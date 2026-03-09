@@ -15,7 +15,10 @@ upstreams:
 
 customDNS:
   mapping:
-    '(.*\.)?imapps\.uk': 192.168.68.18
+    sentinel.imapps.uk: 192.168.68.18
+    shoppingo.imapps.uk: 192.168.68.18
+    jellyfin.imapps.uk: 192.168.68.18
+    immich.imapps.uk: 192.168.68.18
 
 caching:
   maxTime: 0s
