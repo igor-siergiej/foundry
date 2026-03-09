@@ -11,16 +11,13 @@ httpPort: 4000
 # Upstream DNS providers (external resolution)
 upstream:
   default:
-    - https://1.1.1.1/dns-query      # Cloudflare DNS
-    - https://8.8.8.8/dns-query      # Google DNS
+    - https://1.1.1.1/dns-query # Cloudflare DNS
+    - https://8.8.8.8/dns-query # Google DNS
 
 # Custom DNS mappings for local split-horizon routing
 customDNS:
   mapping:
-    # Replace GATEWAY_IP with your local gateway IP (e.g., 192.168.69.1)
-    # This allows LAN clients to reach internal services without going through the Cloudflare tunnel
-    example.com: GATEWAY_IP
-    "*.example.com": GATEWAY_IP
+    '*.imapps.uk': 192.168.68.18
 
 # Caching
 caching:
