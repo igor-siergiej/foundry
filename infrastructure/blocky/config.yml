@@ -1,0 +1,56 @@
+# Blocky DNS Server Configuration
+# This DNS server is used for local split-horizon DNS
+# It resolves *.example.com to the local gateway to bypass the Cloudflare tunnel on LAN
+# External DNS is still handled by Cloudflare
+
+# Server settings
+port: 53
+portTLS: 853
+httpPort: 4000
+
+# Upstream DNS providers (external resolution)
+upstream:
+  default:
+    - https://1.1.1.1/dns-query      # Cloudflare DNS
+    - https://8.8.8.8/dns-query      # Google DNS
+
+# Custom DNS mappings for local split-horizon routing
+customDNS:
+  mapping:
+    # Replace GATEWAY_IP with your local gateway IP (e.g., 192.168.69.1)
+    # This allows LAN clients to reach internal services without going through the Cloudflare tunnel
+    example.com: GATEWAY_IP
+    "*.example.com": GATEWAY_IP
+
+# Caching
+caching:
+  maxItemsCount: 10000
+  prefetching: true
+
+# Query logging
+log:
+  level: info
+  format: text
+
+# Blocking lists (optional)
+blocking:
+  blackLists:
+    ads:
+      - https://adaway.org/hosts.txt
+      - https://www.malwaredomainlist.com/hostslist/hosts.txt
+  whiteLists: {}
+  clientGroupsBlock:
+    default:
+      - ads
+
+# Client-specific settings
+clients:
+  default:
+    upstream:
+      - https://1.1.1.1/dns-query
+      - https://8.8.8.8/dns-query
+
+# Prometheus metrics (optional)
+prometheus:
+  enable: true
+  path: /metrics
