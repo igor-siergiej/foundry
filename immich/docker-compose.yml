@@ -1,0 +1,71 @@
+name: immich
+
+services:
+  immich-server:
+    image: ghcr.io/immich-app/immich-server:release
+    container_name: immich-server
+    restart: unless-stopped
+    depends_on:
+      - redis
+      - database
+    environment:
+      DB_HOSTNAME: database
+      DB_USERNAME: immich
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_DATABASE_NAME: immich
+      REDIS_HOSTNAME: redis
+    volumes:
+      - immich-upload:/usr/src/app/upload
+    ports:
+      - "2283:2283"
+    networks:
+      - immich
+
+  immich-machine-learning:
+    image: ghcr.io/immich-app/immich-machine-learning:release
+    container_name: immich-machine-learning
+    restart: unless-stopped
+    volumes:
+      - model-cache:/cache
+    networks:
+      - immich
+
+  redis:
+    image: docker.io/redis:7-alpine
+    container_name: immich-redis
+    restart: unless-stopped
+    networks:
+      - immich
+
+  database:
+    image: ghcr.io/immich-app/postgres:16-vectorchord0.4.3-pgvectors0.2.0
+    container_name: immich-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: immich
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: immich
+      POSTGRES_INITDB_ARGS: "--data-checksums"
+    volumes:
+      - immich-pgdata:/var/lib/postgresql/data
+    networks:
+      - immich
+
+volumes:
+  immich-upload:
+    driver: local
+    driver_opts:
+      type: nfs
+      o: addr=192.168.68.19,vers=4,soft,timeo=180,tcp,rw,nolock
+      device: ":/mnt/tank/shared/immich/upload"
+  immich-pgdata:
+    driver: local
+    driver_opts:
+      type: nfs
+      o: addr=192.168.68.19,vers=4,soft,timeo=180,tcp,rw,nolock
+      device: ":/mnt/tank/shared/immich/postgres-docker"
+  model-cache:
+
+networks:
+  immich:
+    driver: bridge
