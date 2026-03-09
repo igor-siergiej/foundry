@@ -15,7 +15,7 @@ upstreams:
 
 customDNS:
   mapping:
-    '*.imapps.uk': 192.168.68.18
+    '(.*\.)?imapps\.uk': 192.168.68.18
 
 caching:
   maxTime: 0s
