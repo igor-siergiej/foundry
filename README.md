@@ -14,7 +14,7 @@ Local split-horizon DNS server that provides:
 
 #### Configuration
 
-Edit `infrastructure/blocky/config.yml` and replace `GATEWAY_IP` with your local gateway IP:
+Edit `blocky/config.yml` and replace `GATEWAY_IP` with your local gateway IP:
 
 ```yaml
 customDNS:
@@ -28,18 +28,20 @@ This allows LAN clients to access internal services (Dokploy, Immich, etc.) dire
 #### Deployment with Dokploy
 
 1. Connect this repository to Dokploy with Git Sync
-2. Dokploy will pull `docker-compose.yml` and deploy the Blocky service
-3. Update `GATEWAY_IP` placeholder before first deployment
-4. Access web UI at `http://<server-ip>:4000`
+2. Set compose file path to `blocky/docker-compose.yml`
+3. Dokploy will pull and deploy the Blocky service
+4. Update `GATEWAY_IP` placeholder in `blocky/config.yml` before first deployment
+5. Access web UI at `http://<server-ip>:4000`
 
 ## Directory Structure
 
 ```
 foundry/
-├── docker-compose.yml              # Main compose file
-└── infrastructure/
-    └── blocky/
-        └── config.yml              # Blocky configuration
+├── blocky/
+│   ├── docker-compose.yml          # Blocky service definition
+│   └── config.yml                  # Blocky configuration
+├── README.md
+└── .gitignore
 ```
 
 ## Notes
