@@ -1,0 +1,24 @@
+services:
+  mongodb:
+    image: mongo:7.0
+    container_name: mongodb
+    restart: unless-stopped
+    ports:
+      - '27017:27017'
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USER}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD}
+    volumes:
+      - mongodb-data:/data/db
+      - ./init:/docker-entrypoint-initdb.d
+    networks:
+      - default
+
+volumes:
+  mongodb-data:
+    driver: local
+    # For NFS persistence (requires TrueNAS export at /mnt/tank/shared/mongodb):
+    # driver_opts:
+    #   type: nfs
+    #   o: addr=192.168.68.19,vers=4,soft,timeo=180,tcp,rw,nolock
+    #   device: ":/mnt/tank/shared/mongodb"
