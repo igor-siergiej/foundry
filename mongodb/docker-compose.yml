@@ -1,6 +1,6 @@
 services:
   mongodb:
-    image: mongo:4.4
+    image: mongo:7.0
     container_name: mongodb
     restart: unless-stopped
     ports:
@@ -17,3 +17,8 @@ services:
 volumes:
   mongodb-data:
     driver: local
+    # For NFS persistence (requires TrueNAS export at /mnt/tank/shared/mongodb):
+    # driver_opts:
+    #   type: nfs
+    #   o: addr=192.168.68.19,vers=4,soft,timeo=180,tcp,rw,nolock
+    #   device: ":/mnt/tank/shared/mongodb"

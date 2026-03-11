@@ -1,6 +1,6 @@
 # MongoDB Compose Setup
 
-Docker Compose setup for MongoDB 4.4, serving shoppingo and jewellery-catalogue (staging + production).
+Docker Compose setup for MongoDB 7.0, serving shoppingo and jewellery-catalogue (staging + production).
 
 ## Quick Start
 
@@ -18,7 +18,7 @@ Docker Compose setup for MongoDB 4.4, serving shoppingo and jewellery-catalogue 
 3. Verify it's running:
    ```bash
    docker compose ps
-   docker exec mongodb mongo -u admin -p <MONGO_ROOT_PASSWORD> --authenticationDatabase admin --eval "show dbs"
+   docker exec mongodb mongosh -u admin -p <MONGO_ROOT_PASSWORD> --authenticationDatabase admin --eval "show dbs"
    ```
 
 ## Creating Application Users
@@ -26,19 +26,19 @@ Docker Compose setup for MongoDB 4.4, serving shoppingo and jewellery-catalogue 
 Users can be created manually or via the init script. To create users manually:
 
 ```bash
-docker exec mongodb mongo -u admin -p <MONGO_ROOT_PASSWORD> --authenticationDatabase admin < init/01-create-users.js
+docker exec mongodb mongosh -u admin -p <MONGO_ROOT_PASSWORD> --authenticationDatabase admin < init/01-create-users.js
 ```
 
 Or interactively:
 ```bash
-docker exec mongodb mongo -u admin -p <MONGO_ROOT_PASSWORD> --authenticationDatabase admin
+docker exec mongodb mongosh -u admin -p <MONGO_ROOT_PASSWORD> --authenticationDatabase admin
 # Then run the commands from init/01-create-users.js
 ```
 
 ## Testing Application Connection
 
 ```bash
-docker exec mongodb mongo "mongodb://shoppingo_production_user:<APP_PASSWORD>@localhost:27017/shoppingo_production?authSource=shoppingo_production"
+docker exec mongodb mongosh "mongodb://shoppingo_production_user:<APP_PASSWORD>@localhost:27017/shoppingo_production?authSource=shoppingo_production"
 ```
 
 ## NFS Persistence (TrueNAS)
