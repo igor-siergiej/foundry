@@ -23,16 +23,22 @@ Docker Compose setup for MongoDB 7.0, serving shoppingo and jewellery-catalogue 
 
 ## Creating Application Users
 
-Users can be created manually or via the init script. To create users manually:
+Create users after MongoDB starts:
 
 ```bash
-docker exec mongodb mongosh -u admin -p <MONGO_ROOT_PASSWORD> --authenticationDatabase admin < init/01-create-users.js
-```
+docker exec mongodb mongosh -u admin -p <MONGO_ROOT_PASSWORD> --authenticationDatabase admin <<'EOF'
+db = db.getSiblingDB('shoppingo_production');
+db.createUser({ user: 'shoppingo_production_user', pwd: '<APP_PASSWORD>', roles: ['readWrite'] });
 
-Or interactively:
-```bash
-docker exec mongodb mongosh -u admin -p <MONGO_ROOT_PASSWORD> --authenticationDatabase admin
-# Then run the commands from init/01-create-users.js
+db = db.getSiblingDB('shoppingo_staging');
+db.createUser({ user: 'shoppingo_staging_user', pwd: '<APP_PASSWORD>', roles: ['readWrite'] });
+
+db = db.getSiblingDB('jewellery_production');
+db.createUser({ user: 'jewellery_production_user', pwd: '<APP_PASSWORD>', roles: ['readWrite'] });
+
+db = db.getSiblingDB('jewellery_staging');
+db.createUser({ user: 'jewellery_staging_user', pwd: '<APP_PASSWORD>', roles: ['readWrite'] });
+EOF
 ```
 
 ## Testing Application Connection
