@@ -1,4 +1,7 @@
 # Blocky DNS Server Configuration
+# This DNS server is used for local split-horizon DNS
+# It resolves *.imapps.uk to the local gateway to bypass the Cloudflare tunnel on LAN
+# External DNS is still handled by Cloudflare
 
 ports:
   dns: 53
@@ -9,6 +12,10 @@ upstreams:
     default:
       - 1.1.1.1
       - 8.8.8.8
+
+customDNS:
+  mapping:
+    imapps.uk: 192.168.68.18
 
 caching:
   maxTime: 0s
