@@ -1,0 +1,60 @@
+name: joplin
+
+services:
+  joplin-db:
+    image: postgres:16
+    container_name: joplin-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-joplin}
+      POSTGRES_USER: ${POSTGRES_USER:-joplin}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - joplin-db:/var/lib/postgresql/data
+    networks:
+      - joplin
+
+  joplin:
+    image: joplin/server:latest
+    container_name: joplin
+    restart: unless-stopped
+    depends_on:
+      - joplin-db
+    environment:
+      DB_CLIENT: pg
+      POSTGRES_HOST: joplin-db
+      POSTGRES_PORT: 5432
+      POSTGRES_DATABASE: ${POSTGRES_DB:-joplin}
+      POSTGRES_USER: ${POSTGRES_USER:-joplin}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      APP_BASE_URL: https://joplin.imapps.uk
+      APP_PORT: 22300
+    volumes:
+      - joplin-config:/root/.config/joplin-server
+    ports:
+      - "22300:22300"
+    networks:
+      - joplin
+    labels:
+      - traefik.docker.network=dokploy-network
+      - traefik.http.routers.joplin-web.rule=Host(`joplin.imapps.uk`)
+      - traefik.http.routers.joplin-web.entrypoints=web
+      - traefik.http.services.joplin-web.loadbalancer.server.port=22300
+      - traefik.http.routers.joplin-web.service=joplin-web
+      - traefik.http.routers.joplin-web.middlewares=redirect-to-https@file
+      - traefik.http.routers.joplin-websecure.rule=Host(`joplin.imapps.uk`)
+      - traefik.http.routers.joplin-websecure.entrypoints=websecure
+      - traefik.http.services.joplin-websecure.loadbalancer.server.port=22300
+      - traefik.http.routers.joplin-websecure.service=joplin-websecure
+      - traefik.http.routers.joplin-websecure.tls.certresolver=letsencrypt
+      - traefik.enable=true
+
+volumes:
+  joplin-db:
+    driver: local
+  joplin-config:
+    driver: local
+
+networks:
+  joplin:
+    driver: bridge
