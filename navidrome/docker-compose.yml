@@ -1,0 +1,32 @@
+name: navidrome
+
+services:
+  navidrome:
+    image: deluan/navidrome:latest
+    container_name: navidrome
+    restart: unless-stopped
+    environment:
+      ND_LOGFORMAT: json
+      ND_LOGFRAME: "false"
+      ND_BASEURL: ""
+    volumes:
+      - navidrome-config:/data
+      - navidrome-music:/music:ro
+    ports:
+      - "4533:4533"
+    networks:
+      - navidrome
+
+volumes:
+  navidrome-config:
+    driver: local
+  navidrome-music:
+    driver: local
+    driver_opts:
+      type: nfs
+      o: addr=192.168.68.19,vers=4,soft,timeo=180,tcp,rw,nolock
+      device: ":/mnt/tank/shared/jellyfin/media"
+
+networks:
+  navidrome:
+    driver: bridge

@@ -1,0 +1,31 @@
+name: audiobookshelf
+
+services:
+  audiobookshelf:
+    image: advplyr/audiobookshelf:latest
+    container_name: audiobookshelf
+    restart: unless-stopped
+    environment:
+      AUDIOBOOKSHELF_UID: 1000
+      AUDIOBOOKSHELF_GID: 1000
+    volumes:
+      - audiobookshelf-config:/config
+      - audiobookshelf-books:/audiobooks:ro
+    ports:
+      - "13378:80"
+    networks:
+      - audiobookshelf
+
+volumes:
+  audiobookshelf-config:
+    driver: local
+  audiobookshelf-books:
+    driver: local
+    driver_opts:
+      type: nfs
+      o: addr=192.168.68.19,vers=4,soft,timeo=180,tcp,rw,nolock
+      device: ":/mnt/tank/shared/jellyfin/media"
+
+networks:
+  audiobookshelf:
+    driver: bridge
