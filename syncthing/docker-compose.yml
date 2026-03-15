@@ -6,8 +6,8 @@ services:
     container_name: syncthing
     restart: unless-stopped
     environment:
-      - PUID=1000
-      - PGID=1000
+      - PUID=0
+      - PGID=0
     volumes:
       - syncthing-config:/var/syncthing/config
       - notes:/var/syncthing/notes
