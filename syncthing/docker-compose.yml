@@ -1,0 +1,45 @@
+name: syncthing
+
+services:
+  syncthing:
+    image: syncthing/syncthing:latest
+    container_name: syncthing
+    restart: unless-stopped
+    environment:
+      - PUID=1000
+      - PGID=1000
+    volumes:
+      - syncthing-config:/var/syncthing/config
+      - notes:/var/syncthing/notes
+    ports:
+      - "22000:22000/tcp"   # sync protocol
+      - "21027:21027/udp"   # local discovery
+    networks:
+      - dokploy-network
+    labels:
+      - traefik.docker.network=dokploy-network
+      - traefik.enable=true
+      - traefik.http.routers.syncthing-web.rule=Host(`syncthing.imapps.uk`)
+      - traefik.http.routers.syncthing-web.entrypoints=web
+      - traefik.http.routers.syncthing-web.service=syncthing-web
+      - traefik.http.routers.syncthing-web.middlewares=redirect-to-https@file
+      - traefik.http.services.syncthing-web.loadbalancer.server.port=8384
+      - traefik.http.routers.syncthing-websecure.rule=Host(`syncthing.imapps.uk`)
+      - traefik.http.routers.syncthing-websecure.entrypoints=websecure
+      - traefik.http.routers.syncthing-websecure.service=syncthing-websecure
+      - traefik.http.routers.syncthing-websecure.tls.certresolver=letsencrypt
+      - traefik.http.services.syncthing-websecure.loadbalancer.server.port=8384
+
+volumes:
+  syncthing-config:
+    driver: local
+  notes:
+    driver: local
+    driver_opts:
+      type: nfs
+      o: addr=192.168.68.19,vers=4,soft,timeo=180,tcp,rw,nolock
+      device: ":/mnt/tank/shared/notes"
+
+networks:
+  dokploy-network:
+    external: true
