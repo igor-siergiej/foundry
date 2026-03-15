@@ -38,7 +38,7 @@ volumes:
     driver_opts:
       type: nfs
       o: addr=192.168.68.19,vers=4,soft,timeo=180,tcp,rw,nolock
-      device: ":/mnt/tank/shared/notes"
+      device: ":/mnt/tank/shared/syncthing"
 
 networks:
   dokploy-network:
