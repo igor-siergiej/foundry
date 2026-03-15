@@ -29,8 +29,6 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       APP_BASE_URL: https://joplin.imapps.uk
       APP_PORT: 22300
-      JOPLIN_ADMIN_EMAIL: admin@joplin.imapps.uk
-      JOPLIN_ADMIN_PASSWORD: admin
     volumes:
       - joplin-config:/root/.config/joplin-server
     ports:
