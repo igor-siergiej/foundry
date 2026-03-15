@@ -12,7 +12,7 @@ services:
     volumes:
       - joplin-db:/var/lib/postgresql/data
     networks:
-      - joplin
+      - dokploy-network
 
   joplin:
     image: joplin/server:latest
@@ -29,12 +29,14 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       APP_BASE_URL: https://joplin.imapps.uk
       APP_PORT: 22300
+      JOPLIN_ADMIN_EMAIL: admin@localhost
+      JOPLIN_ADMIN_PASSWORD: joplin123
     volumes:
       - joplin-config:/root/.config/joplin-server
     ports:
       - "22300:22300"
     networks:
-      - joplin
+      - dokploy-network
     labels:
       - traefik.docker.network=dokploy-network
       - traefik.http.routers.joplin-web.rule=Host(`joplin.imapps.uk`)
@@ -56,5 +58,5 @@ volumes:
     driver: local
 
 networks:
-  joplin:
-    driver: bridge
+  dokploy-network:
+    external: true
