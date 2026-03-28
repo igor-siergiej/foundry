@@ -1,0 +1,22 @@
+name: homeassistant
+
+services:
+  homeassistant:
+    image: ghcr.io/home-assistant/home-assistant:2024.12.3
+    container_name: homeassistant
+    restart: unless-stopped
+    network_mode: host
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+    volumes:
+      - ha-config:/config
+    privileged: true
+
+volumes:
+  ha-config:
+    driver: local
+    driver_opts:
+      type: nfs
+      o: addr=192.168.68.19,vers=4,soft,timeo=180,tcp,rw,nolock
+      device: ":/mnt/tank/shared/homeassistant/config"
