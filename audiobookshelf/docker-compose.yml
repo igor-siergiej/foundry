@@ -18,7 +18,7 @@ services:
 
 volumes:
   audiobookshelf-config:
-    driver: local
+    external: true
   audiobookshelf-books:
     external: true
 
