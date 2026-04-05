@@ -135,27 +135,27 @@ volumes:
   loki-data:
     driver: local
     driver_opts:
-      type: none
-      o: bind
-      device: /mnt/tank/shared/loki
+      type: nfs
+      o: addr=192.168.68.13,vers=4,soft,timeo=180,tcp,rw,nolock
+      device: ":/mnt/tank/shared/loki"
   prometheus-data:
     driver: local
     driver_opts:
-      type: none
-      o: bind
-      device: /mnt/tank/shared/prometheus
+      type: nfs
+      o: addr=192.168.68.13,vers=4,soft,timeo=180,tcp,rw,nolock
+      device: ":/mnt/tank/shared/prometheus"
   grafana-data:
     driver: local
     driver_opts:
-      type: none
-      o: bind
-      device: /mnt/tank/shared/grafana
+      type: nfs
+      o: addr=192.168.68.13,vers=4,soft,timeo=180,tcp,rw,nolock
+      device: ":/mnt/tank/shared/grafana"
   uptime-kuma-data:
     driver: local
     driver_opts:
-      type: none
-      o: bind
-      device: /mnt/tank/shared/uptime-kuma
+      type: nfs
+      o: addr=192.168.68.13,vers=4,soft,timeo=180,tcp,rw,nolock
+      device: ":/mnt/tank/shared/uptime-kuma"
   promtail-positions:
     driver: local
 
