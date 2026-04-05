@@ -1,0 +1,228 @@
+{
+	"annotations": {
+		"list": [
+			{
+				"builtIn": 1,
+				"datasource": {
+					"type": "grafana",
+					"uid": "-- Grafana --"
+				},
+				"enable": true,
+				"hide": true,
+				"iconColor": "rgba(0, 211, 255, 1)",
+				"name": "Annotations & Alerts",
+				"type": "dashboard"
+			}
+		]
+	},
+	"editable": true,
+	"fiscalYearStartMonth": 0,
+	"graphTooltip": 0,
+	"links": [],
+	"liveNow": false,
+	"panels": [
+		{
+			"datasource": {
+				"type": "loki",
+				"uid": "P8E80F9AEF21F6940"
+			},
+			"fieldConfig": {
+				"defaults": {
+					"color": {
+						"mode": "thresholds"
+					},
+					"custom": {
+						"align": "auto",
+						"cellOptions": {
+							"type": "auto"
+						},
+						"inspect": false
+					},
+					"mappings": [],
+					"thresholds": {
+						"mode": "absolute",
+						"steps": [
+							{
+								"color": "green",
+								"value": null
+							},
+							{
+								"color": "red",
+								"value": 80
+							}
+						]
+					},
+					"unitScale": true
+				},
+				"overrides": [
+					{
+						"matcher": {
+							"id": "byName",
+							"options": "Time"
+						},
+						"properties": [
+							{
+								"id": "custom.width",
+								"value": 208
+							}
+						]
+					}
+				]
+			},
+			"gridPos": {
+				"h": 20,
+				"w": 6,
+				"x": 0,
+				"y": 0
+			},
+			"id": 1,
+			"options": {
+				"cellHeight": "sm",
+				"footer": {
+					"countRows": false,
+					"fields": "",
+					"reducer": ["sum"],
+					"show": false
+				},
+				"showHeader": true,
+				"sortBy": []
+			},
+			"pluginVersion": "10.3.3",
+			"targets": [
+				{
+					"datasource": {
+						"type": "loki",
+						"uid": "P8E80F9AEF21F6940"
+					},
+					"editorMode": "code",
+					"expr": "{compose_project=\"shoppingo\"}\r\n|= \"Image generated using AI\"\r\n|= \"\\\"source\\\":\\\"gemini\\\"\"\r\n| json",
+					"queryType": "range",
+					"refId": "A"
+				}
+			],
+			"title": "Generated Images",
+			"transformations": [
+				{
+					"id": "extractFields",
+					"options": {
+						"format": "kvp",
+						"keepTime": false,
+						"replace": false,
+						"source": "Line"
+					}
+				},
+				{
+					"id": "organize",
+					"options": {
+						"excludeByName": {
+							"Line": true,
+							"Time": false,
+							"]": true,
+							"app": true,
+							"component": true,
+							"container": true,
+							"contentType": true,
+							"filename": true,
+							"id": true,
+							"labels": true,
+							"level": true,
+							"message": true,
+							"meta": true,
+							"compose_project": true,
+							"node_name": true,
+							"pod": true,
+							"source": true,
+							"stream": true,
+							"tsNs": true
+						},
+						"includeByName": {},
+						"indexByName": {},
+						"renameByName": {}
+					}
+				}
+			],
+			"type": "table"
+		},
+		{
+			"datasource": {
+				"type": "loki",
+				"uid": "P8E80F9AEF21F6940"
+			},
+			"fieldConfig": {
+				"defaults": {
+					"color": {
+						"mode": "thresholds"
+					},
+					"mappings": [],
+					"thresholds": {
+						"mode": "absolute",
+						"steps": [
+							{
+								"color": "green",
+								"value": null
+							},
+							{
+								"color": "red",
+								"value": 80
+							}
+						]
+					},
+					"unitScale": true
+				},
+				"overrides": []
+			},
+			"gridPos": {
+				"h": 20,
+				"w": 8,
+				"x": 6,
+				"y": 0
+			},
+			"id": 2,
+			"options": {
+				"colorMode": "value",
+				"graphMode": "area",
+				"justifyMode": "auto",
+				"orientation": "auto",
+				"reduceOptions": {
+					"calcs": ["lastNotNull"],
+					"fields": "",
+					"values": false
+				},
+				"showPercentChange": false,
+				"textMode": "auto",
+				"wideLayout": true
+			},
+			"pluginVersion": "10.3.3",
+			"targets": [
+				{
+					"datasource": {
+						"type": "loki",
+						"uid": "P8E80F9AEF21F6940"
+					},
+					"editorMode": "code",
+					"expr": "sum(\r\n  count_over_time(\r\n    {compose_project=\"shoppingo\"}[$__range]\r\n    |= \"Image generated using AI\"\r\n  )\r\n)",
+					"queryType": "range",
+					"refId": "A"
+				}
+			],
+			"title": "Number of Images generated with AI model",
+			"type": "stat"
+		}
+	],
+	"refresh": "",
+	"schemaVersion": 39,
+	"tags": [],
+	"templating": {
+		"list": []
+	},
+	"time": {
+		"from": "now-2d",
+		"to": "now"
+	},
+	"timepicker": {},
+	"timezone": "",
+	"title": "Shoppingo Prod",
+	"uid": "f8ffb92b-8f1c-41cd-b33f-757aaf9438cd",
+	"version": 1,
+	"weekStart": ""
+}

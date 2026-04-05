@@ -1,0 +1,169 @@
+name: monitoring
+
+services:
+  loki:
+    image: grafana/loki:3.3.2
+    container_name: loki
+    restart: unless-stopped
+    user: "10001:10001"
+    command: -config.file=/etc/loki/loki.yml
+    volumes:
+      - ./config/loki/loki.yml:/etc/loki/loki.yml:ro
+      - loki-data:/loki
+    networks:
+      - monitoring
+
+  promtail:
+    image: grafana/promtail:3.3.2
+    container_name: promtail
+    restart: unless-stopped
+    command: -config.file=/etc/promtail/promtail.yml
+    volumes:
+      - ./config/promtail/promtail.yml:/etc/promtail/promtail.yml:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - promtail-positions:/var/lib/promtail
+    networks:
+      - monitoring
+    depends_on:
+      - loki
+
+  prometheus:
+    image: prom/prometheus:v3.2.1
+    container_name: prometheus
+    restart: unless-stopped
+    user: "65534:65534"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --storage.tsdb.retention.time=30d
+      - --web.enable-lifecycle
+    volumes:
+      - ./config/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    networks:
+      - monitoring
+
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:v0.52.1
+    container_name: cadvisor
+    restart: unless-stopped
+    privileged: true
+    devices:
+      - /dev/kmsg:/dev/kmsg
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker:/var/lib/docker:ro
+      - /cgroup:/cgroup:ro
+    networks:
+      - monitoring
+
+  node-exporter:
+    image: prom/node-exporter:v1.9.1
+    container_name: node-exporter
+    restart: unless-stopped
+    pid: host
+    command:
+      - --path.rootfs=/host
+      - --collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)
+    volumes:
+      - /:/host:ro,rslave
+    networks:
+      - monitoring
+
+  grafana:
+    image: grafana/grafana:11.5.2
+    container_name: grafana
+    restart: unless-stopped
+    user: "472:472"
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GF_ADMIN_USER}
+      GF_SECURITY_ADMIN_PASSWORD: ${GF_ADMIN_PASSWORD}
+      GF_SERVER_ROOT_URL: https://grafana.imapps.uk
+      GF_SECURITY_ALLOW_EMBEDDING: "true"
+      GF_AUTH_ANONYMOUS_ENABLED: "false"
+      GF_PATHS_PROVISIONING: /etc/grafana/provisioning
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./config/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./config/grafana/dashboards:/etc/grafana/dashboards:ro
+    networks:
+      - monitoring
+      - dokploy-network
+    depends_on:
+      - loki
+      - prometheus
+    labels:
+      - traefik.docker.network=dokploy-network
+      - traefik.enable=true
+      - traefik.http.routers.grafana-web.rule=Host(`grafana.imapps.uk`)
+      - traefik.http.routers.grafana-web.entrypoints=web
+      - traefik.http.routers.grafana-web.service=grafana-web
+      - traefik.http.routers.grafana-web.middlewares=redirect-to-https@file
+      - traefik.http.services.grafana-web.loadbalancer.server.port=3000
+      - traefik.http.routers.grafana-websecure.rule=Host(`grafana.imapps.uk`)
+      - traefik.http.routers.grafana-websecure.entrypoints=websecure
+      - traefik.http.routers.grafana-websecure.service=grafana-websecure
+      - traefik.http.routers.grafana-websecure.tls.certresolver=letsencrypt
+      - traefik.http.services.grafana-websecure.loadbalancer.server.port=3000
+
+  uptime-kuma:
+    image: louislam/uptime-kuma:2
+    container_name: uptime-kuma
+    restart: unless-stopped
+    volumes:
+      - uptime-kuma-data:/app/data
+    networks:
+      - dokploy-network
+    labels:
+      - traefik.docker.network=dokploy-network
+      - traefik.enable=true
+      - traefik.http.routers.uptime-web.rule=Host(`uptime.imapps.uk`)
+      - traefik.http.routers.uptime-web.entrypoints=web
+      - traefik.http.routers.uptime-web.service=uptime-web
+      - traefik.http.routers.uptime-web.middlewares=redirect-to-https@file
+      - traefik.http.services.uptime-web.loadbalancer.server.port=3001
+      - traefik.http.routers.uptime-websecure.rule=Host(`uptime.imapps.uk`)
+      - traefik.http.routers.uptime-websecure.entrypoints=websecure
+      - traefik.http.routers.uptime-websecure.service=uptime-websecure
+      - traefik.http.routers.uptime-websecure.tls.certresolver=letsencrypt
+      - traefik.http.services.uptime-websecure.loadbalancer.server.port=3001
+
+volumes:
+  loki-data:
+    driver: local
+    driver_opts:
+      type: nfs
+      o: addr=192.168.68.13,vers=4,soft,timeo=180,tcp,rw,nolock
+      device: ":/mnt/tank/shared/loki"
+  prometheus-data:
+    driver: local
+    driver_opts:
+      type: nfs
+      o: addr=192.168.68.13,vers=4,soft,timeo=180,tcp,rw,nolock
+      device: ":/mnt/tank/shared/prometheus"
+  grafana-data:
+    driver: local
+    driver_opts:
+      type: nfs
+      o: addr=192.168.68.13,vers=4,soft,timeo=180,tcp,rw,nolock
+      device: ":/mnt/tank/shared/grafana"
+  uptime-kuma-data:
+    driver: local
+    driver_opts:
+      type: nfs
+      o: addr=192.168.68.13,vers=4,soft,timeo=180,tcp,rw,nolock
+      device: ":/mnt/tank/shared/uptime-kuma"
+  promtail-positions:
+    driver: local
+
+networks:
+  monitoring:
+    driver: bridge
+    name: monitoring
+  dokploy-network:
+    external: true
