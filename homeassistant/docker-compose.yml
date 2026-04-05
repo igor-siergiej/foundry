@@ -18,5 +18,5 @@ volumes:
     driver: local
     driver_opts:
       type: nfs
-      o: addr=192.168.68.19,vers=4,soft,timeo=180,tcp,rw,nolock
+      o: addr=192.168.68.13,vers=4,soft,timeo=180,tcp,rw,nolock
       device: ":/mnt/tank/shared/homeassistant/config"
