@@ -161,7 +161,6 @@ volumes:
 
 networks:
   monitoring:
-    driver: bridge
-    name: monitoring
+    driver: overlay
   dokploy-network:
     external: true
