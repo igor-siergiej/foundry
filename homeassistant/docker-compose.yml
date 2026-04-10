@@ -5,7 +5,8 @@ services:
     image: ghcr.io/home-assistant/home-assistant:2024.12.3
     container_name: homeassistant
     restart: unless-stopped
-    network_mode: host
+    ports:
+      - "8123:8123"
     cap_add:
       - NET_ADMIN
       - NET_RAW
