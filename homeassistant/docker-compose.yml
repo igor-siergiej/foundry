@@ -12,6 +12,7 @@ services:
       - NET_RAW
     volumes:
       - ha-config:/config
+      - ./configuration.yaml:/config/configuration.yaml
     privileged: true
 
 volumes:
