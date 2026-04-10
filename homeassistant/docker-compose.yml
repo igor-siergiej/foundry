@@ -14,6 +14,8 @@ services:
       - ha-config:/config
       - ./configuration.yaml:/config/configuration.yaml
     privileged: true
+    networks:
+      - homeassistant
 
 volumes:
   ha-config:
@@ -22,3 +24,7 @@ volumes:
       type: nfs
       o: addr=192.168.68.13,vers=4,soft,timeo=180,tcp,rw,nolock
       device: ":/mnt/tank/shared/homeassistant/config"
+
+networks:
+  homeassistant:
+    driver: bridge
