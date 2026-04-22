@@ -130,6 +130,12 @@ services:
       - traefik.http.routers.uptime-websecure.service=uptime-websecure
       - traefik.http.routers.uptime-websecure.tls.certresolver=letsencrypt
       - traefik.http.services.uptime-websecure.loadbalancer.server.port=3001
+      # Iframe-allowing middleware: strips X-Frame-Options, sets CSP frame-ancestors.
+      - traefik.http.middlewares.uptime-iframe.headers.customResponseHeaders.X-Frame-Options=
+      - traefik.http.middlewares.uptime-iframe.headers.contentSecurityPolicy=frame-ancestors 'self' https://sentinel.imapps.uk
+      # Attach middleware to Dokploy-managed router for uptime-kuma.imapps.uk.
+      # Router name tied to Dokploy project id; update if project recreated.
+      - traefik.http.routers.infra-monitoring-xbyv0n-19-websecure.middlewares=uptime-iframe@docker
 
 volumes:
   loki-data:
