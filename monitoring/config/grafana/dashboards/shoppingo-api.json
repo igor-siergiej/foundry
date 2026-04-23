@@ -181,10 +181,56 @@
     },
     {
       "id": 15,
+      "type": "table",
+      "title": "Generated images (24h)",
+      "datasource": { "type": "loki", "uid": "P8E80F9AEF21F6940" },
+      "gridPos": { "h": 10, "w": 24, "x": 0, "y": 44 },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "{container=~\"shoppingo-api.*\"} |= \"Image generated using AI\" | json itemName=\"meta[0].itemName\", source=\"meta[0].source\", contentType=\"meta[0].contentType\"",
+          "queryType": "range"
+        }
+      ],
+      "transformations": [
+        { "id": "extractFields", "options": { "source": "labels", "keepLabels": true } },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "labels": true,
+              "tsNs": true,
+              "id": true,
+              "Line": true,
+              "container": true,
+              "job": true,
+              "service_name": true,
+              "stream": true,
+              "detected_level": true
+            },
+            "renameByName": {
+              "Time": "time",
+              "itemName": "item",
+              "source": "source",
+              "contentType": "content type"
+            },
+            "indexByName": {
+              "Time": 0,
+              "itemName": 1,
+              "source": 2,
+              "contentType": 3
+            }
+          }
+        }
+      ],
+      "options": { "showHeader": true, "sortBy": [{ "displayName": "time", "desc": true }] }
+    },
+    {
+      "id": 16,
       "type": "logs",
       "title": "Recent errors",
       "datasource": { "type": "loki", "uid": "P8E80F9AEF21F6940" },
-      "gridPos": { "h": 10, "w": 24, "x": 0, "y": 44 },
+      "gridPos": { "h": 10, "w": 24, "x": 0, "y": 54 },
       "targets": [
         { "refId": "A", "expr": "{container=~\"shoppingo-api.*\"} | json | level=\"error\"" }
       ],
