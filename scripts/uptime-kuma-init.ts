@@ -3,10 +3,18 @@ import { readFileSync } from 'fs';
 import { join } from 'path';
 
 function ensureArray<T>(value: unknown): T[] {
-  if (!Array.isArray(value)) {
-    throw new Error(`Expected array, got ${typeof value}`);
+  if (Array.isArray(value)) {
+    return value as T[];
   }
-  return value as T[];
+  // Handle wrapped response: { data: [...] } or { monitors: [...] }
+  if (typeof value === 'object' && value !== null) {
+    const obj = value as any;
+    const arrayValue = obj.data || obj.monitors || obj.list;
+    if (Array.isArray(arrayValue)) {
+      return arrayValue as T[];
+    }
+  }
+  throw new Error(`Expected array, got ${typeof value}`);
 }
 
 const UPTIME_KUMA_URL = process.env.UPTIME_KUMA_URL || 'http://localhost:3001';
