@@ -148,7 +148,7 @@ async function createOrUpdateMonitor(
   }
 }
 
-async function createDashboard(monitors: number[]): Promise<number> {
+async function createDashboard(monitors: number[], config: Config): Promise<number> {
   try {
     // Check if dashboard exists
     const listResponse = (await apiCall('GET', '/status-page')) as Array<{
@@ -156,13 +156,13 @@ async function createDashboard(monitors: number[]): Promise<number> {
       title: string;
     }>;
     const existingDashboard = listResponse.find(
-      (d) => d.title === 'Homelab Status'
+      (d) => d.title === config.dashboard.name
     );
 
     const dashboardPayload = {
-      title: 'Homelab Status',
-      description: 'All services uptime and availability',
-      slug: 'homelab-status',
+      title: config.dashboard.name,
+      description: config.dashboard.description,
+      slug: config.dashboard.name.toLowerCase().replace(/\s+/g, '-'),
       showTags: 1,
       published: 1,
     };
@@ -176,7 +176,7 @@ async function createDashboard(monitors: number[]): Promise<number> {
         dashboardPayload
       );
       dashboardId = existingDashboard.id;
-      console.log('  ↻ Updated dashboard: Homelab Status');
+      console.log(`  ↻ Updated dashboard: ${config.dashboard.name}`);
     } else {
       const response = (await apiCall(
         'POST',
@@ -184,7 +184,7 @@ async function createDashboard(monitors: number[]): Promise<number> {
         dashboardPayload
       )) as { id: number };
       dashboardId = response.id;
-      console.log('  + Created dashboard: Homelab Status');
+      console.log(`  + Created dashboard: ${config.dashboard.name}`);
     }
 
     // Add monitors to dashboard
@@ -241,7 +241,7 @@ async function main(): Promise<void> {
 
     // Create dashboard
     console.log('\n📊 Setting up dashboard...');
-    await createDashboard(monitorIds);
+    await createDashboard(monitorIds, config);
 
     console.log('\n✓ Setup complete!');
     console.log(
