@@ -1,0 +1,17 @@
+{
+  "name": "uptime-kuma-setup",
+  "version": "1.0.0",
+  "description": "Initialize uptime-kuma monitors from config file",
+  "type": "module",
+  "scripts": {
+    "setup": "bun uptime-kuma-init.ts",
+    "setup:dry-run": "bun uptime-kuma-init.ts --dry-run"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "typescript": "latest"
+  },
+  "dependencies": {
+    "yaml": "^2.3.0"
+  }
+}
