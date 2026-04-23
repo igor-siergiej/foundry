@@ -138,6 +138,32 @@ services:
       # Router name tied to Dokploy project id; update if project recreated.
       - traefik.http.routers.infra-monitoring-xbyv0n-19-websecure.middlewares=uptime-iframe@docker
 
+  gatus:
+    image: twinproduction/gatus:latest
+    container_name: gatus
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    volumes:
+      - ../gatus-config.yml:/config/config.yml:ro
+      - gatus-data:/data
+    networks:
+      - dokploy-network
+      - monitoring
+    labels:
+      - traefik.docker.network=dokploy-network
+      - traefik.enable=true
+      - traefik.http.routers.gatus-web.rule=Host(`gatus.imapps.uk`)
+      - traefik.http.routers.gatus-web.entrypoints=web
+      - traefik.http.routers.gatus-web.service=gatus-web
+      - traefik.http.routers.gatus-web.middlewares=redirect-to-https@file
+      - traefik.http.services.gatus-web.loadbalancer.server.port=8080
+      - traefik.http.routers.gatus-websecure.rule=Host(`gatus.imapps.uk`)
+      - traefik.http.routers.gatus-websecure.entrypoints=websecure
+      - traefik.http.routers.gatus-websecure.service=gatus-websecure
+      - traefik.http.routers.gatus-websecure.tls.certresolver=letsencrypt
+      - traefik.http.services.gatus-websecure.loadbalancer.server.port=8080
+
 volumes:
   loki-data:
     driver: local
@@ -163,6 +189,12 @@ volumes:
       type: nfs
       o: addr=192.168.68.13,vers=4,soft,timeo=180,tcp,rw,nolock
       device: ":/mnt/tank/shared/uptime-kuma"
+  gatus-data:
+    driver: local
+    driver_opts:
+      type: nfs
+      o: addr=192.168.68.13,vers=4,soft,timeo=180,tcp,rw,nolock
+      device: ":/mnt/tank/shared/gatus"
   promtail-positions:
     driver: local
 
