@@ -2,6 +2,13 @@ import { parse } from 'yaml';
 import { readFileSync } from 'fs';
 import { join } from 'path';
 
+function ensureArray<T>(value: unknown): T[] {
+  if (!Array.isArray(value)) {
+    throw new Error(`Expected array, got ${typeof value}`);
+  }
+  return value as T[];
+}
+
 const UPTIME_KUMA_URL = process.env.UPTIME_KUMA_URL || 'http://localhost:3001';
 const UPTIME_KUMA_API_KEY = process.env.UPTIME_KUMA_API_KEY;
 
@@ -59,7 +66,9 @@ async function apiCall(
 
   if (!response.ok) {
     const text = await response.text();
-    throw new Error(`API Error: ${response.status} ${text}`);
+    const error = new Error(`API Error: ${response.status} ${text}`);
+    (error as any).status = response.status;
+    throw error;
   }
 
   const contentType = response.headers.get('content-type');
@@ -69,7 +78,7 @@ async function apiCall(
   return null;
 }
 
-async function loadConfig(): Promise<Config> {
+function loadConfig(): Config {
   const configPath = join(import.meta.dir, '..', 'uptime-kuma-config.yml');
   const fileContent = readFileSync(configPath, 'utf8');
   return parse(fileContent) as Config;
@@ -116,10 +125,9 @@ async function createOrUpdateMonitor(
 ): Promise<number> {
   try {
     // Check if monitor already exists
-    const listResponse = (await apiCall('GET', '/monitor')) as Array<{
-      id: number;
-      name: string;
-    }>;
+    const listResponse = ensureArray<{ id: number; name: string }>(
+      await apiCall('GET', '/monitor')
+    );
     const existingMonitor = listResponse.find(
       (m) => m.name === monitorConfig.name
     );
@@ -151,10 +159,9 @@ async function createOrUpdateMonitor(
 async function createDashboard(monitors: number[], config: Config): Promise<number> {
   try {
     // Check if dashboard exists
-    const listResponse = (await apiCall('GET', '/status-page')) as Array<{
-      id: number;
-      title: string;
-    }>;
+    const listResponse = ensureArray<{ id: number; title: string }>(
+      await apiCall('GET', '/status-page')
+    );
     const existingDashboard = listResponse.find(
       (d) => d.title === config.dashboard.name
     );
@@ -193,10 +200,7 @@ async function createDashboard(monitors: number[], config: Config): Promise<numb
         await apiCall('POST', `/status-page/${dashboardId}/monitor/${monitorId}`, {});
       } catch (error) {
         // Monitor may already be on dashboard
-        if (
-          !(error instanceof Error) ||
-          !error.message.includes('409')
-        ) {
+        if (!(error instanceof Error) || (error as any).status !== 409) {
           throw error;
         }
       }
@@ -229,7 +233,7 @@ async function main(): Promise<void> {
 
     // Load config
     console.log('\n📋 Loading configuration...');
-    const config = await loadConfig();
+    const config = loadConfig();
 
     // Create monitors
     console.log('\n🔍 Setting up monitors...');
@@ -239,13 +243,19 @@ async function main(): Promise<void> {
       monitorIds.push(id);
     }
 
+    // Validate monitors were created
+    if (monitorIds.length === 0) {
+      console.warn('⚠ No monitors were created');
+    }
+
     // Create dashboard
     console.log('\n📊 Setting up dashboard...');
+    const dashboardSlug = config.dashboard.name.toLowerCase().replace(/\s+/g, '-');
     await createDashboard(monitorIds, config);
 
     console.log('\n✓ Setup complete!');
     console.log(
-      `View dashboard at: ${UPTIME_KUMA_URL}/status/homelab-status`
+      `View dashboard at: ${UPTIME_KUMA_URL}/status/${dashboardSlug}`
     );
   } catch (error) {
     console.error(
