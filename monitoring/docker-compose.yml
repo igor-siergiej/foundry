@@ -43,6 +43,7 @@ services:
       - prometheus-data:/prometheus
     networks:
       - monitoring
+      - dokploy-network
 
   cadvisor:
     image: gcr.io/cadvisor/cadvisor:v0.52.1

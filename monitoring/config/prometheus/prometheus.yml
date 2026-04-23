@@ -24,3 +24,21 @@ scrape_configs:
     static_configs:
       - targets: ["host.docker.internal:4000"]
     metrics_path: /metrics
+
+  # Shoppingo API — exposes Prometheus metrics at /api/metrics.
+  # Reachable on dokploy-network via the dokploy-managed service DNS alias.
+  # If the deployment hash in the service name changes, update the target.
+  - job_name: shoppingo-api
+    static_configs:
+      - targets: ["shoppingo-api-zlusv1:4001"]
+        labels:
+          service: shoppingo-api
+    metrics_path: /api/metrics
+
+  # Kivo auth service — exposes Prometheus metrics at /metrics.
+  - job_name: kivo
+    static_configs:
+      - targets: ["kivo-api-1pae1e:3008"]
+        labels:
+          service: kivo
+    metrics_path: /metrics
