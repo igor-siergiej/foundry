@@ -135,6 +135,10 @@ services:
       - traefik.http.routers.gatus-websecure.service=gatus-websecure
       - traefik.http.routers.gatus-websecure.tls.certresolver=letsencrypt
       - traefik.http.services.gatus-websecure.loadbalancer.server.port=8080
+      # Allow iframe embedding in Sentinel
+      - traefik.http.middlewares.gatus-iframe.headers.customResponseHeaders.X-Frame-Options=
+      - traefik.http.middlewares.gatus-iframe.headers.contentSecurityPolicy=frame-ancestors 'self' https://sentinel.imapps.uk
+      - traefik.http.routers.gatus-websecure.middlewares=gatus-iframe@docker
 
 volumes:
   loki-data:
