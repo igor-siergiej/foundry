@@ -26,7 +26,8 @@
       "targets": [
         { "refId": "A", "expr": "sum(increase(kivo_auth_attempts_total{endpoint=\"login\"}[24h]))" }
       ],
-      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "value" }
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "value" },
+      "fieldConfig": { "defaults": { "decimals": 0 } }
     },
     {
       "id": 2,
@@ -49,7 +50,8 @@
       "targets": [
         { "refId": "A", "expr": "sum(increase(kivo_registrations_total{outcome=\"success\"}[24h]))" }
       ],
-      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "value" }
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "value" },
+      "fieldConfig": { "defaults": { "decimals": 0 } }
     },
     {
       "id": 4,
@@ -61,7 +63,7 @@
         { "refId": "A", "expr": "sum(increase(kivo_rate_limit_hits_total[24h]))" }
       ],
       "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "value" },
-      "fieldConfig": { "defaults": { "color": { "mode": "thresholds" }, "thresholds": { "mode": "absolute", "steps": [{ "color": "green" }, { "color": "red", "value": 10 }] } } }
+      "fieldConfig": { "defaults": { "decimals": 0, "color": { "mode": "thresholds" }, "thresholds": { "mode": "absolute", "steps": [{ "color": "green" }, { "color": "red", "value": 10 }] } } }
     },
     {
       "id": 5,
