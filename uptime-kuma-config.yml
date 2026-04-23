@@ -1,0 +1,75 @@
+monitors:
+  blocky:
+    name: "Blocky (DNS)"
+    type: http
+    url: http://blocky:4000/health
+    interval: 60
+    maxretries: 3
+
+  immich:
+    name: "Immich (Photos)"
+    type: http
+    url: http://immich/api/server/about
+    interval: 60
+    maxretries: 3
+
+  mongodb:
+    name: "MongoDB"
+    type: tcp
+    host: mongodb
+    port: 27017
+    interval: 60
+    maxretries: 3
+
+  minio:
+    name: "MinIO (Storage)"
+    type: http
+    url: http://minio:9000/minio/health
+    interval: 60
+    maxretries: 3
+
+  jellyfin:
+    name: "Jellyfin (Media)"
+    type: http
+    url: http://jellyfin:8096/health
+    interval: 60
+    maxretries: 3
+
+  navidrome:
+    name: "Navidrome (Music)"
+    type: http
+    url: http://navidrome:4533/health
+    interval: 60
+    maxretries: 3
+
+  audiobookshelf:
+    name: "AudiobookShelf"
+    type: http
+    url: http://audiobookshelf:80/health
+    interval: 60
+    maxretries: 3
+
+  homeassistant:
+    name: "Home Assistant"
+    type: http
+    url: http://homeassistant:8123/api/
+    interval: 60
+    maxretries: 3
+
+  prometheus:
+    name: "Prometheus"
+    type: http
+    url: http://prometheus:9090/-/healthy
+    interval: 60
+    maxretries: 3
+
+  grafana:
+    name: "Grafana"
+    type: http
+    url: http://grafana:3000/api/health
+    interval: 60
+    maxretries: 3
+
+dashboard:
+  name: "Homelab Status"
+  description: "All services uptime and availability"
