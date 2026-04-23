@@ -110,34 +110,6 @@ services:
       - traefik.http.routers.grafana-websecure.tls.certresolver=letsencrypt
       - traefik.http.services.grafana-websecure.loadbalancer.server.port=3000
 
-  uptime-kuma:
-    image: louislam/uptime-kuma:2
-    container_name: uptime-kuma
-    restart: unless-stopped
-    volumes:
-      - uptime-kuma-data:/app/data
-    networks:
-      - dokploy-network
-    labels:
-      - traefik.docker.network=dokploy-network
-      - traefik.enable=true
-      - traefik.http.routers.uptime-web.rule=Host(`uptime.imapps.uk`)
-      - traefik.http.routers.uptime-web.entrypoints=web
-      - traefik.http.routers.uptime-web.service=uptime-web
-      - traefik.http.routers.uptime-web.middlewares=redirect-to-https@file
-      - traefik.http.services.uptime-web.loadbalancer.server.port=3001
-      - traefik.http.routers.uptime-websecure.rule=Host(`uptime.imapps.uk`)
-      - traefik.http.routers.uptime-websecure.entrypoints=websecure
-      - traefik.http.routers.uptime-websecure.service=uptime-websecure
-      - traefik.http.routers.uptime-websecure.tls.certresolver=letsencrypt
-      - traefik.http.services.uptime-websecure.loadbalancer.server.port=3001
-      # Iframe-allowing middleware: strips X-Frame-Options, sets CSP frame-ancestors.
-      - traefik.http.middlewares.uptime-iframe.headers.customResponseHeaders.X-Frame-Options=
-      - traefik.http.middlewares.uptime-iframe.headers.contentSecurityPolicy=frame-ancestors 'self' https://sentinel.imapps.uk
-      # Attach middleware to Dokploy-managed router for uptime-kuma.imapps.uk.
-      # Router name tied to Dokploy project id; update if project recreated.
-      - traefik.http.routers.infra-monitoring-xbyv0n-19-websecure.middlewares=uptime-iframe@docker
-
   gatus:
     image: twinproduction/gatus:latest
     container_name: gatus
@@ -183,12 +155,6 @@ volumes:
       type: nfs
       o: addr=192.168.68.13,vers=4,soft,timeo=180,tcp,rw,nolock
       device: ":/mnt/tank/shared/grafana"
-  uptime-kuma-data:
-    driver: local
-    driver_opts:
-      type: nfs
-      o: addr=192.168.68.13,vers=4,soft,timeo=180,tcp,rw,nolock
-      device: ":/mnt/tank/shared/uptime-kuma"
   gatus-data:
     driver: local
     driver_opts:
