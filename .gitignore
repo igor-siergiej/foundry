@@ -1,0 +1,10 @@
+# Environment
+.env
+.env.local
+.env.*.local
+scripts/.env
+
+# Bun
+node_modules/
+bun.lockb
+*.log
