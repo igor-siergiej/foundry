@@ -1,0 +1,85 @@
+debug: false
+metrics: true
+storage:
+  type: sqlite
+ui:
+  title: "Homelab Status"
+  header: "Service Uptime"
+endpoints:
+  - name: Blocky (DNS)
+    group: Services
+    url: http://blocky:4000/health
+    interval: 60s
+    timeout: 10s
+    conditions:
+      - "[STATUS] == 200"
+
+  - name: Immich (Photos)
+    group: Services
+    url: http://immich/api/server/about
+    interval: 60s
+    timeout: 10s
+    conditions:
+      - "[STATUS] == 200"
+
+  - name: MongoDB
+    group: Services
+    url: "tcp://mongodb:27017"
+    interval: 60s
+    timeout: 10s
+
+  - name: MinIO (Storage)
+    group: Services
+    url: http://minio:9000/minio/health
+    interval: 60s
+    timeout: 10s
+    conditions:
+      - "[STATUS] == 200"
+
+  - name: Jellyfin (Media)
+    group: Services
+    url: http://jellyfin:8096/health
+    interval: 60s
+    timeout: 10s
+    conditions:
+      - "[STATUS] == 200"
+
+  - name: Navidrome (Music)
+    group: Services
+    url: http://navidrome:4533/health
+    interval: 60s
+    timeout: 10s
+    conditions:
+      - "[STATUS] == 200"
+
+  - name: AudiobookShelf
+    group: Services
+    url: http://audiobookshelf/health
+    interval: 60s
+    timeout: 10s
+    conditions:
+      - "[STATUS] == 200"
+
+  - name: Home Assistant
+    group: Services
+    url: http://homeassistant:8123/api/
+    interval: 60s
+    timeout: 10s
+    conditions:
+      - "[STATUS] == 200"
+
+  - name: Prometheus
+    group: Services
+    url: http://prometheus:9090/-/healthy
+    interval: 60s
+    timeout: 10s
+    conditions:
+      - "[STATUS] == 200"
+
+  - name: Grafana
+    group: Services
+    url: http://grafana:3000/api/health
+    interval: 60s
+    timeout: 10s
+    conditions:
+      - "[STATUS] == 200"
