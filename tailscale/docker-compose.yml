@@ -15,7 +15,6 @@ services:
     environment:
       TS_AUTHKEY: ${TS_AUTHKEY}
       TS_ROUTES: 192.168.68.0/24
-      TS_EXTRA_ARGS: --advertise-routes=192.168.68.0/24
       TS_STATE_DIR: /var/lib/tailscale
       TS_USERSPACE: false
     restart: unless-stopped
