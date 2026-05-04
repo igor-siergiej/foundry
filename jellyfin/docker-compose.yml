@@ -21,17 +21,7 @@ services:
 
 volumes:
   jellyfin-config:
-    driver: local
-    driver_opts:
-      type: nfs
-      o: addr=192.168.68.13,vers=4,hard,timeo=180,tcp,rw
-      device: ":/mnt/tank/shared/jellyfin/config"
   jellyfin-cache:
-    driver: local
-    driver_opts:
-      type: nfs
-      o: addr=192.168.68.13,vers=4,hard,timeo=180,tcp,rw
-      device: ":/mnt/tank/shared/jellyfin/cache"
   jellyfin-media:
     driver: local
     driver_opts:
