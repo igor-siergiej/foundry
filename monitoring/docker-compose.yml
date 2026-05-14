@@ -117,7 +117,7 @@ services:
     ports:
       - "8080:8080"
     volumes:
-      - ../gatus-config.yml:/config/config.yml:ro
+      - ../gatus-config.yml:/config/config.yaml:ro
       - gatus-data:/data
     networks:
       - dokploy-network
