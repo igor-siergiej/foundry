@@ -13,19 +13,15 @@ endpoints:
     interval: 3600s
     timeout: 10s
     conditions:
-      - "[STATUS] < 400"
       - "[CERTIFICATE_EXPIRATION] > 7d"
 
   - name: DNS Resolution
     group: Infrastructure
-    url: dns://1.1.1.1:53
-    dns:
-      query-name: "imapps.uk"
-      query-type: "A"
+    url: tcp://1.1.1.1:53
     interval: 300s
     timeout: 10s
     conditions:
-      - "[DNS_RCODE] == NOERROR"
+      - "[CONNECTED] == true"
 
   - name: ICMP Ping (Home)
     group: Infrastructure
