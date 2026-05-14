@@ -7,7 +7,6 @@ ui:
   title: "Homelab Status"
   header: "Service Uptime"
 endpoints:
-  # Infrastructure checks
   - name: Domain Expiration
     group: Infrastructure
     url: https://imapps.uk
@@ -19,11 +18,14 @@ endpoints:
 
   - name: DNS Resolution
     group: Infrastructure
-    url: https://1.1.1.1/dns-query?name=imapps.uk&type=A
+    url: dns://1.1.1.1
+    dns:
+      query-name: "imapps.uk"
+      query-type: "A"
     interval: 300s
     timeout: 10s
     conditions:
-      - "[STATUS] == 200"
+      - "[DNS_RCODE] == NOERROR"
 
   - name: ICMP Ping (Home)
     group: Infrastructure
@@ -41,7 +43,6 @@ endpoints:
     conditions:
       - "[CONNECTED] == true"
 
-  # Storage services
   - name: MongoDB
     group: Storage
     url: tcp://mongodb:27017
@@ -52,16 +53,15 @@ endpoints:
 
   - name: MinIO (Storage)
     group: Storage
-    url: http://minio:9000/minio/health
+    url: http://host.docker.internal:9000/minio/health/live
     interval: 60s
     timeout: 10s
     conditions:
       - "[STATUS] == 200"
 
-  # Media services
   - name: Immich (Photos)
     group: Media
-    url: http://immich/api/server/about
+    url: http://host.docker.internal:2283/api/server/about
     interval: 60s
     timeout: 10s
     conditions:
@@ -85,16 +85,15 @@ endpoints:
 
   - name: AudiobookShelf
     group: Media
-    url: http://audiobookshelf/health
+    url: http://host.docker.internal:13378/ping
     interval: 60s
     timeout: 10s
     conditions:
       - "[STATUS] == 200"
 
-  # Automation & Core
   - name: Blocky (DNS)
     group: Core
-    url: http://blocky:4000/health
+    url: http://host.docker.internal:4000/api/blocking/status
     interval: 60s
     timeout: 10s
     conditions:
@@ -102,13 +101,12 @@ endpoints:
 
   - name: Home Assistant
     group: Core
-    url: http://homeassistant:8123/api/
+    url: http://host.docker.internal:8123/manifest.json
     interval: 60s
     timeout: 10s
     conditions:
       - "[STATUS] == 200"
 
-  # Apps
   - name: Kivo (API)
     group: Apps
     url: http://kivo-api-1pae1e:3008/health
@@ -118,7 +116,6 @@ endpoints:
       - "[STATUS] == 200"
       - "[BODY].status == healthy"
 
-  # Monitoring stack
   - name: Prometheus
     group: Monitoring
     url: http://prometheus:9090/-/healthy
