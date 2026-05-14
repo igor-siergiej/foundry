@@ -13,12 +13,12 @@ endpoints:
     interval: 3600s
     timeout: 10s
     conditions:
-      - "[STATUS] == 200"
+      - "[STATUS] < 400"
       - "[CERTIFICATE_EXPIRATION] > 7d"
 
   - name: DNS Resolution
     group: Infrastructure
-    url: dns://1.1.1.1
+    url: dns://1.1.1.1:53
     dns:
       query-name: "imapps.uk"
       query-type: "A"
@@ -61,7 +61,7 @@ endpoints:
 
   - name: Immich (Photos)
     group: Media
-    url: http://host.docker.internal:2283/api/server/about
+    url: http://host.docker.internal:2283/api/server/ping
     interval: 60s
     timeout: 10s
     conditions:
