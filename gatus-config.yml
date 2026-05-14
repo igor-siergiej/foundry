@@ -2,6 +2,7 @@ debug: false
 metrics: true
 storage:
   type: sqlite
+  path: /data/data.db
 ui:
   title: "Homelab Status"
   header: "Service Uptime"
