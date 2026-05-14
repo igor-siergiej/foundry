@@ -101,6 +101,16 @@ endpoints:
     conditions:
       - "[STATUS] == 200"
 
+  # Apps
+  - name: Kivo (API)
+    group: Apps
+    url: http://kivo-api-1pae1e:3008/health
+    interval: 60s
+    timeout: 10s
+    conditions:
+      - "[STATUS] == 200"
+      - "[BODY].status == healthy"
+
   # Monitoring stack
   - name: Prometheus
     group: Monitoring
