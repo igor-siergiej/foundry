@@ -11,8 +11,8 @@ services:
     restart: unless-stopped
     environment:
       PORT: 3001
-      AUTH_URL: ${AUTH_URL}
-      USER_LIBRARIES: ${USER_LIBRARIES}
+      JWT_SECRET: ${JWT_SECRET}
+      USERS_JSON: ${USERS_JSON}
       MUSIC_ROOT: /music
       MIX_CAP: 50
     volumes:
