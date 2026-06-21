@@ -1,0 +1,44 @@
+name: mixtape
+
+# Mixtape — YouTube → mp3 → Navidrome library downloader.
+# Images built + pushed by the mixtape repo CI (github.com/igor-siergiej/mixtape).
+# Writes mp3s into the same NFS share Navidrome reads (read-write here, read-only there).
+
+services:
+  api:
+    image: docker.io/igurusama/imapps:mixtape-api-latest
+    container_name: mixtape-api
+    restart: unless-stopped
+    environment:
+      PORT: 3001
+      JWT_SECRET: ${JWT_SECRET}
+      USERS_JSON: ${USERS_JSON}
+      MUSIC_ROOT: /music
+      MIX_CAP: 50
+    volumes:
+      - mixtape-music:/music
+    networks:
+      - mixtape
+
+  web:
+    image: docker.io/igurusama/imapps:mixtape-web-latest
+    container_name: mixtape-web
+    restart: unless-stopped
+    depends_on:
+      - api
+    ports:
+      - "3000:3000"
+    networks:
+      - mixtape
+
+volumes:
+  mixtape-music:
+    driver: local
+    driver_opts:
+      type: nfs
+      o: addr=192.168.68.13,vers=4,soft,timeo=180,tcp,rw,nolock
+      device: ":/mnt/tank/shared/navidrome"
+
+networks:
+  mixtape:
+    driver: bridge
