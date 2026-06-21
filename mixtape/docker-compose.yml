@@ -7,12 +7,14 @@ name: mixtape
 services:
   api:
     image: docker.io/igurusama/imapps:mixtape-api-latest
+    # Always re-pull :latest — otherwise Dokploy reuses the stale local image and never deploys new code.
+    pull_policy: always
     container_name: mixtape-api
     restart: unless-stopped
     environment:
       PORT: 3001
-      JWT_SECRET: ${JWT_SECRET}
-      USERS_JSON: ${USERS_JSON}
+      AUTH_URL: ${AUTH_URL}
+      USER_LIBRARIES: ${USER_LIBRARIES}
       MUSIC_ROOT: /music
       MIX_CAP: 50
     volumes:
@@ -22,6 +24,7 @@ services:
 
   web:
     image: docker.io/igurusama/imapps:mixtape-web-latest
+    pull_policy: always
     container_name: mixtape-web
     restart: unless-stopped
     depends_on:
