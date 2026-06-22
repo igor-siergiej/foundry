@@ -32,6 +32,10 @@ services:
     # No host port — Traefik routes mixtape.imapps.uk to this container's :3000.
     expose:
       - "3000"
+    # Runtime frontend config (AUTH_URL) — Dokploy file mount, overrides the
+    # localhost default baked into the web image at build time.
+    volumes:
+      - /etc/dokploy/compose/compose-parse-1080p-microchip-k6mk71/files/config.json:/usr/share/nginx/html/config.json:ro
     networks:
       - mixtape
 
