@@ -17,6 +17,9 @@ services:
       USER_LIBRARIES: ${USER_LIBRARIES}
       MUSIC_ROOT: /music
       MIX_CAP: 50
+      # Durable per-user job history. Reuses the shared infra mongo (scoped mixtape user).
+      CONNECTION_URI: ${CONNECTION_URI}
+      DATABASE_NAME: ${DATABASE_NAME}
     volumes:
       - mixtape-music:/music
     networks:
