@@ -57,7 +57,7 @@ endpoints:
 
   - name: Immich (Photos)
     group: Media
-    url: http://host.docker.internal:2283/api/server/ping
+    url: http://immich-server:2283/api/server/ping
     interval: 60s
     timeout: 10s
     conditions:
@@ -81,7 +81,7 @@ endpoints:
 
   - name: AudiobookShelf
     group: Media
-    url: http://host.docker.internal:13378/ping
+    url: http://audiobookshelf:80/ping
     interval: 60s
     timeout: 10s
     conditions:
@@ -89,7 +89,7 @@ endpoints:
 
   - name: Blocky (DNS)
     group: Core
-    url: http://host.docker.internal:4000/api/blocking/status
+    url: http://blocky:4000/api/blocking/status
     interval: 60s
     timeout: 10s
     conditions:
@@ -97,7 +97,7 @@ endpoints:
 
   - name: Home Assistant
     group: Core
-    url: http://host.docker.internal:8123/manifest.json
+    url: http://homeassistant:8123/manifest.json
     interval: 60s
     timeout: 10s
     conditions:

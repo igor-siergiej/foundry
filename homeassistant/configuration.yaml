@@ -4,9 +4,8 @@ default_config:
 http:
   use_x_forwarded_for: true
   trusted_proxies:
+    # dokploy-network overlay only — Traefik is the sole ingress.
+    # Do NOT re-add LAN/tailnet ranges: any host there could forge X-Forwarded-For.
     - 127.0.0.1
     - ::1
-    - 10.0.0.0/8
-    - 172.16.0.0/12
-    - 192.168.0.0/16
-    - fc00::/7
+    - 10.0.1.0/24

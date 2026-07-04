@@ -12,8 +12,6 @@ services:
     volumes:
       - navidrome-config:/data
       - navidrome-music:/music:ro
-    ports:
-      - "4533:4533"
     networks:
       - navidrome
 
