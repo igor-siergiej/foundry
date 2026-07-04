@@ -12,8 +12,6 @@ services:
       - jellyfin-config:/config
       - jellyfin-cache:/cache
       - jellyfin-media:/media
-    ports:
-      - "8096:8096"
     networks:
       - jellyfin
     devices:

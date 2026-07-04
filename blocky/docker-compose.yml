@@ -8,12 +8,14 @@ services:
     ports:
       - "53:53/tcp"
       - "53:53/udp"
-      - "4000:4000"
     volumes:
       - ./config.yml:/app/config.yml
     networks:
       - infra
+      - dokploy-network
 
 networks:
   infra:
     driver: bridge
+  dokploy-network:
+    external: true

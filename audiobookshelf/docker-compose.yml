@@ -11,8 +11,6 @@ services:
     volumes:
       - audiobookshelf-config:/config
       - audiobookshelf-books:/audiobooks:ro
-    ports:
-      - "13378:80"
     networks:
       - audiobookshelf
 
