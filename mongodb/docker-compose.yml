@@ -4,7 +4,8 @@ services:
     container_name: mongodb
     restart: unless-stopped
     ports:
-      - '27017:27017'
+      # bind to tailscale interface only — not publicly exposed on 0.0.0.0
+      - '100.85.189.60:27017:27017'
     environment:
       MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USER}
       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD}
