@@ -13,8 +13,12 @@ services:
     volumes:
       - minio-data:/data
     networks:
-      - default
+      - dokploy-network
 
 volumes:
   minio-data:
+    external: true
+
+networks:
+  dokploy-network:
     external: true
