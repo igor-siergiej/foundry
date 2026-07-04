@@ -13,7 +13,7 @@ services:
     volumes:
       - mongodb-data:/data/db
     networks:
-      - default
+      - dokploy-network
 
 volumes:
   mongodb-data:
@@ -22,3 +22,7 @@ volumes:
       type: nfs
       o: addr=192.168.68.13,vers=4,soft,timeo=180,tcp,rw,nolock
       device: ":/mnt/tank/shared/mongodb"
+
+networks:
+  dokploy-network:
+    external: true
