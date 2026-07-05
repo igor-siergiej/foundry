@@ -1,0 +1,25 @@
+name: minio-gallery
+
+# Filestash: web S3 browser with image thumbnails + gallery viewer.
+# Talks to MinIO internally over dokploy-network at http://minio:9000
+# (same-origin https via Traefik/cloudflared -> no mixed-content issues).
+services:
+  filestash:
+    image: machines/filestash:latest
+    container_name: minio-gallery
+    restart: unless-stopped
+    environment:
+      APPLICATION_URL: minio-gallery.imapps.uk
+      CANARY: "false"
+    volumes:
+      - filestash-state:/app/data/state
+    networks:
+      - dokploy-network
+
+volumes:
+  filestash-state:
+    driver: local
+
+networks:
+  dokploy-network:
+    external: true
