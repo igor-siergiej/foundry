@@ -1,0 +1,38 @@
+name: gtnh
+
+services:
+  gtnh:
+    image: igurusama/imapps:gtnh-latest
+    container_name: gtnh
+    restart: unless-stopped
+    pull_policy: always
+    network_mode: "service:gtnh-tailscale"
+    depends_on:
+      - gtnh-tailscale
+    environment:
+      LEVEL_NAME: OmniSlop
+      MC_USERNAMES: ${MC_USERNAMES}
+      MIN_RAM: 6G
+      MAX_RAM: 6G
+    volumes:
+      - gtnh-data:/data
+
+  gtnh-tailscale:
+    image: tailscale/tailscale:latest
+    container_name: gtnh-tailscale
+    hostname: gtnh
+    restart: unless-stopped
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+    volumes:
+      - gtnh-tailscale-state:/var/lib/tailscale
+      - /dev/net/tun:/dev/net/tun
+    environment:
+      TS_AUTHKEY: ${TS_AUTHKEY_GTNH}
+      TS_STATE_DIR: /var/lib/tailscale
+      TS_USERSPACE: false
+
+volumes:
+  gtnh-data:
+  gtnh-tailscale-state:
