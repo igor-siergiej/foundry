@@ -12,8 +12,8 @@ services:
     environment:
       LEVEL_NAME: OmniSlop
       MC_USERNAMES: ${MC_USERNAMES}
-      MIN_RAM: 11G
-      MAX_RAM: 11G
+      MIN_RAM: 8G
+      MAX_RAM: 8G
       JDK_JAVA_OPTIONS: >-
         -XX:+UseG1GC -XX:+ParallelRefProcEnabled -XX:MaxGCPauseMillis=200
         -XX:+UnlockExperimentalVMOptions -XX:+DisableExplicitGC -XX:+AlwaysPreTouch
