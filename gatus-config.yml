@@ -15,6 +15,30 @@ endpoints:
     conditions:
       - "[CERTIFICATE_EXPIRATION] > 7d"
 
+  - name: Shoppingo Cert Expiration
+    group: Infrastructure
+    url: https://shoppingo.imapps.uk
+    interval: 3600s
+    timeout: 10s
+    conditions:
+      - "[CERTIFICATE_EXPIRATION] > 14d"
+
+  - name: Kivo Cert Expiration
+    group: Infrastructure
+    url: https://kivo.imapps.uk
+    interval: 3600s
+    timeout: 10s
+    conditions:
+      - "[CERTIFICATE_EXPIRATION] > 14d"
+
+  - name: Dokploy Cert Expiration
+    group: Infrastructure
+    url: https://dokploy.imapps.uk
+    interval: 3600s
+    timeout: 10s
+    conditions:
+      - "[CERTIFICATE_EXPIRATION] > 14d"
+
   - name: DNS Resolution
     group: Infrastructure
     url: tcp://1.1.1.1:53
