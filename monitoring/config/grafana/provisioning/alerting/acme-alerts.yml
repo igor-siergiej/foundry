@@ -1,0 +1,67 @@
+apiVersion: 1
+
+contactPoints:
+  - orgId: 1
+    name: discord-webhook
+    receivers:
+      - uid: discord-webhook-1
+        type: discord
+        settings:
+          url: https://discordapp.com/api/webhooks/1539382807166582885/OylwM37K3EpgxXzgsWc4BMFeCvlQge6wA38D0n6eWMlNtrsHuJYFIgH9hUkPTFTow97x
+          use_discord_username: false
+
+policies:
+  - orgId: 1
+    receiver: discord-webhook
+    group_by: ['alertname']
+
+groups:
+  - orgId: 1
+    name: acme-cert-renewal
+    folder: Alerts
+    interval: 5m
+    rules:
+      - uid: acme-renewal-failure
+        title: Traefik ACME renewal failing
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 900
+              to: 0
+            datasourceUid: P8E80F9AEF21F6940
+            model:
+              expr: count_over_time({container="dokploy-traefik"} |= "Error renewing ACME certificate" [15m])
+              queryType: range
+              refId: A
+          - refId: B
+            relativeTimeRange:
+              from: 900
+              to: 0
+            datasourceUid: __expr__
+            model:
+              type: reduce
+              expression: A
+              reducer: last
+              refId: B
+          - refId: C
+            relativeTimeRange:
+              from: 900
+              to: 0
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              expression: B
+              conditions:
+                - evaluator:
+                    type: gt
+                    params: [0]
+              refId: C
+        noDataState: OK
+        execErrState: Error
+        for: 0m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Traefik ACME certificate renewal is failing on dokploy-traefik"
+          description: "Loki has seen 'Error renewing ACME certificate' log lines from dokploy-traefik in the last 15m. Check `docker logs dokploy-traefik | grep -i acme` on foundry."
