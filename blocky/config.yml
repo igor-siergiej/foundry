@@ -17,6 +17,10 @@ customDNS:
   mapping:
     imapps.uk: 192.168.68.17
 
+filtering:
+  queryTypes:
+    - AAAA
+
 caching:
   maxTime: 0s
 
