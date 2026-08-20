@@ -5,8 +5,8 @@ services:
     restart: unless-stopped
     ports:
       # bind to LAN + tailscale only — not exposed on 0.0.0.0/WAN
-      - '192.168.68.18:27017:27017'   # LAN: on-host apps (kivo, shoppingo-api) via infra-mongodb.imapps.uk
-      - '100.85.189.60:27017:27017'   # tailscale: remote debugging over tailnet
+      - '192.168.68.17:27017:27017'   # LAN: on-host apps (kivo, shoppingo-api) via infra-mongodb.imapps.uk
+      - '100.79.92.93:27017:27017'   # tailscale: remote debugging over tailnet
     environment:
       MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USER}
       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD}
