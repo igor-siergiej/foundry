@@ -5,10 +5,10 @@ services:
     restart: unless-stopped
     ports:
       # bind to LAN + tailscale only — not exposed on 0.0.0.0/WAN
-      - '192.168.68.18:9000:9000'    # LAN: on-host apps (shoppingo-api, jewellery-catalogue-api) via minio-ui.imapps.uk
-      - '100.85.189.60:9000:9000'    # tailscale: remote access over tailnet
-      - '192.168.68.18:9001:9001'    # LAN: MinIO console
-      - '100.85.189.60:9001:9001'    # tailscale: MinIO console
+      - '192.168.68.17:9000:9000'    # LAN: on-host apps (shoppingo-api, jewellery-catalogue-api) via minio-ui.imapps.uk
+      - '100.79.92.93:9000:9000'    # tailscale: remote access over tailnet
+      - '192.168.68.17:9001:9001'    # LAN: MinIO console
+      - '100.79.92.93:9001:9001'    # tailscale: MinIO console
     environment:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
