@@ -19,9 +19,9 @@ volumes:
   mongodb-data:
     driver: local
     driver_opts:
-      type: nfs
-      o: addr=192.168.68.13,vers=4,soft,timeo=180,tcp,rw,nolock
-      device: ":/mnt/tank/shared/mongodb"
+      type: none
+      o: bind
+      device: /mnt/tank/shared/mongodb
 
 networks:
   dokploy-network:
