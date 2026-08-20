@@ -21,9 +21,9 @@ volumes:
   navidrome-music:
     driver: local
     driver_opts:
-      type: nfs
-      o: addr=192.168.68.13,vers=4,soft,timeo=180,tcp,rw,nolock
-      device: ":/mnt/tank/shared/navidrome"
+      type: none
+      o: bind
+      device: /mnt/tank/shared/navidrome
 
 networks:
   navidrome:
