@@ -24,7 +24,7 @@
       "datasource": { "type": "prometheus", "uid": "prometheus" },
       "gridPos": { "h": 4, "w": 6, "x": 0, "y": 0 },
       "targets": [
-        { "refId": "A", "expr": "node_filesystem_size_bytes{mountpoint=\"/mnt/tank/shared\"} - node_filesystem_avail_bytes{mountpoint=\"/mnt/tank/shared\"}" }
+        { "refId": "A", "expr": "sum(node_filesystem_size_bytes{mountpoint=~\"/mnt/tank/shared.*\", mountpoint!~\".*\\\\.zfs.*\"} - node_filesystem_avail_bytes{mountpoint=~\"/mnt/tank/shared.*\", mountpoint!~\".*\\\\.zfs.*\"})" }
       ],
       "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "value" },
       "fieldConfig": { "defaults": { "unit": "bytes", "decimals": 1 } }
@@ -48,7 +48,7 @@
       "datasource": { "type": "prometheus", "uid": "prometheus" },
       "gridPos": { "h": 4, "w": 6, "x": 12, "y": 0 },
       "targets": [
-        { "refId": "A", "expr": "1 - (node_filesystem_avail_bytes{mountpoint=\"/mnt/tank/shared\"} / node_filesystem_size_bytes{mountpoint=\"/mnt/tank/shared\"})" }
+        { "refId": "A", "expr": "sum(node_filesystem_size_bytes{mountpoint=~\"/mnt/tank/shared.*\", mountpoint!~\".*\\\\.zfs.*\"} - node_filesystem_avail_bytes{mountpoint=~\"/mnt/tank/shared.*\", mountpoint!~\".*\\\\.zfs.*\"}) / (sum(node_filesystem_size_bytes{mountpoint=~\"/mnt/tank/shared.*\", mountpoint!~\".*\\\\.zfs.*\"} - node_filesystem_avail_bytes{mountpoint=~\"/mnt/tank/shared.*\", mountpoint!~\".*\\\\.zfs.*\"}) + node_filesystem_avail_bytes{mountpoint=\"/mnt/tank/shared\"})" }
       ],
       "options": { "reduceOptions": { "calcs": ["lastNotNull"] } },
       "fieldConfig": { "defaults": { "unit": "percentunit", "min": 0, "max": 1, "color": { "mode": "thresholds" }, "thresholds": { "mode": "absolute", "steps": [{ "color": "green" }, { "color": "orange", "value": 0.8 }, { "color": "red", "value": 0.9 }] } } }
@@ -64,6 +64,12 @@
           "refId": "A",
           "instant": true,
           "expr": "sort_desc(label_replace(node_filesystem_size_bytes{mountpoint=~\"/mnt/tank/shared/[^/]+\"} - node_filesystem_avail_bytes{mountpoint=~\"/mnt/tank/shared/[^/]+\"}, \"dir\", \"$1\", \"mountpoint\", \"/mnt/tank/shared/(.*)\"))",
+          "legendFormat": "{{dir}}"
+        },
+        {
+          "refId": "B",
+          "instant": true,
+          "expr": "label_replace(node_filesystem_size_bytes{mountpoint=\"/mnt/tank/shared\"} - node_filesystem_avail_bytes{mountpoint=\"/mnt/tank/shared\"}, \"dir\", \"(loose files)\", \"mountpoint\", \".*\")",
           "legendFormat": "{{dir}}"
         }
       ],
@@ -87,6 +93,12 @@
           "instant": true,
           "format": "table",
           "expr": "label_replace(node_filesystem_size_bytes{mountpoint=~\"/mnt/tank/shared/[^/]+\"} - node_filesystem_avail_bytes{mountpoint=~\"/mnt/tank/shared/[^/]+\"}, \"dir\", \"$1\", \"mountpoint\", \"/mnt/tank/shared/(.*)\")"
+        },
+        {
+          "refId": "B",
+          "instant": true,
+          "format": "table",
+          "expr": "label_replace(node_filesystem_size_bytes{mountpoint=\"/mnt/tank/shared\"} - node_filesystem_avail_bytes{mountpoint=\"/mnt/tank/shared\"}, \"dir\", \"(loose files)\", \"mountpoint\", \".*\")"
         }
       ],
       "transformations": [
