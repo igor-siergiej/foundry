@@ -48,7 +48,7 @@
       "datasource": { "type": "prometheus", "uid": "prometheus" },
       "gridPos": { "h": 4, "w": 6, "x": 12, "y": 0 },
       "targets": [
-        { "refId": "A", "expr": "sum(node_filesystem_size_bytes{mountpoint=~\"/mnt/tank/shared.*\", mountpoint!~\".*\\\\.zfs.*\"} - node_filesystem_avail_bytes{mountpoint=~\"/mnt/tank/shared.*\", mountpoint!~\".*\\\\.zfs.*\"}) / (sum(node_filesystem_size_bytes{mountpoint=~\"/mnt/tank/shared.*\", mountpoint!~\".*\\\\.zfs.*\"} - node_filesystem_avail_bytes{mountpoint=~\"/mnt/tank/shared.*\", mountpoint!~\".*\\\\.zfs.*\"}) + node_filesystem_avail_bytes{mountpoint=\"/mnt/tank/shared\"})" }
+        { "refId": "A", "expr": "sum(node_filesystem_size_bytes{mountpoint=~\"/mnt/tank/shared.*\", mountpoint!~\".*\\\\.zfs.*\"} - node_filesystem_avail_bytes{mountpoint=~\"/mnt/tank/shared.*\", mountpoint!~\".*\\\\.zfs.*\"}) / (sum(node_filesystem_size_bytes{mountpoint=~\"/mnt/tank/shared.*\", mountpoint!~\".*\\\\.zfs.*\"} - node_filesystem_avail_bytes{mountpoint=~\"/mnt/tank/shared.*\", mountpoint!~\".*\\\\.zfs.*\"}) + sum(node_filesystem_avail_bytes{mountpoint=\"/mnt/tank/shared\"}))" }
       ],
       "options": { "reduceOptions": { "calcs": ["lastNotNull"] } },
       "fieldConfig": { "defaults": { "unit": "percentunit", "min": 0, "max": 1, "color": { "mode": "thresholds" }, "thresholds": { "mode": "absolute", "steps": [{ "color": "green" }, { "color": "orange", "value": 0.8 }, { "color": "red", "value": 0.9 }] } } }
