@@ -10,13 +10,15 @@ Agent-oriented map of how the Dokploy homelab fits together: topology, deploy fl
 
 | Plane | Address | Notes |
 |---|---|---|
-| Dokploy host (`foundry`) LAN | `192.168.68.18` | single node, runs everything |
+| Dokploy host (`foundry`) LAN | `192.168.68.17` | single node, runs everything |
 | Dokploy host WAN | `92.40.218.136` | no inbound port-forward except none needed (tunnel is outbound) |
-| Dokploy host tailnet | `100.85.189.60` | tailscale, MagicDNS name `foundry` |
+| Dokploy host tailnet | `100.79.92.93` | tailscale, MagicDNS name `foundry` |
 | NAS (NFS) | `192.168.68.13` | `/mnt/tank/shared/*` — backing store for most volumes |
 | LAN gateway | `192.168.68.1` | |
 
 Single Docker host. No swarm cluster. Everything is Docker Compose stacks managed by Dokploy.
+
+> Host was reinstalled bare-metal on 2026-08-20 (previously Proxmox), which changed LAN/tailnet IPs from `.18`/`100.85.189.60` to the values above — confirmed against the live `mongodb`/`minio`/`blocky` compose files and the `blocky` fix-hardcoded-IPs deployment, not from a prior copy of this doc. If you find another IP reference anywhere (scripts, other notes), it's stale — this file and the live compose files are the source of truth.
 
 ## 2. Ingress & DNS (how a request reaches a service)
 
@@ -32,7 +34,7 @@ flowchart TB
     end
 
     subgraph lan["LAN / TAILNET path"]
-        blocky["blocky split-horizon DNS<br/>imapps.uk → 192.168.68.18"]
+        blocky["blocky split-horizon DNS<br/>imapps.uk → 192.168.68.17"]
     end
 
     traefik["dokploy-traefik:443<br/>Host(`x.imapps.uk`) routing"]
@@ -84,22 +86,24 @@ Org `QhuDFk1KJXDHR2xy0nwcK`. 4 projects, all in `production` environment.
 | kivo | app | kivo.imapps.uk | mongo; own JWT auth |
 
 ### `nas` (compose stacks, media)
-| Stack | Image | Host port | Ingress |
+| Stack | Image | Container port | Ingress |
 |---|---|---|---|
 | immich | `immich-server:v2.7.3` (+ ml, redis, pg16) | 2283 | immich.imapps.uk — **Access bypass**, own login |
 | jellyfin | `jellyfin:10.9.11` | 8096 | jellyfin.imapps.uk — bypass |
 | navidrome | `navidrome:latest` | 4533 | navidrome.imapps.uk — bypass |
 | audiobookshelf | `audiobookshelf:latest` | 13378 | audiobookshelf.imapps.uk — bypass |
-| mixtape | `igurusama/imapps:mixtape-{api,web}-latest` | web via Traefik only | mixtape.imapps.uk — bypass; YouTube→mp3 into Navidrome NFS share |
+| mixtape | `igurusama/imapps:mixtape-{api,web}-latest` | 3000 | mixtape.imapps.uk — bypass; YouTube→mp3 into Navidrome NFS share |
+
+None of these publish a host port (`ports:` block) — confirmed against the live compose files. "Container port" is what Traefik routes to internally via `dokploy-network`; nothing here is reachable by hitting the host IP directly on that port. (This was tightened in the 2026-07-04 hardening pass — see git log on this repo for `harden: remove 0.0.0.0 host ports` if you need the before/after.)
 
 ### `infra`
 | Stack | Image | Ports | Notes |
 |---|---|---|---|
 | cloudflared | (app) | — | the tunnel |
 | tailscale | `tailscale:latest` | host net | `network_mode: host`, advertises route `192.168.68.0/24` |
-| blocky | `spx01/blocky:latest` | 53, 4000 | split-horizon DNS + web UI |
-| mongodb | `mongo:7.0` | 27017 (LAN+tailnet only) | shared DB (kivo, shoppingo, jewellery, mixtape). NFS-backed |
-| minio | `minio:latest` | 9000/9001 (LAN+tailnet only) | S3 for apps. `minio-data` external volume |
+| blocky | `spx01/blocky:latest` | 53 (host-published, LAN DNS) | split-horizon DNS; web UI/metrics now internal-only via `dokploy-network` (`:4000` host publish dropped in the 2026-07-04 hardening pass) |
+| mongodb | `mongo:7.0` | 27017, host-published bound to `192.168.68.17` + `100.79.92.93` only | shared DB (kivo, shoppingo, jewellery, mixtape). NFS-backed |
+| minio | `minio:latest` | 9000/9001, host-published bound to `192.168.68.17` + `100.79.92.93` only | S3 for apps. `minio-data` external volume |
 | monitoring | loki/promtail/prometheus/cadvisor/node-exporter/grafana/gatus | grafana(Traefik), gatus 8080 | grafana.imapps.uk, gatus.imapps.uk |
 | home-assistant | `home-assistant:2024.12.3` | 8123 | `privileged`, NET_ADMIN/NET_RAW |
 | **vaultwarden** *(planned)* | `vaultwarden/server:latest` | — | self-hosted secrets/password vault, replaces plaintext `~/notes/secrets/tokens.md`; see [`README.md`](./README.md#secrets) |
@@ -130,4 +134,5 @@ Org `QhuDFk1KJXDHR2xy0nwcK`. 4 projects, all in `production` environment.
 - [ ] You are on the laptop, not the host. Use tailscale to reach `foundry`. Laptop may be off home wifi.
 - [ ] Some public wifi has a middlebox that ACKs every SYN → false "port OPEN". Judge reachability by real protocol replies (HTTP body, mongo wire), not raw connect.
 - [ ] Access protects remote only; LAN/tailnet bypasses it via blocky split-horizon.
+- [ ] **This doc drifted from reality once already** (stale `.18`/`100.85.189.60` host IPs from before the 2026-08-20 bare-metal migration, a stale "host port" claim for services hardened on 2026-07-04) — found and fixed 2026-08-23 by cross-checking the live compose files instead of trusting the doc. If something here looks surprising, check the actual compose file / `dokploy-mcp` state before trusting this doc over it.
 - [ ] **This homelab and `taisei-karate` (AWS) share no infrastructure** — different clouds, different auth models, different deploy pipelines. See [`taisei-karate.md`](./taisei-karate.md).
