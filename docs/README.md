@@ -26,13 +26,11 @@ flowchart LR
 
 ## Secrets
 
-**Vaultwarden is live** at `vault.imapps.uk` (deployed 2026-08-23, `infra` project — see [`homelab.md` §5](./homelab.md#5-projects--services-dokploy-inventory)), pinned `1.37.2`, NFS-backed, no SMTP, `SIGNUPS_ALLOWED=true` only until the one owner account exists.
+**Vaultwarden is live** at `vault.imapps.uk` (deployed 2026-08-23, `infra` project — see [`homelab.md` §5](./homelab.md#5-projects--services-dokploy-inventory)), pinned `1.37.2`, NFS-backed, no SMTP. Owner account + TOTP 2FA done, `ADMIN_TOKEN` set (Argon2id hash, admin panel confirmed gated), `SIGNUPS_ALLOWED=false`.
 
 Remaining steps (not yet done):
-1. Create the owner account, turn on **TOTP 2FA** immediately.
-2. Generate the Argon2id `ADMIN_TOKEN` hash (`docker run --rm -it vaultwarden/server:1.37.2 /vaultwarden hash`) and set it directly in Dokploy's env panel — not in git, not pasted into chat.
-3. Flip `SIGNUPS_ALLOWED` to `false`, redeploy.
-4. Migrate `~/notes/secrets/tokens.md` in via a one-time Bitwarden export/import, point the official Bitwarden clients at `https://vault.imapps.uk`, then retire the plaintext file.
+1. Migrate `~/notes/secrets/tokens.md` and the two real `.env` files in via the `bw` CLI, then retire the plaintext `tokens.md`.
+2. Add `pull-env.sh` to each app repo for local secret retrieval.
 
 `taisei-karate`'s secrets stay as GitHub Actions secrets regardless (OIDC model, see [`taisei-karate.md` §5](./taisei-karate.md#5-secrets--auth-model)) — Vaultwarden is for personal/homelab credentials, not CI secrets.
 
