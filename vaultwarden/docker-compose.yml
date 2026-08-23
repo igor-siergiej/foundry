@@ -1,0 +1,53 @@
+name: vaultwarden
+
+# Self-hosted Bitwarden-compatible vault — replaces the plaintext
+# ~/notes/secrets/tokens.md. See ../docs/README.md#secrets.
+#
+# ADMIN_TOKEN is NOT set here: it must be an Argon2id-PHC hash (plaintext admin
+# tokens are rejected/warned-on since v1.28), generated once with
+# `docker run --rm -it vaultwarden/server:1.37.2 /vaultwarden hash` and pasted
+# directly into Dokploy's env panel — never into this file or into chat, since
+# that value is the master key to every secret this holds.
+
+services:
+  vaultwarden:
+    image: vaultwarden/server:1.37.2
+    container_name: vaultwarden
+    restart: unless-stopped
+    environment:
+      DOMAIN: https://vault.imapps.uk
+      ADMIN_TOKEN: ${ADMIN_TOKEN}
+      # Bootstrap only: flip to "false" once the one owner account exists (see
+      # docs/README.md#secrets for the exact sequence) — this is a single-user
+      # vault, no reason to leave registration open.
+      SIGNUPS_ALLOWED: "true"
+      SIGNUPS_VERIFY: "true"
+      INVITATIONS_ALLOWED: "false"
+      SHOW_PASSWORD_HINT: "false"
+      # Real client IP for login-attempt rate limiting — without this every
+      # request appears to come from the Traefik container.
+      IP_HEADER: X-Forwarded-For
+      LOG_LEVEL: warn
+    volumes:
+      - vaultwarden-data:/data
+    # No host port — Traefik routes vault.imapps.uk to this container's :80,
+    # same pattern as mixtape-web.
+    expose:
+      - "80"
+    networks:
+      - vaultwarden
+
+volumes:
+  # NFS-backed, not a bare local volume — SECURITY-AUDIT.md #5 already flagged
+  # host-disk-only volumes (immich-pgdata, minio-data) as a data-loss risk;
+  # this data matters more than either of those.
+  vaultwarden-data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /mnt/tank/shared/vaultwarden
+
+networks:
+  vaultwarden:
+    driver: bridge
