@@ -1,0 +1,39 @@
+services:
+  scrutiny:
+    image: ghcr.io/analogj/scrutiny:master-omnibus
+    container_name: scrutiny
+    restart: unless-stopped
+    cap_add:
+      - SYS_RAWIO
+      - SYS_ADMIN
+    devices:
+      - /dev/disk/by-id/ata-TOSHIBA_MQ04ABF100V_44DSP5EIT:/dev/sda
+      - /dev/disk/by-id/ata-TOSHIBA_MQ04ABF100V_73RSP1RJT:/dev/sdb
+    volumes:
+      - scrutiny-config:/opt/scrutiny/config
+      - scrutiny-influxdb:/opt/scrutiny/influxdb
+    networks:
+      - dokploy-network
+    labels:
+      - traefik.docker.network=dokploy-network
+      - traefik.enable=true
+      - traefik.http.routers.scrutiny-web.rule=Host(`scrutiny.imapps.uk`)
+      - traefik.http.routers.scrutiny-web.entrypoints=web
+      - traefik.http.routers.scrutiny-web.service=scrutiny-web
+      - traefik.http.routers.scrutiny-web.middlewares=redirect-to-https@file
+      - traefik.http.services.scrutiny-web.loadbalancer.server.port=8080
+      - traefik.http.routers.scrutiny-websecure.rule=Host(`scrutiny.imapps.uk`)
+      - traefik.http.routers.scrutiny-websecure.entrypoints=websecure
+      - traefik.http.routers.scrutiny-websecure.service=scrutiny-websecure
+      - traefik.http.routers.scrutiny-websecure.tls.certresolver=letsencrypt
+      - traefik.http.services.scrutiny-websecure.loadbalancer.server.port=8080
+
+volumes:
+  scrutiny-config:
+    driver: local
+  scrutiny-influxdb:
+    driver: local
+
+networks:
+  dokploy-network:
+    external: true
