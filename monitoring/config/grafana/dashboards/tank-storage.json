@@ -1,0 +1,99 @@
+{
+  "annotations": { "list": [] },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "links": [],
+  "liveNow": false,
+  "refresh": "1m",
+  "schemaVersion": 39,
+  "tags": ["storage", "zfs", "tank"],
+  "templating": { "list": [] },
+  "time": { "from": "now-6h", "to": "now" },
+  "timepicker": {},
+  "timezone": "",
+  "title": "Tank Storage",
+  "uid": "tank-storage",
+  "version": 1,
+  "weekStart": "",
+  "panels": [
+    {
+      "id": 1,
+      "type": "stat",
+      "title": "Pool Used",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 0 },
+      "targets": [
+        { "refId": "A", "expr": "node_filesystem_size_bytes{mountpoint=\"/mnt/tank/shared\"} - node_filesystem_avail_bytes{mountpoint=\"/mnt/tank/shared\"}" }
+      ],
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "value" },
+      "fieldConfig": { "defaults": { "unit": "bytes", "decimals": 1 } }
+    },
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "Pool Available",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 4, "w": 6, "x": 6, "y": 0 },
+      "targets": [
+        { "refId": "A", "expr": "node_filesystem_avail_bytes{mountpoint=\"/mnt/tank/shared\"}" }
+      ],
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "value" },
+      "fieldConfig": { "defaults": { "unit": "bytes", "decimals": 1, "color": { "mode": "thresholds" }, "thresholds": { "mode": "absolute", "steps": [{ "color": "red" }, { "color": "orange", "value": 53687091200 }, { "color": "green", "value": 107374182400 }] } } }
+    },
+    {
+      "id": 3,
+      "type": "gauge",
+      "title": "Pool Used %",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 4, "w": 6, "x": 12, "y": 0 },
+      "targets": [
+        { "refId": "A", "expr": "1 - (node_filesystem_avail_bytes{mountpoint=\"/mnt/tank/shared\"} / node_filesystem_size_bytes{mountpoint=\"/mnt/tank/shared\"})" }
+      ],
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "fieldConfig": { "defaults": { "unit": "percentunit", "min": 0, "max": 1, "color": { "mode": "thresholds" }, "thresholds": { "mode": "absolute", "steps": [{ "color": "green" }, { "color": "orange", "value": 0.8 }, { "color": "red", "value": 0.9 }] } } }
+    },
+    {
+      "id": 4,
+      "type": "bargauge",
+      "title": "Used Space by Directory",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 10, "w": 12, "x": 0, "y": 4 },
+      "targets": [
+        {
+          "refId": "A",
+          "instant": true,
+          "expr": "sort_desc(label_replace(node_filesystem_size_bytes{mountpoint=~\"/mnt/tank/shared/[^/]+\"} - node_filesystem_avail_bytes{mountpoint=~\"/mnt/tank/shared/[^/]+\"}, \"dir\", \"$1\", \"mountpoint\", \"/mnt/tank/shared/(.*)\"))",
+          "legendFormat": "{{dir}}"
+        }
+      ],
+      "options": {
+        "orientation": "horizontal",
+        "displayMode": "gradient",
+        "showUnfilled": true,
+        "reduceOptions": { "calcs": ["lastNotNull"] }
+      },
+      "fieldConfig": { "defaults": { "unit": "bytes", "decimals": 1 } }
+    },
+    {
+      "id": 5,
+      "type": "table",
+      "title": "Directory Breakdown",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 10, "w": 12, "x": 12, "y": 4 },
+      "targets": [
+        {
+          "refId": "A",
+          "instant": true,
+          "format": "table",
+          "expr": "label_replace(node_filesystem_size_bytes{mountpoint=~\"/mnt/tank/shared/[^/]+\"} - node_filesystem_avail_bytes{mountpoint=~\"/mnt/tank/shared/[^/]+\"}, \"dir\", \"$1\", \"mountpoint\", \"/mnt/tank/shared/(.*)\")"
+        }
+      ],
+      "transformations": [
+        { "id": "organize", "options": { "excludeByName": { "Time": true, "__name__": true, "device": true, "device_error": true, "fstype": true, "mountpoint": true, "instance": true, "job": true }, "renameByName": { "dir": "Directory", "Value": "Used" } } }
+      ],
+      "options": { "sortBy": [{ "displayName": "Used", "desc": true }] },
+      "fieldConfig": { "defaults": { "unit": "bytes", "decimals": 1 }, "overrides": [] }
+    }
+  ]
+}
