@@ -106,7 +106,7 @@ None of these publish a host port (`ports:` block) — confirmed against the liv
 | minio | `minio:latest` | 9000/9001, host-published bound to `192.168.68.17` + `100.79.92.93` only | S3 for apps. `minio-data` external volume |
 | monitoring | loki/promtail/prometheus/cadvisor/node-exporter/grafana/gatus | grafana(Traefik), gatus 8080 | grafana.imapps.uk, gatus.imapps.uk |
 | home-assistant | `home-assistant:2024.12.3` | 8123 | `privileged`, NET_ADMIN/NET_RAW |
-| **vaultwarden** *(planned)* | `vaultwarden/server:latest` | — | self-hosted secrets/password vault, replaces plaintext `~/notes/secrets/tokens.md`; see [`README.md`](./README.md#secrets) |
+| vaultwarden | `vaultwarden/server:1.37.2` | vault.imapps.uk | self-hosted secrets/password vault, replaces plaintext `~/notes/secrets/tokens.md`; NFS-backed (`/mnt/tank/shared/vaultwarden`); see [`README.md`](./README.md#secrets) |
 
 ### `sentinel`
 | Service | Host | Notes |

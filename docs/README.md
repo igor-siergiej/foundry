@@ -26,9 +26,15 @@ flowchart LR
 
 ## Secrets
 
-Current state: raw secrets (passwords, API tokens, 2FA recovery codes) live in `~/notes/secrets/tokens.md`, plaintext markdown synced across devices via Resilio. This is the known weak point — see `../SECURITY-AUDIT.md` items #2 and #3 for specific secrets pending rotation.
+**Vaultwarden is live** at `vault.imapps.uk` (deployed 2026-08-23, `infra` project — see [`homelab.md` §5](./homelab.md#5-projects--services-dokploy-inventory)), pinned `1.37.2`, NFS-backed, no SMTP, `SIGNUPS_ALLOWED=true` only until the one owner account exists.
 
-Plan: deploy **Vaultwarden** (self-hosted, Bitwarden-compatible) as a service in this repo's `infra/` project, behind Traefik like everything else — see [`homelab.md` §5](./homelab.md#5-projects--services-dokploy-inventory) for its placeholder entry. Once live: migrate `tokens.md` contents in via a one-time Bitwarden export/import, point the official Bitwarden clients (browser ext, CLI, mobile) at it, then retire the plaintext file. `taisei-karate`'s secrets stay as GitHub Actions secrets regardless (OIDC model, see [`taisei-karate.md` §5](./taisei-karate.md#5-secrets--auth-model)) — Vaultwarden is for personal/homelab credentials, not CI secrets.
+Remaining steps (not yet done):
+1. Create the owner account, turn on **TOTP 2FA** immediately.
+2. Generate the Argon2id `ADMIN_TOKEN` hash (`docker run --rm -it vaultwarden/server:1.37.2 /vaultwarden hash`) and set it directly in Dokploy's env panel — not in git, not pasted into chat.
+3. Flip `SIGNUPS_ALLOWED` to `false`, redeploy.
+4. Migrate `~/notes/secrets/tokens.md` in via a one-time Bitwarden export/import, point the official Bitwarden clients at `https://vault.imapps.uk`, then retire the plaintext file.
+
+`taisei-karate`'s secrets stay as GitHub Actions secrets regardless (OIDC model, see [`taisei-karate.md` §5](./taisei-karate.md#5-secrets--auth-model)) — Vaultwarden is for personal/homelab credentials, not CI secrets.
 
 ## Keeping this current
 
