@@ -2,6 +2,8 @@
 
 Docker Compose stack for Dokploy infrastructure services deployment.
 
+> Full infra docs (topology, deploy flow, service inventory, security findings) live in [`docs/`](./docs/README.md).
+
 ## Services
 
 ### Blocky (DNS Server)
