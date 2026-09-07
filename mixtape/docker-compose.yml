@@ -1,8 +1,9 @@
 name: mixtape
 
-# Mixtape — YouTube → mp3 → Navidrome library downloader.
+# Mixtape — YouTube downloader.
 # Images built + pushed by the mixtape repo CI (github.com/igor-siergiej/mixtape).
-# Writes mp3s into the same NFS share Navidrome reads (read-write here, read-only there).
+# Audio jobs → mp3 into the Navidrome share (read-write here, read-only there).
+# Video jobs → mp4 into the Jellyfin media root, under a YouTube/ subfolder.
 
 services:
   api:
@@ -16,12 +17,15 @@ services:
       AUTH_URL: ${AUTH_URL}
       USER_LIBRARIES: ${USER_LIBRARIES}
       MUSIC_ROOT: /music
+      # Video jobs land in ${JELLYFIN_ROOT}/YouTube/ — mixtape-video is the Jellyfin media root.
+      JELLYFIN_ROOT: /videos
       MIX_CAP: 50
       # Durable per-user job history. Reuses the shared infra mongo (scoped mixtape user).
       CONNECTION_URI: ${CONNECTION_URI}
       DATABASE_NAME: ${DATABASE_NAME}
     volumes:
       - mixtape-music:/music
+      - mixtape-video:/videos
     networks:
       - mixtape
 
@@ -49,6 +53,14 @@ volumes:
       type: none
       o: bind
       device: /mnt/tank/shared/navidrome
+  # Jellyfin media root. Mixtape writes mp4s into <this>/YouTube/; add that as a
+  # Jellyfin library. Same share Jellyfin serves from (jellyfin-media in foundry/jellyfin).
+  mixtape-video:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /mnt/tank/shared/jellyfin/media
 
 networks:
   mixtape:
