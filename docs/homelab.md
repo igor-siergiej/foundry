@@ -88,7 +88,7 @@ Org `QhuDFk1KJXDHR2xy0nwcK`. 4 projects, all in `production` environment.
 ### `nas` (compose stacks, media)
 | Stack | Image | Container port | Ingress |
 |---|---|---|---|
-| immich | `immich-server:v2.7.3` (+ ml, redis, pg16) | 2283 | immich.imapps.uk — **Access bypass**, own login |
+| immich | `immich-server:v3.2.0` (+ ml, redis, pg16) | 2283 | immich.imapps.uk — **Access bypass**, own login |
 | jellyfin | `jellyfin:10.9.11` | 8096 | jellyfin.imapps.uk — bypass |
 | navidrome | `navidrome:latest` | 4533 | navidrome.imapps.uk — bypass |
 | audiobookshelf | `audiobookshelf:latest` | 13378 | audiobookshelf.imapps.uk — bypass |
