@@ -316,3 +316,35 @@ logins were never actually covered. This task closes that gap.
   UI matches the browser's saved-password count.
 - [ ] **Step 5 [USER]:** Shred the plaintext CSV immediately:
   `shred -u <path-to-csv>` (plain `rm` leaves recoverable disk blocks).
+
+---
+
+### Task 10: Dev-server env injection from Vaultwarden (no on-disk `.env`)
+
+**Files:**
+- Created: `~/dotfiles/bin/.local/bin/bw-run`, `~/dotfiles/bin/.local/bin/bw-run-compose` (done, see dotfiles `265ffdf`).
+
+**Interfaces:**
+- Consumes: `BW_SESSION` (user-exported), a vault item per repo (same names as Task 6's `bw-import-file` items).
+- Produces: a way to run any repo's dev command with secrets injected into the process only — closes the original ask's "no .env files" goal, once each repo's real `.env` is actually migrated in (Task 6) and the on-disk file is deleted.
+
+Generic, not per-repo — one pair of scripts covers every repo under `~/imapps`, same reasoning as Task 4.
+
+- [x] **Step 1 [AGENT]:** Write `bw-run` — execs a command with a vault Secure Note's `KEY=VALUE` lines exported into that process only, nothing written to disk. Usage: `bw-run "kivo .env" -- bun run dev`.
+- [x] **Step 2 [AGENT]:** Write `bw-run-compose` — same idea for `docker compose`, which needs an `--env-file` *path*: writes a private (`0600`) temp file for the call's duration, deletes it on exit. Usage: `bw-run-compose "mixtape .env" -- up`.
+- [ ] **Step 3 [USER]:** Once a repo's `.env` is migrated in (Task 6) and verified (Task 7), delete the local `.env` and switch that repo's dev workflow to `bw-run`/`bw-run-compose`. Per repo, not all-at-once — do it as each one's migration lands.
+
+**Note on Dokploy (prod) env vars — reviewed, not centralizing:** Dokploy's
+per-app/compose environment panel is the actual deploy-time mechanism that
+injects env vars into running prod containers — there's no Dokploy↔Vaultwarden
+integration, so "centralizing" would mean either (a) a custom script pushing
+Bitwarden → Dokploy via `dokploy-mcp` on every secret change, adding a new
+failure mode to the deploy path for a homelab, or (b) manually keeping two
+places in sync, which drifts. Recommendation: **keep Dokploy env vars in
+Dokploy** as prod's source of truth (unchanged); optionally mirror a copy
+into a Vaultwarden Secure Note per service as an off-host disaster-recovery
+backup only (via `bw-import-file`, same pattern as `tokens.md`) — never a
+live sync Dokploy reads from. Same boundary already drawn for
+`taisei-karate`'s GitHub Actions secrets: Vaultwarden is for personal/homelab
+credentials and DR backups, not a live secrets backend for a deploy
+pipeline.
