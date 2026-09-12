@@ -28,11 +28,17 @@ flowchart LR
 
 **Vaultwarden is live** at `vault.imapps.uk` (deployed 2026-08-23, `infra` project — see [`homelab.md` §5](./homelab.md#5-projects--services-dokploy-inventory)), pinned `1.37.2`, NFS-backed, no SMTP. Owner account + TOTP 2FA done, `ADMIN_TOKEN` set (Argon2id hash, admin panel confirmed gated), `SIGNUPS_ALLOWED=false`.
 
-Remaining steps (not yet done):
-1. Migrate `~/notes/secrets/tokens.md` and the two real `.env` files in via the `bw` CLI, then retire the plaintext `tokens.md`.
-2. Add `pull-env.sh` to each app repo for local secret retrieval.
+CLI tooling for it lives in `~/dotfiles` (stow package `bin` → `~/.local/bin`, on `$PATH` on every machine that's stowed it), not per-repo — see the full plan at
+`docs/superpowers/plans/2026-08-23-vaultwarden-secrets-migration.md`:
 
-`taisei-karate`'s secrets stay as GitHub Actions secrets regardless (OIDC model, see [`taisei-karate.md` §5](./taisei-karate.md#5-secrets--auth-model)) — Vaultwarden is for personal/homelab credentials, not CI secrets.
+- `bw-import-file <item-name> <file-path>` — upserts a file's contents into a Secure Note (creates or updates in place).
+- `pull-env <item-name> [out-file]` — writes a Secure Note's contents to a local file (default `.env`), for tools that need a real file on disk.
+- `bw-run <item-name> -- <command...>` — runs a dev command with the note's `KEY=VALUE` lines exported into that process only, no file ever written. e.g. `bw-run "kivo .env" -- bun run dev`.
+- `bw-run-compose <item-name> -- <compose args...>` — same idea for `docker compose`, which needs an `--env-file` path: writes a private (`0600`) temp file for the call's duration only, then deletes it. e.g. `bw-run-compose "mixtape .env" -- up`.
+
+Known non-empty app `.env`s found on this machine so far: `kivo`, `mixtape`, `shoppingo` (`jewellery-catalogue`'s isn't on this machine — pull it from wherever it's actually used before migrating). Migration into vault items and eventually dropping the on-disk `.env`s entirely in favor of `bw-run` is tracked on the plan/kanban board, not yet done.
+
+`taisei-karate`'s secrets stay as GitHub Actions secrets regardless (OIDC model, see [`taisei-karate.md` §5](./taisei-karate.md#5-secrets--auth-model)) — Vaultwarden is for personal/homelab credentials, not CI secrets. Dokploy's own per-app environment panel (prod runtime secrets) stays as the deploy-time source of truth too — see the note in the plan doc on why that isn't being centralized into Vaultwarden.
 
 ## Keeping this current
 
