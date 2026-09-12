@@ -114,20 +114,28 @@ bw status | grep -i serverUrl
 
 ---
 
-### Task 4: Write the migration helper script
+### Task 4: Write the migration + retrieval helper scripts
 
 **Files:**
-- Create: `foundry/scripts/bw-import-file.sh`
+- Create: `~/dotfiles/bin/.local/bin/bw-import-file` (stow package `bin`, symlinked to `~/.local/bin/bw-import-file`, already on `$PATH`)
+- Create: `~/dotfiles/bin/.local/bin/pull-env` (same package/symlink mechanism)
+
+Not per-repo — these are personal machine tools, not project code, so they
+live in the dotfiles repo (stowed into `~/.local/bin`) rather than
+duplicated into `foundry` or any app repo. `pull-env` is generic (`pull-env
+<item-name> [out-file]`, defaults `out-file` to `.env`) so one copy serves
+every repo, unlike a per-repo `scripts/pull-env.sh`.
 
 **Interfaces:**
 - Consumes: `BW_SESSION` env var (must already be exported by the user before running).
-- Produces: one Secure Note item per invocation, name = first arg, content = file at second arg. Used by Tasks 5 and 6.
+- `bw-import-file` produces: one Secure Note item per invocation, name = first arg, content = file at second arg. Used by Tasks 5 and 6.
+- `pull-env` produces: reconstructs a vault item's contents to a local file. Used by Task 7.
 
-- [ ] **Step 1 [AGENT]:** Write the script:
+- [ ] **Step 1 [AGENT]:** Write the scripts:
 
 ```bash
 #!/usr/bin/env bash
-# bw-import-file.sh <item-name> <file-path>
+# bw-import-file <item-name> <file-path>
 # Stores <file-path>'s full contents as a Secure Note named <item-name>.
 # Requires BW_SESSION already exported (run `export BW_SESSION=$(bw unlock --raw)` first).
 set -euo pipefail
@@ -153,12 +161,34 @@ bw get template item | \
 echo "Created vault item: $name"
 ```
 
-- [ ] **Step 2 [AGENT]:** `chmod +x foundry/scripts/bw-import-file.sh`
+```bash
+#!/usr/bin/env bash
+# pull-env <item-name> [out-file]
+# Reconstructs a .env file from a Vaultwarden Secure Note. Run locally after
+# `export BW_SESSION=$(bw unlock --raw)`. Vault item name must match what
+# bw-import-file used when the file was migrated in.
+set -euo pipefail
 
-- [ ] **Step 3 [AGENT]:** Commit (script contains no secrets, safe to commit):
+if [ -z "${BW_SESSION:-}" ]; then
+  echo "BW_SESSION not set — run: export BW_SESSION=\$(bw unlock --raw)" >&2
+  exit 1
+fi
+
+item_name="$1"
+out_file="${2:-.env}"
+
+bw get notes "$item_name" > "$out_file"
+echo "wrote $out_file from vault item: $item_name"
+```
+
+- [ ] **Step 2 [AGENT]:** `chmod +x` both, add `bin` to `SHARED` in `~/dotfiles/Makefile`, `stow --target=$HOME --restow bin`.
+
+- [ ] **Step 3 [AGENT]:** Commit in the dotfiles repo (script contains no secrets, safe to commit):
 
 ```bash
-git add scripts/bw-import-file.sh && git commit -m "chore: add bw-import-file helper for secret migration" && git push
+cd ~/dotfiles
+git add bin/.local/bin/bw-import-file bin/.local/bin/pull-env Makefile README.md
+git commit -m "chore: add bw-import-file + pull-env personal CLI scripts" && git push
 ```
 
 ---
@@ -168,14 +198,14 @@ git add scripts/bw-import-file.sh && git commit -m "chore: add bw-import-file he
 **Files:** none created (uses Task 4's script).
 
 **Interfaces:**
-- Consumes: `foundry/scripts/bw-import-file.sh` from Task 4.
+- Consumes: `bw-import-file` (on `$PATH`) from Task 4.
 - Produces: one vault item, `"homelab tokens (from tokens.md)"`.
 
 - [ ] **Step 1 [USER]:**
 
 ```bash
 export BW_SESSION=$(bw unlock --raw)
-~/imapps/foundry/scripts/bw-import-file.sh "homelab tokens (from tokens.md)" ~/notes/secrets/tokens.md
+bw-import-file "homelab tokens (from tokens.md)" ~/notes/secrets/tokens.md
 ```
 
 - [ ] **Step 2 [USER]:** Verify round-trip before deleting anything:
@@ -201,14 +231,14 @@ rm ~/notes/secrets/tokens.md
 **Files:** none created (uses Task 4's script).
 
 **Interfaces:**
-- Consumes: `foundry/scripts/bw-import-file.sh` from Task 4.
+- Consumes: `bw-import-file` (on `$PATH`) from Task 4.
 - Produces: two vault items, `"jewellery-catalogue .env"` and `"mixtape .env"`.
 
 - [ ] **Step 1 [USER]:** (reuse the same `BW_SESSION` from Task 5 if still valid, otherwise `export BW_SESSION=$(bw unlock --raw)` again)
 
 ```bash
-~/imapps/foundry/scripts/bw-import-file.sh "jewellery-catalogue .env" ~/imapps/jewellery-catalogue/.env
-~/imapps/foundry/scripts/bw-import-file.sh "mixtape .env" ~/imapps/mixtape/.env
+bw-import-file "jewellery-catalogue .env" ~/imapps/jewellery-catalogue/.env
+bw-import-file "mixtape .env" ~/imapps/mixtape/.env
 ```
 
 - [ ] **Step 2 [USER]:** Verify both round-trip cleanly, same pattern as Task 5 Step 2:
@@ -223,57 +253,25 @@ bw get notes "mixtape .env" | diff - ~/imapps/mixtape/.env
 
 ---
 
-### Task 7: Add the local pull-env script to each app repo
+### Task 7: Verify pull-env end to end
 
-**Files:**
-- Create: `jewellery-catalogue/scripts/pull-env.sh`
-- Create: `mixtape/scripts/pull-env.sh`
+**Files:** none (uses Task 4's `pull-env`, on `$PATH` in every repo already).
 
 **Interfaces:**
 - Consumes: `BW_SESSION` (user-exported), the vault item names from Task 6.
-- Produces: a one-command way to reconstruct `.env` from the vault on a fresh checkout or after local loss.
+- Produces: confirmation that `pull-env` reconstructs each `.env` byte-for-byte from the vault.
 
-- [ ] **Step 1 [AGENT]:** Write the script (identical content, one per repo since they're independent git repos):
-
-```bash
-#!/usr/bin/env bash
-# pull-env.sh — reconstructs .env from Vaultwarden. Run locally after
-# `export BW_SESSION=$(bw unlock --raw)`. Vault item name must match
-# what bw-import-file.sh used when this repo's .env was migrated in
-# (see foundry/docs/superpowers/plans/2026-08-23-vaultwarden-secrets-migration.md).
-set -euo pipefail
-
-if [ -z "${BW_SESSION:-}" ]; then
-  echo "BW_SESSION not set — run: export BW_SESSION=\$(bw unlock --raw)" >&2
-  exit 1
-fi
-
-item_name="$1"   # e.g. "jewellery-catalogue .env"
-bw get notes "$item_name" > .env
-echo "wrote .env from vault item: $item_name"
-```
-
-- [ ] **Step 2 [AGENT]:** For each repo, commit the script (no secrets in it):
-
-```bash
-cd ~/imapps/jewellery-catalogue
-git add scripts/pull-env.sh && git commit -m "chore: add pull-env.sh to restore .env from Vaultwarden" && git push
-
-cd ~/imapps/mixtape
-git add scripts/pull-env.sh && git commit -m "chore: add pull-env.sh to restore .env from Vaultwarden" && git push
-```
-
-- [ ] **Step 3 [USER]:** Verify each script works end to end on a scratch copy:
+- [ ] **Step 1 [USER]:** Verify end to end on a scratch copy, per repo:
 
 ```bash
 cd ~/imapps/jewellery-catalogue
 mv .env .env.bak
 export BW_SESSION=$(bw unlock --raw)   # if not already exported
-./scripts/pull-env.sh "jewellery-catalogue .env"
+pull-env "jewellery-catalogue .env"
 diff .env .env.bak && rm .env.bak
 ```
 
-  Repeat for `mixtape`. Expect no diff.
+  Repeat for `mixtape` with `pull-env "mixtape .env"`. Expect no diff.
 
 ---
 
@@ -284,7 +282,7 @@ diff .env .env.bak && rm .env.bak
 
 **Interfaces:** none — final documentation sync, no code interfaces.
 
-- [ ] **Step 1 [AGENT]:** Update the "Secrets" section in `docs/README.md`: mark the migration itself complete, list the vault item names created (`homelab tokens (from tokens.md)`, `jewellery-catalogue .env`, `mixtape .env`), and add a one-line pointer to `scripts/pull-env.sh` in each app repo for future onboarding.
+- [ ] **Step 1 [AGENT]:** Update the "Secrets" section in `docs/README.md`: mark the migration itself complete, list the vault item names created (`homelab tokens (from tokens.md)`, `jewellery-catalogue .env`, `mixtape .env`), and add a one-line pointer to `pull-env` (in `~/dotfiles`, on `$PATH`) for future onboarding.
 
 - [ ] **Step 2 [AGENT]:** Commit and push:
 
@@ -293,3 +291,28 @@ git add docs/README.md && git commit -m "docs: vaultwarden secrets migration com
 ```
 
 - [ ] **Step 3 [USER]:** Rotate the Bitwarden `client_credentials` API key pasted into this chat earlier in the session (Account Settings → Security → Keys → Rotate API Key) — it's been in agent/transcript context since this conversation started and should be treated as burned regardless of whether it was ever actually used.
+
+---
+
+### Task 9: Import browser-saved passwords
+
+**Files:** none (browser + `bw` CLI only).
+
+**Interfaces:** none — standalone, does not depend on Tasks 4-8's helper scripts (`bw import` covers this natively).
+
+Original ask covered "all the secrets, in our browser, dokploy, local .env" —
+Tasks 5/6 only migrated `tokens.md` and two `.env` files. Browser-saved
+logins were never actually covered. This task closes that gap.
+
+- [ ] **Step 1 [USER]:** Export saved passwords to CSV: Chrome
+  `chrome://settings/passwords` → ⋮ → Export passwords; Firefox
+  `about:logins` → ⋮ → Export Logins.
+- [ ] **Step 2 [USER]:** Confirm `bw config server` still points at
+  `https://vault.imapps.uk` (set in Task 3), then
+  `export BW_SESSION=$(bw unlock --raw)`.
+- [ ] **Step 3 [USER]:** Import: `bw import chromecsv <path-to-csv>` (or
+  `firefoxcsv` — run `bw import --formats` for the full list).
+- [ ] **Step 4 [USER]:** `bw sync`, spot-check the item count in the vault
+  UI matches the browser's saved-password count.
+- [ ] **Step 5 [USER]:** Shred the plaintext CSV immediately:
+  `shred -u <path-to-csv>` (plain `rm` leaves recoverable disk blocks).
