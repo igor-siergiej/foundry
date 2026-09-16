@@ -7,7 +7,7 @@ contactPoints:
       - uid: discord-webhook-1
         type: discord
         settings:
-          url: https://discord.com/api/webhooks/REDACTED/REDACTED
+          url: $__ENV{DISCORD_WEBHOOK_URL}__
           use_discord_username: false
 
 policies:
