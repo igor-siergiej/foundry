@@ -4,8 +4,8 @@ services:
     container_name: mongodb
     restart: unless-stopped
     ports:
-      # bind to LAN + tailscale only — not exposed on 0.0.0.0/WAN
-      - '192.168.68.17:27017:27017'   # LAN: on-host apps (kivo, shoppingo-api) via infra-mongodb.imapps.uk
+      # tailnet only. On-host apps reach this as mongodb:27017 over
+      # dokploy-network — never via a host IP, which a DHCP lease can move.
       - '100.79.92.93:27017:27017'   # tailscale: remote debugging over tailnet
     environment:
       MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USER}

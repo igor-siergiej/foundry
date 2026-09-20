@@ -48,9 +48,13 @@ flowchart TB
 ```
 
 - **One Cloudflare tunnel** `0da10189-66a3-49f1-b138-f1f617592567` → wildcard `*.imapps.uk` (proxied) → `dokploy-traefik:443` → Traefik hostname routing.
-- **blocky** (`infra/blocky`) does split-horizon DNS: `imapps.uk → 192.168.68.18`. On LAN/tailnet, traffic goes straight to Traefik and **bypasses Cloudflare + Access**. → **CF Access only protects REMOTE traffic. Zero protection on LAN/tailnet.**
+- **blocky** (`infra/blocky`) does split-horizon DNS: `imapps.uk → 192.168.68.17` (the host's reserved LAN IP). On LAN/tailnet, traffic goes straight to Traefik and **bypasses Cloudflare + Access**. → **CF Access only protects REMOTE traffic. Zero protection on LAN/tailnet.**
 - Traefik entrypoints: `web` (80, redirect→https), `websecure` (443, letsencrypt certresolver). Services attach via `dokploy-network` + traefik labels.
-- Internal service-to-service DB access uses blocky names resolving to the host bind: `infra-mongodb.imapps.uk:27017`, `minio-ui.imapps.uk:9000`.
+- Internal service-to-service DB access goes container-to-container over
+  `dokploy-network`: `mongodb:27017`, `minio:9000`. It deliberately does not
+  use `*.imapps.uk` names — those resolve via blocky to the host LAN IP, so a
+  DHCP lease change would break every app (it did, 2026-09-19). Any service
+  needing mongo or minio must join `dokploy-network`.
 
 ## 3. Deploy flow (CRITICAL — read before any change)
 
