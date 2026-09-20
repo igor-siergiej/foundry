@@ -28,6 +28,8 @@ services:
       - mixtape-video:/videos
     networks:
       - mixtape
+      # Direct container-to-container path to shared infra mongo — no host IP hop.
+      - dokploy-network
 
   web:
     image: docker.io/igurusama/imapps:mixtape-web-latest
@@ -65,3 +67,5 @@ volumes:
 networks:
   mixtape:
     driver: bridge
+  dokploy-network:
+    external: true
