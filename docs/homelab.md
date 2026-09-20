@@ -54,7 +54,7 @@ flowchart TB
 
 ## 3. Deploy flow (CRITICAL — read before any change)
 
-IaC repo: `/home/igors/imapps/foundry` → `git@github.com:igor-siergiej/foundry.git`.
+IaC repo: `/home/home/imapps/foundry` on this host (path may differ on other machines) → `git@github.com:igor-siergiej/foundry.git`.
 
 - **Dokploy deploys from GitHub HEAD, not local files.** Compose changes must be **commit + push** first.
 - `autoDeploy=true` but the **webhook is unreliable — do NOT trust it to fire.** After push, deploy explicitly via `compose-deploy` (dokploy-mcp).
@@ -63,16 +63,22 @@ IaC repo: `/home/igors/imapps/foundry` → `git@github.com:igor-siergiej/foundry
 
 ## 4. MCP control planes (how an agent operates this homelab)
 
-| MCP | Transport | Scope / capability | Gaps |
+Two reachability tiers — don't assume a server is a native deferred tool just because it's configured somewhere:
+
+| MCP | Reachability | Scope / capability | Gaps |
 |---|---|---|---|
-| **dokploy-mcp** | deferred tools (load via `ToolSearch select:<name>`) | full Dokploy API: projects, compose/app CRUD + deploy, docker, domains, backups, env, users | API key lacks `sso-listProviders` + `auditLog-all` (both 403) |
-| **cloudflare** (`mcp__cloudflare__*`) | OAuth remote MCP `https://mcp.cloudflare.com/mcp` | Account `ddf9791b93ad2e4cc5ef56aedfd7bd72`, zone `imapps.uk` = `e8069a9a6e586db3add05a408bd1e2d0`. Has **Access:Edit** | **lacks Zone WAF/Rulesets** — rate-limit rules need a scoped API token via `curl` |
-| **playwright** | `mcp-cli --config ~/.mcp_servers.json` | browser automation | — |
+| **dokploy-mcp** | `mcp-cli --config ~/.mcp_servers.json call-tool dokploy-mcp:<tool>` | full Dokploy API: projects, compose/app CRUD + deploy, docker, domains, backups, env, users | API key lacks `sso-listProviders` + `auditLog-all` (both 403) |
+| **cloudflare-api** | `mcp-cli --config ~/.mcp_servers.json call-tool cloudflare-api:<tool>` | remote MCP `https://mcp.cloudflare.com/mcp`. Account `ddf9791b93ad2e4cc5ef56aedfd7bd72`, zone `imapps.uk` = `e8069a9a6e586db3add05a408bd1e2d0`. Has **Access:Edit** | **lacks Zone WAF/Rulesets** — rate-limit rules need a scoped API token via `curl` |
+| **grafana** | `mcp-cli --config ~/.mcp_servers.json call-tool grafana:<tool>` | dashboards/alerts at `grafana.imapps.uk` | — |
+| **tailscale** | `mcp-cli --config ~/.mcp_servers.json call-tool tailscale:<tool>` | tailnet admin (OAuth client, write risk allowed) | — |
+| **trello** | `mcp-cli --config ~/.mcp_servers.json call-tool trello:<tool>` | board `6a8ace741220b3624276fdf6` | — |
+| **playwright** | native deferred tool (`mcp__plugin_playwright_playwright__*`) — ALSO in `~/.mcp_servers.json` for `mcp-cli` use outside Claude Code | browser automation | — |
+| **github** | native deferred tool, plugin-managed (`plugin:github:github`, `api.githubcopilot.com`) | repo/PR/issue ops | needs `GITHUB_PERSONAL_ACCESS_TOKEN` in env at Claude Code launch (via `bw-run "github.pat" -- claude`) or it fails to connect |
 
 Notes:
-- dokploy-mcp tools are **deferred**: the schema must be loaded with `ToolSearch` query `select:mcp__dokploy-mcp__<tool>` before calling.
-- Global `~/.mcp_servers.json` only contains playwright. dokploy + cloudflare are wired as first-class deferred MCPs in this harness, not in that file.
-- **This shell runs on the user's LAPTOP (`framework`), not the Dokploy host.** No docker locally; local `ss`/port checks are meaningless for the server. Reach the host via tailscale (`100.85.189.60` / `foundry`).
+- **None of dokploy/cloudflare/grafana/tailscale/trello are native Claude Code deferred tools** — they're `mcp-cli`-CLI-only, by design (see user CLAUDE.md: avoids deferred-tool context bloat). Only Gmail/Drive/Calendar/Figma/GitHub/Playwright are registered natively (check with `claude mcp list`).
+- `~/.mcp_servers.json` is vault-rendered (see dotfiles `docs/secrets.md`), not hand-edited — the checked-in shape lives at dotfiles `docs/mcp_servers.json.template`.
+- **Don't assume which machine you're on.** A SessionStart hook (`~/.claude/hooks/machine-context.sh`, dotfiles-managed) injects machine identity (hostname/tailscale IP → known role, e.g. this box IS `foundry` itself with direct docker access) at session start — read that context instead of assuming "laptop, reach host via tailscale". If the hook reports "unrecognized machine", check `hostname`/`tailscale status` yourself before trusting anything below that assumes a specific box.
 
 ## 5. Projects & services (Dokploy inventory)
 
@@ -129,9 +135,9 @@ None of these publish a host port (`ports:` block) — confirmed against the liv
 ## 8. Gotchas checklist (for future agents)
 
 - [ ] Compose change → commit + push (`dangerouslyDisableSandbox:true`) → **explicit `compose-deploy`** (webhook unreliable).
-- [ ] dokploy-mcp tools are deferred — `ToolSearch select:` before use.
+- [ ] dokploy/cloudflare/grafana/tailscale/trello are `mcp-cli`-only, not deferred tools — see §4.
 - [ ] Cloudflare MCP can't do WAF/rate-limit — use a scoped API token + `curl`, then revoke it.
-- [ ] You are on the laptop, not the host. Use tailscale to reach `foundry`. Laptop may be off home wifi.
+- [ ] Check the SessionStart machine-identity context before assuming you're on the laptop or the host — this session may be running directly on `foundry` with direct docker access, or on a laptop needing tailscale to reach it. Don't guess; the hook output says which.
 - [ ] Some public wifi has a middlebox that ACKs every SYN → false "port OPEN". Judge reachability by real protocol replies (HTTP body, mongo wire), not raw connect.
 - [ ] Access protects remote only; LAN/tailnet bypasses it via blocky split-horizon.
 - [ ] **This doc drifted from reality once already** (stale `.18`/`100.85.189.60` host IPs from before the 2026-08-20 bare-metal migration, a stale "host port" claim for services hardened on 2026-07-04) — found and fixed 2026-08-23 by cross-checking the live compose files instead of trusting the doc. If something here looks surprising, check the actual compose file / `dokploy-mcp` state before trusting this doc over it.
