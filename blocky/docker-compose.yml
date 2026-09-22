@@ -1,15 +1,22 @@
-version: '3.8'
-
 services:
   blocky:
     image: spx01/blocky:latest
     container_name: blocky
-    restart: unless-stopped
+    # LAN-wide resolver: always come back, even after a daemon restart.
+    restart: always
     ports:
       - "53:53/tcp"
       - "53:53/udp"
     volumes:
-      - ./config.yml:/app/config.yml
+      - ./config.yml:/app/config.yml:ro
+    healthcheck:
+      # The image is distroless - no shell, no curl. blocky ships its own
+      # healthcheck subcommand, which is the only thing that works here.
+      test: ["CMD", "/app/blocky", "healthcheck"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
     networks:
       - infra
       - dokploy-network

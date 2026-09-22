@@ -34,7 +34,7 @@ flowchart TB
     end
 
     subgraph lan["LAN / TAILNET path"]
-        blocky["blocky split-horizon DNS<br/>imapps.uk → 192.168.68.17"]
+        blocky["blocky split-horizon DNS + adblock<br/>imapps.uk → 192.168.68.17<br/>(Deco DHCP primary; 1.1.1.1 secondary)"]
     end
 
     traefik["dokploy-traefik:443<br/>Host(`x.imapps.uk`) routing"]
@@ -49,6 +49,8 @@ flowchart TB
 
 - **One Cloudflare tunnel** `0da10189-66a3-49f1-b138-f1f617592567` → wildcard `*.imapps.uk` (proxied) → `dokploy-traefik:443` → Traefik hostname routing.
 - **blocky** (`infra/blocky`) does split-horizon DNS: `imapps.uk → 192.168.68.17` (the host's reserved LAN IP). On LAN/tailnet, traffic goes straight to Traefik and **bypasses Cloudflare + Access**. → **CF Access only protects REMOTE traffic. Zero protection on LAN/tailnet.**
+- Since 2026-09-22 the **Deco hands out `192.168.68.17` as DHCP primary DNS** (secondary `1.1.1.1`), so this applies to *every* device on the WiFi, not just tailnet clients. blocky also runs StevenBlack adware+malware blocklists for the whole LAN.
+- **Secondary-DNS caveat:** during a blocky restart a client can fall through to `1.1.1.1`, receive the Cloudflare-proxied answer for `*.imapps.uk`, and hit an Access prompt until that ~300s TTL expires. Accepted trade-off vs. losing all internet when blocky is down.
 - Traefik entrypoints: `web` (80, redirect→https), `websecure` (443, letsencrypt certresolver). Services attach via `dokploy-network` + traefik labels.
 - Internal service-to-service DB access goes container-to-container over
   `dokploy-network`: `mongodb:27017`, `minio:9000`. It deliberately does not
@@ -129,7 +131,8 @@ None of these publish a host port (`ports:` block) — confirmed against the liv
 - **Explicit Bypass** apps (public / own-auth): immich, shoppingo, jewellery-catalogue, kivo, mixtape, audiobookshelf, jellyfin, navidrome, gatus.
 - **dokploy** + **sentinel** keep their own require-email apps.
 - immich has a rate-limit rule on `/auth/login` (15 req / 10s / IP → block).
-- Reminder: Access is a **remote-only** gate (see §2). On tailnet, own-auth is the only protection.
+- Reminder: Access is a **remote-only** gate (see §2). On LAN and tailnet, own-auth is the only protection.
+- **Widened 2026-09-22:** the Deco now points all DHCP clients at blocky, so *every device on the WiFi* — including guests and IoT — takes the LAN path and bypasses Access. Previously this was limited to tailnet devices. Anything whose only gate is the wildcard Access app (grafana, home-assistant, minio/mongo HTTP routes) is now protected on-LAN solely by its own login.
 
 ## 7. Storage
 
@@ -144,5 +147,10 @@ None of these publish a host port (`ports:` block) — confirmed against the liv
 - [ ] Check the SessionStart machine-identity context before assuming you're on the laptop or the host — this session may be running directly on `foundry` with direct docker access, or on a laptop needing tailscale to reach it. Don't guess; the hook output says which.
 - [ ] Some public wifi has a middlebox that ACKs every SYN → false "port OPEN". Judge reachability by real protocol replies (HTTP body, mongo wire), not raw connect.
 - [ ] Access protects remote only; LAN/tailnet bypasses it via blocky split-horizon.
+- [ ] Split-horizon reaches **every LAN + tailnet device** since 2026-09-22 (Deco DHCP primary DNS = `192.168.68.17`, secondary `1.1.1.1`); tailnet MagicDNS resolver is `100.79.92.93` → same blocky. Before that date it was tailnet-only because the router handed out ISP resolvers (`188.31.250.128/129`). To check whether real LAN clients are using it, look for `192.168.68.x` addresses in `docker logs blocky` — all-`100.x` means the DHCP setting has not taken effect.
+- [ ] blocky is now a **whole-house dependency**: it runs adblock (StevenBlack adware+malware) for every device. A false positive breaks that site for everyone — add an `allowlists` entry in `blocky/config.yml` rather than disabling blocking. `restart: always` + a `blocky healthcheck` healthcheck guard availability.
+- [ ] `/etc/hosts` on `foundry` pins `vault/dokploy/grafana.imapps.uk → 192.168.68.17`. Any Access/WAF check run **from this host** silently takes the LAN path and looks unprotected. Test the real edge with `curl --resolve <host>:443:104.21.45.248` before declaring an Access gap (a false "Access is off" finding came from exactly this, 2026-09-20).
+- [ ] Dokploy **rebuild/redeploy does not regenerate** `/etc/dokploy/traefik/dynamic/<appName>.yml`. `sentinel-api`'s file was missing, so `Host(sentinel.imapps.uk) && PathPrefix(/api)` had no router and every `/api` call fell through to the web SPA (HTML instead of JSON). Fix: `domain.update` on the app's domain rewrites the file immediately — no rebuild needed.
+- [ ] Home Assistant's `.storage` registries were reset on 2026-08-20 (`core.config_entries`/`core.entity_registry`/`core.device_registry` all rewritten that evening): only `sun` + `go2rtc` remain, the TP-Link integration is gone, and the recorder DB has no history of the old entities. HA also runs on a **bridge** network, so Kasa/Tapo UDP broadcast discovery can never work — plugs must be added by IP (live KLAP devices: `192.168.68.9`, `.11`, `.14`), and they are cloud-bound so the TP-Link account credentials are required.
 - [ ] **This doc drifted from reality once already** (stale `.18`/`100.85.189.60` host IPs from before the 2026-08-20 bare-metal migration, a stale "host port" claim for services hardened on 2026-07-04) — found and fixed 2026-08-23 by cross-checking the live compose files instead of trusting the doc. If something here looks surprising, check the actual compose file / `dokploy-mcp` state before trusting this doc over it.
 - [ ] **This homelab and `taisei-karate` (AWS) share no infrastructure** — different clouds, different auth models, different deploy pipelines. See [`taisei-karate.md`](./taisei-karate.md).

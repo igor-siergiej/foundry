@@ -1,11 +1,22 @@
 # Blocky DNS Server Configuration
-# This DNS server is used for local split-horizon DNS
-# It resolves *.imapps.uk to the local gateway to bypass the Cloudflare tunnel on LAN
-# External DNS is still handled by Cloudflare
+#
+# Split-horizon DNS + ad/malware blocking for the whole LAN.
+#
+# Clients reach this via DHCP (Deco: Advanced -> DHCP Server):
+#   Primary DNS   192.168.68.17  (this host)
+#   Secondary DNS 1.1.1.1        (fallback if blocky is down)
+#
+# Consequence of the secondary: while blocky is restarting, a client that falls
+# through to 1.1.1.1 gets the Cloudflare-proxied answer for *.imapps.uk and will
+# see a Cloudflare Access prompt until that record's TTL (~300s) expires.
 
 ports:
   dns: 53
   http: 4000
+
+# Used to resolve upstream/blocklist hostnames before the resolver is ready.
+bootstrapDns:
+  - upstream: 1.1.1.1
 
 upstreams:
   groups:
@@ -13,16 +24,48 @@ upstreams:
       - 1.1.1.1
       - 8.8.8.8
 
+# Split horizon: on-LAN clients go straight to dokploy-traefik on this host,
+# bypassing the Cloudflare tunnel (and therefore Cloudflare Access).
+# Subdomains of a mapped domain are matched automatically.
 customDNS:
   mapping:
     imapps.uk: 192.168.68.17
 
+blocking:
+  denylists:
+    # StevenBlack unified hosts: adware + malware only. Deliberately NOT the
+    # gambling/porn/fakenews extensions - those cause false positives on smart
+    # TVs and consoles, and this resolver now serves every device in the house.
+    ads:
+      - https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts
+  clientGroupsBlock:
+    default:
+      - ads
+  blockType: zeroIp
+  loading:
+    refreshPeriod: 24h
+    # Serve DNS immediately on start instead of waiting on list downloads -
+    # a slow GitHub fetch must never delay DNS for the whole LAN.
+    strategy: fast
+    downloads:
+      timeout: 60s
+      attempts: 3
+      cooldown: 10s
+
+# LAN is IPv4-only; dropping AAAA keeps clients off unreachable v6 paths
+# and forces *.imapps.uk onto the v4 split-horizon answer.
 filtering:
   queryTypes:
     - AAAA
 
 caching:
-  maxTime: 0s
+  minTime: 5m
+  prefetching: true
+
+# Scraped by the monitoring stack (prometheus.yml job_name: blocky).
+prometheus:
+  enable: true
+  path: /metrics
 
 log:
   level: info
