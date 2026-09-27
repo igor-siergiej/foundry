@@ -50,6 +50,7 @@ flowchart TB
 - **One Cloudflare tunnel** `0da10189-66a3-49f1-b138-f1f617592567` → wildcard `*.imapps.uk` (proxied) → `dokploy-traefik:443` → Traefik hostname routing.
 - **blocky** (`infra/blocky`) does split-horizon DNS: `imapps.uk → 192.168.68.17` (the host's reserved LAN IP). On LAN/tailnet, traffic goes straight to Traefik and **bypasses Cloudflare + Access**. → **CF Access only protects REMOTE traffic. Zero protection on LAN/tailnet.**
 - Since 2026-09-22 the **Deco hands out `192.168.68.17` as DHCP primary DNS** (secondary `1.1.1.1`), so this applies to *every* device on the WiFi, not just tailnet clients. blocky also runs StevenBlack adware+malware blocklists for the whole LAN.
+- **Except it wasn't reaching `foundry`.** On 2026-09-27 the host's own DHCP lease still carried the ISP resolvers `188.31.250.128/129`, not `192.168.68.17` — so the box running blocky was the one device not using it. The host is now pinned in netplan (§4a); the Deco setting was left alone, so **assume other long-lease devices may be in the same state** and spot-check one before trusting LAN-wide adblock numbers.
 - **Secondary-DNS caveat:** during a blocky restart a client can fall through to `1.1.1.1`, receive the Cloudflare-proxied answer for `*.imapps.uk`, and hit an Access prompt until that ~300s TTL expires. Accepted trade-off vs. losing all internet when blocky is down.
 - Traefik entrypoints: `web` (80, redirect→https), `websecure` (443, letsencrypt certresolver). Services attach via `dokploy-network` + traefik labels.
 - Internal service-to-service DB access goes container-to-container over
@@ -84,7 +85,75 @@ Two reachability tiers — don't assume a server is a native deferred tool just 
 Notes:
 - **None of dokploy/cloudflare/grafana/tailscale/trello are native Claude Code deferred tools** — they're `mcp-cli`-CLI-only, by design (see user CLAUDE.md: avoids deferred-tool context bloat). Only Gmail/Drive/Calendar/Figma/GitHub/Playwright are registered natively (check with `claude mcp list`).
 - `~/.mcp_servers.json` is vault-rendered (see dotfiles `docs/secrets.md`), not hand-edited — the checked-in shape lives at dotfiles `docs/mcp_servers.json.template`.
+- **`~` is not `/home/home` inside a Paperclip agent run.** Paperclip sandboxes `HOME` to a per-run temp dir, so every `~/.mcp_servers.json` above resolves to a nonexistent file and *all* of these MCPs look unreachable. Use the absolute path — `mcp-cli --config /home/home/.mcp_servers.json call-tool dokploy-mcp:<tool>`. Verified working 2026-09-27.
+- **MagicDNS on `foundry` — broken until 2026-09-27, now fixed.** See §4a. If `*.ts.net` stops resolving here again, that's the thing to check: the Paperclip control-plane MCPs (`home.tail2d4575.ts.net:8444`) fail at session start with `ENOTFOUND` and the fallback is `curl --resolve <host>:<port>:100.79.92.93`.
+- **`cloudflare-api` needs a one-time OAuth sign-in.** Its config entry is now an `npx mcp-remote` stdio wrapper (`mcp-cli` only speaks stdio; the old url-only entry failed with `The "file" argument must be of type string`). The wrapper works, but the first call blocks on Cloudflare's OAuth — see §4b for the sign-in procedure. Until someone completes it, everything this repo says about Cloudflare Access is carried forward from docs, unverified.
 - **Don't assume which machine you're on.** A SessionStart hook (`~/.claude/hooks/machine-context.sh`, dotfiles-managed) injects machine identity (hostname/tailscale IP → known role, e.g. this box IS `foundry` itself with direct docker access) at session start — read that context instead of assuming "laptop, reach host via tailscale". If the hook reports "unrecognized machine", check `hostname`/`tailscale status` yourself before trusting anything below that assumes a specific box.
+
+## 4a. Host DNS resolution on `foundry` (fixed 2026-09-27)
+
+**What was wrong.** `tailscaled` runs as a *host-network Docker container* (`infra-tailscale`,
+`TS_USERSPACE=false`). Host networking means `tailscale0` and the `100.100.100.100` stub resolver
+land in the host netns — so routing worked and `dig @100.100.100.100` always answered — but the
+container keeps its own **mount** namespace, so every `/etc/resolv.conf` tailscaled wrote went into
+the container and the host never saw it. `tailscale set --accept-dns=true` cannot fix that.
+Separately, DHCP was handing this box the ISP resolvers `188.31.250.128/129` rather than blocky,
+despite the Deco being configured to advertise `192.168.68.17`. Net effect: no `*.ts.net`, no
+split-horizon `*.imapps.uk`, no adblock, on the host itself.
+
+**How it's fixed, in two halves:**
+
+1. **blocky forwards `ts.net`** — `blocky/config.yml` has `conditional.mapping.ts.net:
+   100.100.100.100`. Bridge containers can reach the stub through the host's `100.64.0.0/10` route,
+   so this works from inside blocky. This gives MagicDNS to *every* LAN client, not just the host.
+2. **The host is pinned to blocky** — `/etc/netplan/00-installer-config.yaml` now sets
+   `dhcp4-overrides.use-dns: false` plus `nameservers.addresses: [192.168.68.17, 1.1.1.1]` and
+   `search: [tail2d4575.ts.net]`. Previous file backed up alongside as `.bak-2026-09-27`.
+   Applied with `netplan generate && networkctl reload` (no link bounce).
+
+**Ordering hazard:** the host's primary resolver is now a container on the host. `1.1.1.1` is the
+secondary, so a blocky restart degrades rather than breaks DNS — but it means *never* leave blocky
+down while doing anything that needs name resolution to bring it back. `blocky` is `restart: always`
+for this reason.
+
+**Note `/etc/resolv.conf` is in `uplink` mode, not `stub`.** blocky binds `0.0.0.0:53`, which
+collides with systemd-resolved's `127.0.0.53:53` stub listener, so the stub is disabled. That means
+per-domain split DNS via `resolvectl domain <link> ~domain` has **no effect** — resolv.conf points
+clients straight at the link's uplink servers. Route domains through blocky's config instead.
+
+Verify all three paths in one go:
+
+```sh
+getent hosts home.tail2d4575.ts.net   # 100.79.92.93   - MagicDNS
+getent hosts dokploy.imapps.uk        # 192.168.68.17  - split horizon
+getent hosts github.com               # public         - upstream
+```
+
+## 4b. Signing `cloudflare-api` in (one-time, needs a human browser)
+
+`mcp-remote` derives a **fixed** callback port from the server URL: `28491`. It binds
+`127.0.0.1:28491` on whichever box runs it, and stores the resulting token in `~/.mcp-auth`, so the
+sign-in survives across sessions and only has to happen once per machine.
+
+From a machine with a browser, tunnel that port to `foundry` and run the flow there:
+
+```sh
+ssh -L 28491:localhost:28491 home@foundry
+# in that session:
+MCP_REMOTE_CONFIG_DIR=/home/home/.mcp-auth \
+  npx -y mcp-remote@latest https://mcp.cloudflare.com/mcp --transport http-only
+# paste the printed https://mcp.cloudflare.com/authorize?... URL into your local browser
+```
+
+Agents then use it normally, but **must** pin the auth dir, because Paperclip sandboxes `HOME`:
+
+```sh
+MCP_REMOTE_CONFIG_DIR=/home/home/.mcp-auth \
+  mcp-cli --config /home/home/.mcp_servers.json call-tool cloudflare-api:<tool> --args '{}'
+```
+
+If the token is missing or expired the call doesn't error — it **hangs** on
+`Authentication required. Waiting for authorization...`. Always run it under `timeout`.
 
 ## 5. Projects & services (Dokploy inventory)
 
