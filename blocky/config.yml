@@ -31,6 +31,16 @@ customDNS:
   mapping:
     imapps.uk: 192.168.68.17
 
+# MagicDNS. `foundry` runs tailscaled as a host-network container, so its
+# DNS stub listens on 100.100.100.100 in the host netns but tailscaled can
+# only rewrite resolv.conf inside its own mount namespace - the host never
+# sees it. Forwarding ts.net here is what makes *.ts.net resolvable for the
+# host and for every LAN client, without giving tailscaled control of
+# /etc/resolv.conf.
+conditional:
+  mapping:
+    ts.net: 100.100.100.100
+
 blocking:
   denylists:
     # StevenBlack unified hosts: adware + malware only. Deliberately NOT the
