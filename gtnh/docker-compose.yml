@@ -9,11 +9,13 @@ services:
     network_mode: "service:gtnh-tailscale"
     depends_on:
       - gtnh-tailscale
+    mem_limit: 7g
+    memswap_limit: 7g
     environment:
       LEVEL_NAME: OmniSlop
       MC_USERNAMES: ${MC_USERNAMES}
-      MIN_RAM: 8G
-      MAX_RAM: 8G
+      MIN_RAM: 6G
+      MAX_RAM: 6G
       JDK_JAVA_OPTIONS: >-
         -XX:+UseG1GC -XX:+ParallelRefProcEnabled -XX:MaxGCPauseMillis=200
         -XX:+UnlockExperimentalVMOptions -XX:+DisableExplicitGC -XX:+AlwaysPreTouch
