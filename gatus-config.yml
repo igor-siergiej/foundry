@@ -6,6 +6,14 @@ storage:
 ui:
   title: "Homelab Status"
   header: "Service Uptime"
+alerting:
+  discord:
+    webhook-url: "${DISCORD_WEBHOOK_URL}"
+    default-alert:
+      enabled: true
+      failure-threshold: 3
+      success-threshold: 2
+      send-on-resolved: true
 endpoints:
   - name: Domain Expiration
     group: Infrastructure
@@ -14,6 +22,10 @@ endpoints:
     timeout: 10s
     conditions:
       - "[CERTIFICATE_EXPIRATION] > 7d"
+    alerts:
+      - type: discord
+        failure-threshold: 1
+        success-threshold: 1
 
   - name: Shoppingo Cert Expiration
     group: Infrastructure
@@ -22,6 +34,10 @@ endpoints:
     timeout: 10s
     conditions:
       - "[CERTIFICATE_EXPIRATION] > 14d"
+    alerts:
+      - type: discord
+        failure-threshold: 1
+        success-threshold: 1
 
   - name: Kivo Cert Expiration
     group: Infrastructure
@@ -30,6 +46,10 @@ endpoints:
     timeout: 10s
     conditions:
       - "[CERTIFICATE_EXPIRATION] > 14d"
+    alerts:
+      - type: discord
+        failure-threshold: 1
+        success-threshold: 1
 
   - name: Dokploy Cert Expiration
     group: Infrastructure
@@ -38,6 +58,10 @@ endpoints:
     timeout: 10s
     conditions:
       - "[CERTIFICATE_EXPIRATION] > 14d"
+    alerts:
+      - type: discord
+        failure-threshold: 1
+        success-threshold: 1
 
   - name: DNS Resolution
     group: Infrastructure
@@ -46,6 +70,8 @@ endpoints:
     timeout: 10s
     conditions:
       - "[CONNECTED] == true"
+    alerts:
+      - type: discord
 
   - name: ICMP Ping (Home)
     group: Infrastructure
@@ -54,6 +80,8 @@ endpoints:
     timeout: 5s
     conditions:
       - "[CONNECTED] == true"
+    alerts:
+      - type: discord
 
   - name: NFS Server
     group: Infrastructure
@@ -62,6 +90,8 @@ endpoints:
     timeout: 5s
     conditions:
       - "[CONNECTED] == true"
+    alerts:
+      - type: discord
 
   - name: MongoDB
     group: Storage
@@ -70,6 +100,8 @@ endpoints:
     timeout: 10s
     conditions:
       - "[CONNECTED] == true"
+    alerts:
+      - type: discord
 
   - name: MinIO (Storage)
     group: Storage
@@ -78,6 +110,8 @@ endpoints:
     timeout: 10s
     conditions:
       - "[STATUS] == 200"
+    alerts:
+      - type: discord
 
   - name: Immich (Photos)
     group: Media
@@ -86,6 +120,8 @@ endpoints:
     timeout: 10s
     conditions:
       - "[STATUS] == 200"
+    alerts:
+      - type: discord
 
   - name: Jellyfin (Media)
     group: Media
@@ -94,6 +130,8 @@ endpoints:
     timeout: 10s
     conditions:
       - "[STATUS] == 200"
+    alerts:
+      - type: discord
 
   - name: Navidrome (Music)
     group: Media
@@ -102,6 +140,8 @@ endpoints:
     timeout: 10s
     conditions:
       - "[STATUS] == 200"
+    alerts:
+      - type: discord
 
   - name: AudiobookShelf
     group: Media
@@ -110,6 +150,8 @@ endpoints:
     timeout: 10s
     conditions:
       - "[STATUS] == 200"
+    alerts:
+      - type: discord
 
   - name: Blocky (DNS)
     group: Core
@@ -118,6 +160,8 @@ endpoints:
     timeout: 10s
     conditions:
       - "[STATUS] == 200"
+    alerts:
+      - type: discord
 
   - name: Home Assistant
     group: Core
@@ -126,6 +170,8 @@ endpoints:
     timeout: 10s
     conditions:
       - "[STATUS] == 200"
+    alerts:
+      - type: discord
 
   - name: Kivo (API)
     group: Apps
@@ -135,6 +181,8 @@ endpoints:
     conditions:
       - "[STATUS] == 200"
       - "[BODY].status == healthy"
+    alerts:
+      - type: discord
 
   - name: Prometheus
     group: Monitoring
@@ -143,6 +191,8 @@ endpoints:
     timeout: 10s
     conditions:
       - "[STATUS] == 200"
+    alerts:
+      - type: discord
 
   - name: Grafana
     group: Monitoring
@@ -151,6 +201,8 @@ endpoints:
     timeout: 10s
     conditions:
       - "[STATUS] == 200"
+    alerts:
+      - type: discord
 
   - name: Loki (Logs)
     group: Monitoring
@@ -159,3 +211,5 @@ endpoints:
     timeout: 10s
     conditions:
       - "[STATUS] == 200"
+    alerts:
+      - type: discord
