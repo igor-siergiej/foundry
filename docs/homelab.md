@@ -13,7 +13,7 @@ Agent-oriented map of how the Dokploy homelab fits together: topology, deploy fl
 | Dokploy host (`foundry`) LAN | `192.168.68.17` | single node, runs everything |
 | Dokploy host WAN | `92.40.218.136` | no inbound port-forward except none needed (tunnel is outbound) |
 | Dokploy host tailnet | `100.79.92.93` | tailscale, MagicDNS name `foundry` |
-| NAS (NFS) | `192.168.68.13` | `/mnt/tank/shared/*` — backing store for most volumes |
+| `192.168.68.13` | — | Responds to ICMP only, no open service ports; **not** an active dependency — see §7. Stale from before the 2026-08-20 bare-metal migration. |
 | LAN gateway | `192.168.68.1` | |
 
 Single Docker host. No swarm cluster. Everything is Docker Compose stacks managed by Dokploy.
@@ -205,7 +205,8 @@ None of these publish a host port (`ports:` block) — confirmed against the liv
 
 ## 7. Storage
 
-- Most volumes are **NFS on the NAS `192.168.68.13`** (`/mnt/tank/shared/*`): immich uploads, mongodb data, loki/prometheus/grafana/gatus, navidrome music (shared read-write by mixtape, read-only by navidrome).
+- Most volumes are **local ZFS** (`zpool tank`, mirrored, bind-mounted from `/mnt/tank/shared/*`): immich uploads, mongodb data, loki/prometheus/grafana/gatus, navidrome music (shared read-write by mixtape, read-only by navidrome). All compose `driver_opts` are `type: none` (bind), not `nfs` — confirmed against every live compose file.
+- `192.168.68.13` is **not** the storage backend — that claim was stale, left over from before the 2026-08-20 bare-metal migration. The device still answers ICMP intermittently but has no open ports and nothing in this repo mounts from it. Gatus's "NFS Server" check against it was removed 2026-09-28 for exactly this reason.
 - **Local (host-disk) volumes with no NFS + no backup:** `immich-pgdata`, `minio-data` (external). Host disk loss = data loss. See `../SECURITY-AUDIT.md` #5.
 
 ## 8. Gotchas checklist (for future agents)
@@ -222,4 +223,5 @@ None of these publish a host port (`ports:` block) — confirmed against the liv
 - [ ] Dokploy **rebuild/redeploy does not regenerate** `/etc/dokploy/traefik/dynamic/<appName>.yml`. `sentinel-api`'s file was missing, so `Host(sentinel.imapps.uk) && PathPrefix(/api)` had no router and every `/api` call fell through to the web SPA (HTML instead of JSON). Fix: `domain.update` on the app's domain rewrites the file immediately — no rebuild needed.
 - [ ] Home Assistant's `.storage` registries were reset on 2026-08-20 (`core.config_entries`/`core.entity_registry`/`core.device_registry` all rewritten that evening): only `sun` + `go2rtc` remain, the TP-Link integration is gone, and the recorder DB has no history of the old entities. HA also runs on a **bridge** network, so Kasa/Tapo UDP broadcast discovery can never work — plugs must be added by IP (live KLAP devices: `192.168.68.9`, `.11`, `.14`), and they are cloud-bound so the TP-Link account credentials are required.
 - [ ] **This doc drifted from reality once already** (stale `.18`/`100.85.189.60` host IPs from before the 2026-08-20 bare-metal migration, a stale "host port" claim for services hardened on 2026-07-04) — found and fixed 2026-08-23 by cross-checking the live compose files instead of trusting the doc. If something here looks surprising, check the actual compose file / `dokploy-mcp` state before trusting this doc over it.
+- [ ] **Drifted again, found 2026-09-28:** doc claimed "most volumes are NFS on the NAS `192.168.68.13`" — false, every compose `driver_opts` is a local bind mount to `zpool tank`, and `.13` has no open ports. Also found: Gatus's bare-apex `https://imapps.uk` cert check always failed (Traefik has no router for the apex host, only `*.imapps.uk`, so it serves Traefik's default self-signed cert) and its MinIO check hit `host.docker.internal:9000`, which MinIO doesn't publish on (bound to `192.168.68.17`/`100.79.92.93` only). Fixed in `gatus-config.yml`: dropped the NFS + apex checks, repointed MinIO at `minio:9000` over `dokploy-network`.
 - [ ] **This homelab and `taisei-karate` (AWS) share no infrastructure** — different clouds, different auth models, different deploy pipelines. See [`taisei-karate.md`](./taisei-karate.md).

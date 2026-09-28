@@ -15,18 +15,6 @@ alerting:
       success-threshold: 2
       send-on-resolved: true
 endpoints:
-  - name: Domain Expiration
-    group: Infrastructure
-    url: https://imapps.uk
-    interval: 3600s
-    timeout: 10s
-    conditions:
-      - "[CERTIFICATE_EXPIRATION] > 7d"
-    alerts:
-      - type: discord
-        failure-threshold: 1
-        success-threshold: 1
-
   - name: Shoppingo Cert Expiration
     group: Infrastructure
     url: https://shoppingo.imapps.uk
@@ -83,16 +71,6 @@ endpoints:
     alerts:
       - type: discord
 
-  - name: NFS Server
-    group: Infrastructure
-    url: icmp://192.168.68.13
-    interval: 60s
-    timeout: 5s
-    conditions:
-      - "[CONNECTED] == true"
-    alerts:
-      - type: discord
-
   - name: MongoDB
     group: Storage
     url: tcp://mongodb:27017
@@ -105,7 +83,7 @@ endpoints:
 
   - name: MinIO (Storage)
     group: Storage
-    url: http://host.docker.internal:9000/minio/health/live
+    url: http://minio:9000/minio/health/live
     interval: 60s
     timeout: 10s
     conditions:
