@@ -1,0 +1,291 @@
+apiVersion: 1
+
+# Reuses the discord-webhook contact point and root notification policy
+# provisioned by acme-alerts.yml — every org-1 alert routes there already,
+# so these rule groups don't need to redeclare contactPoints/policies.
+
+groups:
+  - orgId: 1
+    name: host-resources
+    folder: Alerts
+    interval: 5m
+    rules:
+      - uid: host-swap-pressure
+        title: Swap usage high
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 900
+              to: 0
+            datasourceUid: prometheus
+            model:
+              expr: (node_memory_SwapTotal_bytes - node_memory_SwapFree_bytes) / node_memory_SwapTotal_bytes * 100
+              queryType: range
+              refId: A
+          - refId: B
+            relativeTimeRange:
+              from: 900
+              to: 0
+            datasourceUid: __expr__
+            model:
+              type: reduce
+              expression: A
+              reducer: last
+              refId: B
+          - refId: C
+            relativeTimeRange:
+              from: 900
+              to: 0
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              expression: B
+              conditions:
+                - evaluator:
+                    type: gt
+                    params: [80]
+              refId: C
+        noDataState: OK
+        execErrState: Error
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Swap usage on foundry is above 80%"
+          description: "8GB swap is mostly consumed by the GTNH JVM already; sustained >80% means the next spike risks thrashing or an OOM kill. Check `free -h` and `docker stats gtnh` on foundry."
+
+      - uid: host-mem-pressure
+        title: Available memory low
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: prometheus
+            model:
+              expr: node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes * 100
+              queryType: range
+              refId: A
+          - refId: B
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: __expr__
+            model:
+              type: reduce
+              expression: A
+              reducer: last
+              refId: B
+          - refId: C
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              expression: B
+              conditions:
+                - evaluator:
+                    type: lt
+                    params: [10]
+              refId: C
+        noDataState: OK
+        execErrState: Error
+        for: 10m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Available RAM on foundry below 10%"
+          description: "28GB host is close to exhausting real memory (separate from swap). Check `docker stats` for the top consumer before it triggers OOM-killer decisions on a single, unfailover-able host."
+
+      - uid: host-load-saturation
+        title: Sustained CPU/load saturation
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 900
+              to: 0
+            datasourceUid: prometheus
+            model:
+              expr: node_load5 / count(node_cpu_seconds_total{mode="idle"})
+              queryType: range
+              refId: A
+          - refId: B
+            relativeTimeRange:
+              from: 900
+              to: 0
+            datasourceUid: __expr__
+            model:
+              type: reduce
+              expression: A
+              reducer: last
+              refId: B
+          - refId: C
+            relativeTimeRange:
+              from: 900
+              to: 0
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              expression: B
+              conditions:
+                - evaluator:
+                    type: gt
+                    params: [1.5]
+              refId: C
+        noDataState: OK
+        execErrState: Error
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: "foundry 5m load average is 1.5x its 4 vCPUs, sustained 15m"
+          description: "Single-host, no failover — sustained saturation means every container's response time is degrading, not just one. Check `docker stats` / `top` for the top CPU consumer."
+
+  - orgId: 1
+    name: host-capacity
+    folder: Alerts
+    interval: 5m
+    rules:
+      - uid: host-root-disk-capacity
+        title: Root disk capacity low
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: prometheus
+            model:
+              expr: node_filesystem_avail_bytes{mountpoint="/"} / node_filesystem_size_bytes{mountpoint="/"} * 100
+              queryType: range
+              refId: A
+          - refId: B
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: __expr__
+            model:
+              type: reduce
+              expression: A
+              reducer: last
+              refId: B
+          - refId: C
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              expression: B
+              conditions:
+                - evaluator:
+                    type: lt
+                    params: [15]
+              refId: C
+        noDataState: OK
+        execErrState: Error
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Root disk on foundry below 15% free"
+          description: "immich-pgdata, dokploy-postgres and the jellyfin/navidrome/audiobookshelf configs all live on root, not /mnt/tank. Check `df -h /` and the largest consumers under /var/lib/docker on foundry."
+
+      - uid: host-zfs-pool-not-online
+        title: ZFS pool tank not online
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: prometheus
+            model:
+              expr: node_zfs_zpool_state{zpool="tank", state="online"}
+              queryType: range
+              refId: A
+          - refId: B
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: __expr__
+            model:
+              type: reduce
+              expression: A
+              reducer: last
+              refId: B
+          - refId: C
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              expression: B
+              conditions:
+                - evaluator:
+                    type: lt
+                    params: [1]
+              refId: C
+        noDataState: OK
+        execErrState: Error
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "ZFS pool tank is not reporting state=online"
+          description: "node_exporter's zfs collector only exposes pool STATE (online/degraded/faulted/...), not pool capacity — there is no node_zfs_zpool_size/alloc/free metric on this host. This rule catches a degraded/faulted/offline pool; it does NOT cover 'pool is getting full'. See the IMA-16 comment thread for the capacity-metric gap (tracked separately for item 33)."
+
+  - orgId: 1
+    name: host-containers
+    folder: Alerts
+    interval: 5m
+    rules:
+      - uid: host-container-restart-loop
+        title: Container restarting repeatedly
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 3600
+              to: 0
+            datasourceUid: prometheus
+            model:
+              expr: changes(container_start_time_seconds{name!=""}[1h])
+              queryType: range
+              refId: A
+          - refId: B
+            relativeTimeRange:
+              from: 3600
+              to: 0
+            datasourceUid: __expr__
+            model:
+              type: reduce
+              expression: A
+              reducer: last
+              refId: B
+          - refId: C
+            relativeTimeRange:
+              from: 3600
+              to: 0
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              expression: B
+              conditions:
+                - evaluator:
+                    type: gt
+                    params: [3]
+              refId: C
+        noDataState: OK
+        execErrState: Error
+        for: 0m
+        labels:
+          severity: warning
+        annotations:
+          summary: "A container has restarted more than 3 times in the last hour"
+          description: "INERT until cadvisor's per-container metrics are fixed — cadvisor currently only reports the root cgroup (id=\"/\"), not per-container container_start_time_seconds, because it can't resolve container overlayfs layer IDs on this host's docker storage driver. See the linked cadvisor-fix issue; this rule will start firing meaningfully once that's resolved."

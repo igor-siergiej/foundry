@@ -153,6 +153,19 @@ endpoints:
     alerts:
       - type: discord
 
+  - name: Vaultwarden
+    group: Core
+    # Isolated on its own `vaultwarden` network (deliberately, per the
+    # docker-compose.yml comment) so Gatus can't reach it by container DNS —
+    # hit the public route the same way the cert-expiration checks do.
+    url: https://vault.imapps.uk/alive
+    interval: 60s
+    timeout: 10s
+    conditions:
+      - "[STATUS] == 200"
+    alerts:
+      - type: discord
+
   - name: Blocky (DNS)
     group: Core
     url: http://blocky:4000/api/blocking/status
