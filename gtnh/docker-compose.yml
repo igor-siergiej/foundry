@@ -5,7 +5,6 @@ services:
     image: igurusama/imapps:gtnh-latest
     container_name: gtnh
     restart: unless-stopped
-    pull_policy: always
     network_mode: "service:gtnh-tailscale"
     depends_on:
       - gtnh-tailscale
@@ -24,6 +23,7 @@ services:
         -XX:InitiatingHeapOccupancyPercent=15 -XX:G1MixedGCLiveThresholdPercent=90
         -XX:G1RSetUpdatingPauseTimePercent=5 -XX:SurvivorRatio=32
         -XX:+PerfDisableSharedMem -XX:MaxTenuringThreshold=1
+        -Dfml.queryResult=confirm
     volumes:
       - gtnh-data:/data
 
