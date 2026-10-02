@@ -2,28 +2,39 @@ name: gtnh
 
 services:
   gtnh:
-    image: igurusama/imapps:gtnh-2.9.0-rc-1
+    image: itzg/minecraft-server:java21
     container_name: gtnh
     restart: unless-stopped
+    pull_policy: missing
+    tty: true
+    stdin_open: true
     network_mode: "service:gtnh-tailscale"
     depends_on:
       - gtnh-tailscale
-    mem_limit: 10g
-    memswap_limit: 10g
     environment:
-      LEVEL_NAME: OmniSlop
-      MC_USERNAMES: ${MC_USERNAMES}
-      MIN_RAM: 6G
-      MAX_RAM: 6G
-      JDK_JAVA_OPTIONS: >-
-        -XX:+UseG1GC -XX:+ParallelRefProcEnabled -XX:MaxGCPauseMillis=200
-        -XX:+UnlockExperimentalVMOptions -XX:+DisableExplicitGC -XX:+AlwaysPreTouch
-        -XX:G1NewSizePercent=30 -XX:G1MaxNewSizePercent=40 -XX:G1HeapRegionSize=8M
-        -XX:G1ReservePercent=20 -XX:G1HeapWastePercent=5 -XX:G1MixedGCCountTarget=4
-        -XX:InitiatingHeapOccupancyPercent=15 -XX:G1MixedGCLiveThresholdPercent=90
-        -XX:G1RSetUpdatingPauseTimePercent=5 -XX:SurvivorRatio=32
-        -XX:+PerfDisableSharedMem -XX:MaxTenuringThreshold=1
-        -Dfml.queryResult=confirm
+      EULA: "TRUE"
+      TYPE: GTNH
+      GTNH_PACK_VERSION: "2.9.0-RC-1"
+      SKIP_GTNH_UPDATE_CHECK: "true"
+      MEMORY: "6G"
+      INIT_MEMORY: "6G"
+      MAX_MEMORY: "6G"
+      JVM_OPTS: "-Dfml.readTimeout=180 @java9args.txt -Dfml.queryResult=confirm"
+      MOTD: "GT:New Horizons"
+      DIFFICULTY: "hard"
+      ENABLE_COMMAND_BLOCK: "true"
+      SPAWN_PROTECTION: 1
+      VIEW_DISTANCE: 8
+      MODE: "0"
+      LEVEL_TYPE: "BIOMESOP"
+      LEVEL: "OmniSlop"
+      ALLOW_FLIGHT: "TRUE"
+      DUMP_SERVER_PROPERTIES: "TRUE"
+      CREATE_CONSOLE_IN_PIPE: "true"
+      WHITELIST: |
+          Kajtek8
+      OPS: |
+          IguruSama
     volumes:
       - gtnh-data:/data
 
@@ -33,15 +44,15 @@ services:
     hostname: gtnh
     restart: unless-stopped
     cap_add:
-      - NET_ADMIN
-      - NET_RAW
+      - NET
+      - RAW
     volumes:
       - gtnh-tailscale-state:/var/lib/tailscale
       - /dev/net/tun:/dev/net/tun
     environment:
       TS_AUTHKEY: ${TS_AUTHKEY_GTNH}
       TS_STATE_DIR: /var/lib/tailscale
-      TS_USERSPACE: false
+      TS_USERSPACE: "false"
 
 volumes:
   gtnh-data:
