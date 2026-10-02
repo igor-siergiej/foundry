@@ -44,8 +44,8 @@ services:
     hostname: gtnh
     restart: unless-stopped
     cap_add:
-      - NET
-      - RAW
+      - NET_ADMIN
+      - NET_RAW
     volumes:
       - gtnh-tailscale-state:/var/lib/tailscale
       - /dev/net/tun:/dev/net/tun
