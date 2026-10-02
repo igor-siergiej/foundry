@@ -15,7 +15,7 @@ services:
       EULA: "TRUE"
       TYPE: GTNH
       GTNH_PACK_VERSION: "2.9.0-RC-1"
-      SKIP_GTNH_UPDATE_CHECK: "true"
+      SKIP_GTNH_UPDATE_CHECK: "false"
       MEMORY: "6G"
       INIT_MEMORY: "6G"
       MAX_MEMORY: "6G"
