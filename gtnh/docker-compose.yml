@@ -2,7 +2,7 @@ name: gtnh
 
 services:
   gtnh:
-    image: igurusama/imapps:gtnh-2.9.0-beta-2
+    image: igurusama/imapps:gtnh-2.9.0-rc-1
     container_name: gtnh
     restart: unless-stopped
     network_mode: "service:gtnh-tailscale"
