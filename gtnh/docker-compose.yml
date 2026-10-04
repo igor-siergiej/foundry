@@ -24,7 +24,7 @@ services:
       DIFFICULTY: "hard"
       ENABLE_COMMAND_BLOCK: "true"
       SPAWN_PROTECTION: 1
-      VIEW_DISTANCE: 8
+      VIEW_DISTANCE: 12
       MODE: "0"
       LEVEL_TYPE: "BIOMESOP"
       LEVEL: "OmniSlop"
