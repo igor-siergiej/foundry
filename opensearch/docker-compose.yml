@@ -1,0 +1,38 @@
+services:
+  opensearch:
+    image: opensearchproject/opensearch:2.19.1
+    container_name: opensearch
+    restart: unless-stopped
+    # Deliberately no `ports:` — internal Docker network only. On-host apps reach it as
+    # http://opensearch:9200 over dokploy-network. Single node, security plugin off, so it must
+    # never be published or routed by Traefik.
+    environment:
+      discovery.type: single-node
+      DISABLE_SECURITY_PLUGIN: 'true'
+      DISABLE_INSTALL_DEMO_CONFIG: 'true'
+      # Heap is half the container limit; the rest is off-heap structures and page cache.
+      OPENSEARCH_JAVA_OPTS: -Xms1g -Xmx1g
+    # Compose apps are not reservation-managed by Dokploy, so the limit lives here.
+    mem_limit: 2g
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+    volumes:
+      - opensearch-data:/usr/share/opensearch/data
+    networks:
+      - dokploy-network
+    healthcheck:
+      test: ['CMD-SHELL', 'curl -sf http://localhost:9200/_cluster/health || exit 1']
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 40s
+
+volumes:
+  # Derived data: shoppingo can rebuild it from MongoDB with `bun run reindex:discovery`.
+  opensearch-data:
+
+networks:
+  dokploy-network:
+    external: true
