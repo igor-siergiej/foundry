@@ -5,13 +5,9 @@ services:
     image: ghcr.io/home-assistant/home-assistant:2024.12.3
     container_name: homeassistant
     restart: unless-stopped
-    cap_add:
-      - NET_ADMIN
-      - NET_RAW
     volumes:
       - ha-config:/config
       - ./configuration.yaml:/config/configuration.yaml
-    privileged: true
     networks:
       - homeassistant
 
