@@ -1,4 +1,20 @@
 services:
+  docker-socket-proxy:
+    # Per SECURITY-AUDIT #10: mount-only :ro is meaningless on a Unix socket —
+    # the Docker API is the same surface. tecnativa/docker-socket-proxy with
+    # CONTAINERS=1 limits the API to /containers, which is all promtail's
+    # docker_sd_configs needs. /var/lib/docker/containers stays as a read bind
+    # for log files (no API access).
+    image: tecnativa/docker-socket-proxy:latest
+    container_name: docker-socket-proxy
+    restart: unless-stopped
+    environment:
+      CONTAINERS: 1
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - monitoring
+
   loki:
     image: grafana/loki:3.3.2
     container_name: loki
@@ -18,13 +34,13 @@ services:
     command: -config.file=/etc/promtail/promtail.yml
     volumes:
       - ./config/promtail/promtail.yml:/etc/promtail/promtail.yml:ro
-      - /var/run/docker.sock:/var/run/docker.sock:ro
       - /var/lib/docker/containers:/var/lib/docker/containers:ro
       - promtail-positions:/var/lib/promtail
     networks:
       - monitoring
     depends_on:
       - loki
+      - docker-socket-proxy
 
   prometheus:
     image: prom/prometheus:v3.2.1
