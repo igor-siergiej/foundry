@@ -17,10 +17,9 @@ services:
     environment:
       DOMAIN: https://vault.imapps.uk
       ADMIN_TOKEN: ${ADMIN_TOKEN}
-      # Bootstrap only: flip to "false" once the one owner account exists (see
-      # docs/README.md#secrets for the exact sequence) — this is a single-user
-      # vault, no reason to leave registration open.
-      SIGNUPS_ALLOWED: "true"
+      # Single-user vault, owner account exists. To bootstrap a fresh vault,
+      # temporarily flip to "true" (see docs/README.md#secrets).
+      SIGNUPS_ALLOWED: "false"
       SIGNUPS_VERIFY: "true"
       INVITATIONS_ALLOWED: "false"
       SHOW_PASSWORD_HINT: "false"

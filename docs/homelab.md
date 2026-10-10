@@ -186,7 +186,7 @@ None of these publish a host port (`ports:` block) — confirmed against the liv
 | mongodb | `mongo:7.0` | 27017, **no host publish, no Traefik route** (internal-only on `dokploy-network`) | shared DB (kivo, shoppingo, jewellery, mixtape). ZFS bind mount. Admin: `docker exec -it mongodb mongosh`, or the socat tunnel in [`../mongodb/README.md`](../mongodb/README.md#remote-access) |
 | minio | `minio:latest` | 9000/9001, **no host publish** — Traefik only: `minio.imapps.uk` → 9000 (S3), `minio-console.imapps.uk` → 9001 (console) | S3 for apps (they use `minio:9000` internally). `minio-data` external volume. Host publishes (LAN, then tailnet) dropped 2026-10-10 |
 | monitoring | loki/promtail/prometheus/cadvisor/node-exporter/grafana/gatus | grafana(Traefik), gatus 8080 | grafana.imapps.uk, gatus.imapps.uk |
-| home-assistant | `home-assistant:2024.12.3` | 8123 | `privileged`, NET_ADMIN/NET_RAW |
+| home-assistant | `home-assistant:2024.12.3` | 8123 | unprivileged bridge container (no host devices; `privileged` + NET_ADMIN/NET_RAW dropped 2026-10-10) |
 | vaultwarden | `vaultwarden/server:1.37.2` | vault.imapps.uk | self-hosted secrets/password vault, replaces plaintext `~/notes/secrets/tokens.md`; NFS-backed (`/mnt/tank/shared/vaultwarden`); see [`README.md`](./README.md#secrets) |
 
 ### `sentinel`
