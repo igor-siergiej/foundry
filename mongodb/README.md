@@ -47,6 +47,25 @@ EOF
 docker exec mongodb mongosh "mongodb://shoppingo_production_user:<APP_PASSWORD>@localhost:27017/shoppingo_production?authSource=shoppingo_production"
 ```
 
+## Remote Access
+
+MongoDB publishes no host port and has no Traefik route — it is reachable only
+from containers on `dokploy-network` (apps use `mongodb:27017`). For a shell,
+run `docker exec -it mongodb mongosh ...` on the host.
+
+For a GUI client (Compass etc.) on another machine, start a throwaway forwarder
+bound to the host's loopback, then SSH-tunnel to it:
+
+```bash
+# on foundry
+docker run --rm -d --name mongo-tunnel --network dokploy-network \
+  -p 127.0.0.1:27018:27017 alpine/socat TCP-LISTEN:27017,fork TCP:mongodb:27017
+# on your machine
+ssh -L 27017:127.0.0.1:27018 home@foundry
+# connect to mongodb://...@localhost:27017/?authSource=admin, then:
+docker stop mongo-tunnel   # on foundry, when done
+```
+
 ## NFS Persistence (TrueNAS)
 
 Data is currently stored locally. To switch to NFS persistence:

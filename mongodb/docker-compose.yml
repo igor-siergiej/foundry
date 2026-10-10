@@ -3,10 +3,10 @@ services:
     image: mongo:7.0
     container_name: mongodb
     restart: unless-stopped
-    ports:
-      # tailnet only. On-host apps reach this as mongodb:27017 over
-      # dokploy-network — never via a host IP, which a DHCP lease can move.
-      - '100.79.92.93:27017:27017'   # tailscale: remote debugging over tailnet
+    # No host ports and no Traefik route: Mongo speaks its own wire protocol,
+    # so there is no HTTP ingress to put in front of it. Apps reach it as
+    # mongodb:27017 over dokploy-network. Admin access: `docker exec -it
+    # mongodb mongosh` on the host (see README for a GUI tunnel).
     environment:
       MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USER}
       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD}

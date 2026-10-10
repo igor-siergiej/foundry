@@ -3,12 +3,10 @@ services:
     image: minio/minio:latest
     container_name: minio
     restart: unless-stopped
-    ports:
-      # tailnet only. On-host apps reach this as minio:9000 over
-      # dokploy-network — never via a host IP, which a DHCP lease can move.
-      # S3 API is also routed publicly by Traefik at minio.imapps.uk.
-      - '100.79.92.93:9000:9000'    # tailscale: remote access over tailnet
-      - '100.79.92.93:9001:9001'    # tailscale: MinIO console
+    # No host ports. Apps reach the S3 API as minio:9000 over dokploy-network;
+    # everything else goes through Traefik (Dokploy domains on this compose):
+    #   minio.imapps.uk         -> :9000 S3 API
+    #   minio-console.imapps.uk -> :9001 web console
     environment:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
