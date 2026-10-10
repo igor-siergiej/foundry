@@ -183,8 +183,8 @@ None of these publish a host port (`ports:` block) — confirmed against the liv
 | cloudflared | (app) | — | the tunnel |
 | tailscale | `tailscale:latest` | host net | `network_mode: host`, advertises route `192.168.68.0/24` |
 | blocky | `spx01/blocky:latest` | 53 (host-published, LAN DNS) | split-horizon DNS; web UI/metrics now internal-only via `dokploy-network` (`:4000` host publish dropped in the 2026-07-04 hardening pass) |
-| mongodb | `mongo:7.0` | 27017, host-published bound to `192.168.68.17` + `100.79.92.93` only | shared DB (kivo, shoppingo, jewellery, mixtape). NFS-backed |
-| minio | `minio:latest` | 9000/9001, host-published bound to `192.168.68.17` + `100.79.92.93` only | S3 for apps. `minio-data` external volume |
+| mongodb | `mongo:7.0` | 27017, **no host publish, no Traefik route** (internal-only on `dokploy-network`) | shared DB (kivo, shoppingo, jewellery, mixtape). ZFS bind mount. Admin: `docker exec -it mongodb mongosh`, or the socat tunnel in [`../mongodb/README.md`](../mongodb/README.md#remote-access) |
+| minio | `minio:latest` | 9000/9001, **no host publish** — Traefik only: `minio.imapps.uk` → 9000 (S3), `minio-console.imapps.uk` → 9001 (console) | S3 for apps (they use `minio:9000` internally). `minio-data` external volume. Host publishes (LAN, then tailnet) dropped 2026-10-10 |
 | monitoring | loki/promtail/prometheus/cadvisor/node-exporter/grafana/gatus | grafana(Traefik), gatus 8080 | grafana.imapps.uk, gatus.imapps.uk |
 | home-assistant | `home-assistant:2024.12.3` | 8123 | `privileged`, NET_ADMIN/NET_RAW |
 | vaultwarden | `vaultwarden/server:1.37.2` | vault.imapps.uk | self-hosted secrets/password vault, replaces plaintext `~/notes/secrets/tokens.md`; NFS-backed (`/mnt/tank/shared/vaultwarden`); see [`README.md`](./README.md#secrets) |
@@ -196,12 +196,12 @@ None of these publish a host port (`ports:` block) — confirmed against the liv
 
 ## 6. Cloudflare Access model (set 2026, default-deny)
 
-- **Wildcard `*.imapps.uk`** app = require owner email (`igorsiergiej@gmail.com` + `gregormai@mail.de`). Catches everything not explicitly bypassed — incl. grafana, home-assistant, minio/mongo HTTP routes.
+- **Wildcard `*.imapps.uk`** app = require owner email (`igorsiergiej@gmail.com` + `gregormai@mail.de`). Catches everything not explicitly bypassed — incl. grafana, home-assistant, minio + minio-console.
 - **Explicit Bypass** apps (public / own-auth): immich, shoppingo, jewellery-catalogue, kivo, mixtape, audiobookshelf, jellyfin, navidrome, gatus.
 - **dokploy** + **sentinel** keep their own require-email apps.
 - immich has a rate-limit rule on `/auth/login` (15 req / 10s / IP → block).
 - Reminder: Access is a **remote-only** gate (see §2). On LAN and tailnet, own-auth is the only protection.
-- **Widened 2026-09-22:** the Deco now points all DHCP clients at blocky, so *every device on the WiFi* — including guests and IoT — takes the LAN path and bypasses Access. Previously this was limited to tailnet devices. Anything whose only gate is the wildcard Access app (grafana, home-assistant, minio/mongo HTTP routes) is now protected on-LAN solely by its own login.
+- **Widened 2026-09-22:** the Deco now points all DHCP clients at blocky, so *every device on the WiFi* — including guests and IoT — takes the LAN path and bypasses Access. Previously this was limited to tailnet devices. Anything whose only gate is the wildcard Access app (grafana, home-assistant, minio + minio-console) is now protected on-LAN solely by its own login.
 
 ## 7. Storage
 
