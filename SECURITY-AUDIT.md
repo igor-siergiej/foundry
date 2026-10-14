@@ -76,13 +76,16 @@ dashboard.
 `:ro` on a socket bind does not restrict the API — promtail can create privileged containers. Put a
 read-only socket proxy (e.g. `tecnativa/docker-socket-proxy` with only `CONTAINERS=1`) in front.
 
-### 11. Filestash (`minio-gallery`) admin console has no password — HIGH
-Found 2026-10-14. `/healthz` reports `admin.auth[size=0]`; `http://minio-gallery.imapps.uk/admin/`
-redirects to `/admin/setup` and `/admin/api/config` answers unauthenticated. Remote traffic is gated
-by the wildcard Access app, but any LAN/WiFi device can claim the admin account and read or rewrite
-the configured connections (7, likely including MinIO credentials). The router is also on the `web`
-(HTTP) entrypoint only. Fix: set the admin password via `/admin/setup` (or the `ADMIN_PASSWORD`
-env), then move the router to `websecure`.
+### 11. `minio-gallery` routed on plain HTTP only — LOW
+The Traefik router for `minio-gallery.imapps.uk` uses the `web` entrypoint only, so on the LAN the
+Filestash admin login goes over plaintext HTTP. Remote traffic is TLS via Cloudflare. Fix: move the
+router to `websecure` with the letsencrypt certresolver.
+
+## Closed 2026-10-14
+
+### Filestash (`minio-gallery`) admin console had no password — was HIGH
+`/healthz` reported `admin.auth[size=0]` and `/admin/api/config` answered unauthenticated from the
+LAN. Admin password set 2026-10-14; `/admin/api/config` now returns 403.
 
 ## Closed 2026-10-10
 
