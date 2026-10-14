@@ -144,7 +144,10 @@ services:
     environment:
       DISCORD_WEBHOOK_URL: ${DISCORD_WEBHOOK_URL}
     volumes:
-      - ../gatus-config.yml:/config/config.yaml:ro
+      # Mount the directory, not the file: a git pull replaces config.yaml with
+      # a new inode, which a single-file bind mount never sees. Gatus
+      # hot-reloads the file when it changes.
+      - ./config/gatus:/config:ro
       - gatus-data:/data
     networks:
       - dokploy-network

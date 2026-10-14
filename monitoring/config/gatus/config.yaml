@@ -166,7 +166,7 @@ endpoints:
 
   - name: Kivo (API)
     group: Apps
-    url: http://kivo-api-1pae1e:3008/health
+    url: https://kivo.imapps.uk/health
     interval: 60s
     timeout: 10s
     conditions:
@@ -205,12 +205,13 @@ endpoints:
     alerts:
       - type: discord
 
-  # Dokploy swarm apps are addressed by their service name (appName incl. the
-  # random suffix), same as Kivo above. If an app is recreated with a new
-  # suffix, update the host here and in monitoring/config/prometheus.
+  # Dokploy swarm apps are checked through their public hostname (blocky ->
+  # Traefik), not the swarm service name: the name carries a random suffix
+  # that changes if the app is recreated, and this path also catches a
+  # missing Traefik dynamic file.
   - name: Shoppingo (API)
     group: Apps
-    url: http://shoppingo-api-zlusv1:4001/api/health
+    url: https://shoppingo.imapps.uk/api/health
     interval: 60s
     timeout: 10s
     conditions:
@@ -221,7 +222,7 @@ endpoints:
 
   - name: Shoppingo (Web)
     group: Apps
-    url: http://shoppingo-web-hbnhxf:3000/
+    url: https://shoppingo.imapps.uk/
     interval: 60s
     timeout: 10s
     conditions:
@@ -231,7 +232,7 @@ endpoints:
 
   - name: Jewellery Catalogue (API)
     group: Apps
-    url: http://apps-jewellerycatalogueapi-e7gjl7:4001/api/health
+    url: https://jewellery-catalogue.imapps.uk/api/health
     interval: 60s
     timeout: 10s
     conditions:
@@ -241,7 +242,7 @@ endpoints:
 
   - name: Jewellery Catalogue (Web)
     group: Apps
-    url: http://apps-jewellerycatalogueweb-iltgmg:3000/
+    url: https://jewellery-catalogue.imapps.uk/
     interval: 60s
     timeout: 10s
     conditions:
@@ -272,6 +273,8 @@ endpoints:
 
   - name: Sentinel (API)
     group: Apps
+    # Only exposes /health, which Traefik routes to the web app, so this one
+    # still uses the swarm service name. Update it if sentinel-api is recreated.
     url: http://sentinel-api-vnfxap:4001/health
     interval: 60s
     timeout: 10s
@@ -283,7 +286,7 @@ endpoints:
 
   - name: Sentinel (Web)
     group: Apps
-    url: http://sentinel-web-jjol8g:3000/
+    url: https://sentinel.imapps.uk/
     interval: 60s
     timeout: 10s
     conditions:
