@@ -10,7 +10,7 @@ Docker Compose stacks for the `imapps.uk` Dokploy homelab, running on the host `
 - Dokploy deploys from GitHub `main` HEAD. To change a compose file, commit, push (`dangerouslyDisableSandbox: true`), then run `compose-deploy` through `dokploy-mcp` explicitly. The autoDeploy webhook is unreliable.
 - `blocky` is the whole LAN's DNS. Never leave it down.
 - Never leave `BW_SESSION` exported beyond a single render step. Vaultwarden runs on this host.
-- New service: add a Gatus endpoint in `gatus-config.yml` and a row in `docs/homelab.md` §5 in the same change.
+- New service: add a Gatus endpoint in `monitoring/config/gatus/config.yaml` and a row in `docs/homelab.md` §5 in the same change.
 
 ## Layout
 One directory per stack (`blocky/`, `monitoring/`, `immich/`, …), each with a `docker-compose.yml`. Security findings: `SECURITY-AUDIT.md`.
