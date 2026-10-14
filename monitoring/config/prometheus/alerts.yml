@@ -1,0 +1,27 @@
+# No Alertmanager: these surface in Prometheus (/alerts), Grafana, and
+# `homelab-status`. Discord paging is still Gatus-only.
+groups:
+  - name: homelab
+    rules:
+      - alert: TargetDown
+        expr: up == 0
+        for: 5m
+        annotations:
+          summary: "{{ $labels.job }} scrape target {{ $labels.instance }} is down"
+
+      - alert: HostDiskSpaceLow
+        expr: node_filesystem_avail_bytes{mountpoint=~"/|/mnt/tank/shared"} / node_filesystem_size_bytes < 0.15
+        for: 15m
+        annotations:
+          summary: "{{ $labels.mountpoint }} has {{ $value | humanizePercentage }} free"
+
+      - alert: HostMemoryHigh
+        expr: node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes < 0.10
+        for: 10m
+        annotations:
+          summary: "Host has {{ $value | humanizePercentage }} memory available"
+
+      - alert: ContainerOOMKilled
+        expr: increase(container_oom_events_total{name!=""}[15m]) > 0
+        annotations:
+          summary: "{{ $labels.name }} was OOM-killed"

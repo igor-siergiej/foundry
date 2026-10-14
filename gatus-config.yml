@@ -204,3 +204,158 @@ endpoints:
       - "[STATUS] == 200"
     alerts:
       - type: discord
+
+  # Dokploy swarm apps are addressed by their service name (appName incl. the
+  # random suffix), same as Kivo above. If an app is recreated with a new
+  # suffix, update the host here and in monitoring/config/prometheus.
+  - name: Shoppingo (API)
+    group: Apps
+    url: http://shoppingo-api-zlusv1:4001/api/health
+    interval: 60s
+    timeout: 10s
+    conditions:
+      - "[STATUS] == 200"
+      - "[BODY].status == healthy"
+    alerts:
+      - type: discord
+
+  - name: Shoppingo (Web)
+    group: Apps
+    url: http://shoppingo-web-hbnhxf:3000/
+    interval: 60s
+    timeout: 10s
+    conditions:
+      - "[STATUS] == 200"
+    alerts:
+      - type: discord
+
+  - name: Jewellery Catalogue (API)
+    group: Apps
+    url: http://apps-jewellerycatalogueapi-e7gjl7:4001/api/health
+    interval: 60s
+    timeout: 10s
+    conditions:
+      - "[STATUS] == 200"
+    alerts:
+      - type: discord
+
+  - name: Jewellery Catalogue (Web)
+    group: Apps
+    url: http://apps-jewellerycatalogueweb-iltgmg:3000/
+    interval: 60s
+    timeout: 10s
+    conditions:
+      - "[STATUS] == 200"
+    alerts:
+      - type: discord
+
+  - name: Mixtape (API)
+    group: Apps
+    url: http://mixtape-api:3001/api/health
+    interval: 60s
+    timeout: 10s
+    conditions:
+      - "[STATUS] == 200"
+      - "[BODY].status == healthy"
+    alerts:
+      - type: discord
+
+  - name: Mixtape (Web)
+    group: Apps
+    url: http://mixtape-web:3000/
+    interval: 60s
+    timeout: 10s
+    conditions:
+      - "[STATUS] == 200"
+    alerts:
+      - type: discord
+
+  - name: Sentinel (API)
+    group: Apps
+    url: http://sentinel-api-vnfxap:4001/health
+    interval: 60s
+    timeout: 10s
+    conditions:
+      - "[STATUS] == 200"
+      - "[BODY].status == healthy"
+    alerts:
+      - type: discord
+
+  - name: Sentinel (Web)
+    group: Apps
+    url: http://sentinel-web-jjol8g:3000/
+    interval: 60s
+    timeout: 10s
+    conditions:
+      - "[STATUS] == 200"
+    alerts:
+      - type: discord
+
+  - name: GTNH (Minecraft)
+    group: Apps
+    # Lives only on the tailnet (network_mode: service:gtnh-tailscale);
+    # blocky forwards ts.net to MagicDNS so this resolves from bridge nets.
+    url: tcp://gtnh.tail2d4575.ts.net:25565
+    interval: 120s
+    timeout: 10s
+    conditions:
+      - "[CONNECTED] == true"
+    alerts:
+      - type: discord
+
+  - name: Dokploy
+    group: Core
+    url: http://dokploy:3000/api/health
+    interval: 60s
+    timeout: 10s
+    conditions:
+      - "[STATUS] == 200"
+    alerts:
+      - type: discord
+
+  - name: Cloudflared Tunnel (remote path)
+    group: Core
+    # Resolve via 1.1.1.1 instead of blocky so the request takes the real
+    # remote path: CF edge -> tunnel -> Traefik. gatus is an Access bypass app.
+    url: https://gatus.imapps.uk/health
+    client:
+      dns-resolver: tcp://1.1.1.1:53
+    interval: 120s
+    timeout: 15s
+    conditions:
+      - "[STATUS] == 200"
+    alerts:
+      - type: discord
+
+  - name: OpenSearch
+    group: Storage
+    # Single node, so replicas never allocate and yellow is normal.
+    url: http://opensearch:9200/_cluster/health
+    interval: 60s
+    timeout: 10s
+    conditions:
+      - "[STATUS] == 200"
+      - "[BODY].status != red"
+    alerts:
+      - type: discord
+
+  - name: MinIO Gallery
+    group: Storage
+    url: http://minio-gallery:8334/healthz
+    interval: 60s
+    timeout: 10s
+    conditions:
+      - "[STATUS] == 200"
+    alerts:
+      - type: discord
+
+  - name: Resilio Sync
+    group: Storage
+    # GUI requires login; 401 means the service is up.
+    url: http://resilio-sync:8888/gui/
+    interval: 60s
+    timeout: 10s
+    conditions:
+      - "[STATUS] == 401"
+    alerts:
+      - type: discord
