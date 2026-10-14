@@ -192,7 +192,7 @@ None of these publish a host port (`ports:` block) — confirmed against the liv
 | vaultwarden | `vaultwarden/server:1.37.2` | vault.imapps.uk | self-hosted secrets/password vault, replaces plaintext `~/notes/secrets/tokens.md`; NFS-backed (`/mnt/tank/shared/vaultwarden`); see [`README.md`](./README.md#secrets) |
 
 | opensearch | `opensearch:2.19.1` | 9200, internal-only on `dokploy-network`, no Traefik route | shoppingo recipe-discovery index; derived from mongo, not backed up; security plugin off. See [`../opensearch/README.md`](../opensearch/README.md) |
-| resilio-sync | `linuxserver/resilio-sync:latest` | 8888 (GUI), 55555 tcp+udp — published on the **tailnet IP only** | syncs the notes dir `/mnt/tank/shared/notes` across devices |
+| resilio-sync | `resilio/sync:latest` (runs as uid 1000) | 8888 (GUI), 55555 tcp+udp — published on the **tailnet IP only** | syncs the notes dir `/mnt/tank/shared/notes` across devices |
 | minio-gallery | `machines/filestash:latest` | 8334; Traefik `minio-gallery.imapps.uk` on the **`web` (HTTP) entrypoint only** | Filestash browser over MinIO; own admin login. HTTP-only router, see `../SECURITY-AUDIT.md` #11 |
 
 ### `gtnh` (game server)
