@@ -4,3 +4,7 @@
 .DS_Store
 Thumbs.db
 .env
+
+# GTNH server files live in the gtnh-data volume; only the compose file is tracked
+gtnh/*
+!gtnh/docker-compose.yml

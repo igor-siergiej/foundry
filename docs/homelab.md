@@ -16,7 +16,9 @@ Agent-oriented map of how the Dokploy homelab fits together: topology, deploy fl
 | `192.168.68.13` | — | Responds to ICMP only, no open service ports; **not** an active dependency — see §7. Stale from before the 2026-08-20 bare-metal migration. |
 | LAN gateway | `192.168.68.1` | |
 
-Single Docker host. No swarm cluster. Everything is Docker Compose stacks managed by Dokploy.
+Single Docker host, swarm mode active with one node. Dokploy runs its `apps`/`sentinel` applications (and itself, `cloudflared`) as swarm services, so their containers are named `<appName>.1.<taskId>` and are addressed on `dokploy-network` by the service name (`shoppingo-api-zlusv1`). Everything else is a plain Docker Compose stack managed by Dokploy.
+
+**Live health:** run `homelab-status` (dotfiles `bin/`) before trusting anything here; `--coverage` lists running services with no Gatus check or no row in §5.
 
 > Host was reinstalled bare-metal on 2026-08-20 (previously Proxmox), which changed LAN/tailnet IPs from `.18`/`100.85.189.60` to the values above — confirmed against the live `mongodb`/`minio`/`blocky` compose files and the `blocky` fix-hardcoded-IPs deployment, not from a prior copy of this doc. If you find another IP reference anywhere (scripts, other notes), it's stale — this file and the live compose files are the source of truth.
 
@@ -173,7 +175,7 @@ Org `QhuDFk1KJXDHR2xy0nwcK`. 4 projects, all in `production` environment.
 | jellyfin | `jellyfin:10.9.11` | 8096 | jellyfin.imapps.uk — bypass |
 | navidrome | `navidrome:latest` | 4533 | navidrome.imapps.uk — bypass |
 | audiobookshelf | `audiobookshelf:latest` | 13378 | audiobookshelf.imapps.uk — bypass |
-| mixtape | `igurusama/imapps:mixtape-{api,web}-latest` | 3000 | mixtape.imapps.uk — bypass; YouTube→mp3 into Navidrome NFS share |
+| mixtape | `igurusama/imapps:mixtape-{api,web}-latest` | web 3000, api 3001 | mixtape.imapps.uk — bypass; YouTube→mp3 into Navidrome NFS share |
 
 None of these publish a host port (`ports:` block) — confirmed against the live compose files. "Container port" is what Traefik routes to internally via `dokploy-network`; nothing here is reachable by hitting the host IP directly on that port. (This was tightened in the 2026-07-04 hardening pass — see git log on this repo for `harden: remove 0.0.0.0 host ports` if you need the before/after.)
 
@@ -188,6 +190,19 @@ None of these publish a host port (`ports:` block) — confirmed against the liv
 | monitoring | loki/promtail/prometheus/cadvisor/node-exporter/grafana/gatus | grafana(Traefik), gatus 8080 | grafana.imapps.uk, gatus.imapps.uk |
 | home-assistant | `home-assistant:2024.12.3` | 8123 | unprivileged bridge container (no host devices; `privileged` + NET_ADMIN/NET_RAW dropped 2026-10-10) |
 | vaultwarden | `vaultwarden/server:1.37.2` | vault.imapps.uk | self-hosted secrets/password vault, replaces plaintext `~/notes/secrets/tokens.md`; NFS-backed (`/mnt/tank/shared/vaultwarden`); see [`README.md`](./README.md#secrets) |
+
+| opensearch | `opensearch:2.19.1` | 9200, internal-only on `dokploy-network`, no Traefik route | shoppingo recipe-discovery index; derived from mongo, not backed up; security plugin off. See [`../opensearch/README.md`](../opensearch/README.md) |
+| resilio-sync | `linuxserver/resilio-sync:latest` | 8888 (GUI), 55555 tcp+udp — published on the **tailnet IP only** | syncs the notes dir `/mnt/tank/shared/notes` across devices |
+| minio-gallery | `machines/filestash:latest` | 8334; Traefik `minio-gallery.imapps.uk` on the **`web` (HTTP) entrypoint only** | Filestash browser over MinIO. **Admin password unset** — see `../SECURITY-AUDIT.md` #11 |
+
+### `gtnh` (game server)
+| Service | Image | Ingress | Notes |
+|---|---|---|---|
+| gtnh | `itzg/minecraft-server:java21` (`TYPE: GTNH`) | tailnet only: `gtnh.tail2d4575.ts.net:25565` | GregTech New Horizons. `network_mode: service:gtnh-tailscale` — no `dokploy-network`, no Traefik. Whitelisted. Only `gtnh/docker-compose.yml` is tracked; the other files in `gtnh/` are local server leftovers (gitignored) |
+| gtnh-tailscale | `tailscale/tailscale:latest` | own tailnet node `gtnh` | `TS_AUTHKEY_GTNH`; see `../SECURITY-AUDIT.md` #1 (tailnet ACL) |
+
+### Not Dokploy-managed (local dev)
+`dev-mongodb`, `dev-minio`, `dev-navidrome` are local development containers bound to `127.0.0.1` only (`dev-navidrome` from `~/imapps/utils/docker`). Not production, not monitored; safe to ignore in health checks.
 
 ### `sentinel`
 | Service | Host | Notes |
