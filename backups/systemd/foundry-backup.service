@@ -1,0 +1,22 @@
+[Unit]
+Description=Foundry nightly backups
+# After network-online so docker can find mongo/minio container IPs.
+After=network-online.target docker.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=root
+# root because most backup helpers need to read /mnt/tank (ZFS mount owned
+# by root) and exec into other users' containers.
+WorkingDirectory=/home/home/imapps/foundry
+EnvironmentFile=/etc/foundry/backup.env
+Environment=PATH=/home/home/.bun/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+ExecStart=/home/home/imapps/foundry/backups/bin/backup.sh
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=foundry-backup
+TimeoutStartSec=60min
+
+[Install]
+WantedBy=multi-user.target

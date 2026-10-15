@@ -1,0 +1,18 @@
+[Unit]
+Description=Foundry hourly stale-backup check
+After=network-online.target
+
+[Service]
+Type=oneshot
+User=root
+WorkingDirectory=/home/home/imapps/foundry
+EnvironmentFile=/etc/foundry/backup.env
+Environment=PATH=/home/home/.bun/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+ExecStart=/home/home/imapps/foundry/backups/bin/stale-check.sh
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=foundry-stale-check
+TimeoutStartSec=5min
+
+[Install]
+WantedBy=multi-user.target

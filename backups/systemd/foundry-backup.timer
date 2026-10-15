@@ -1,0 +1,12 @@
+[Unit]
+Description=Run foundry nightly backup at 02:00
+# Offset from the smoke timer (03:15) so a backup-and-smoke cycle completes
+# in under 90 minutes even if either runs long.
+
+[Timer]
+OnCalendar=*-*-* 02:00:00
+Persistent=true
+Unit=foundry-backup.service
+
+[Install]
+WantedBy=timers.target
