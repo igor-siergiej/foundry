@@ -5,6 +5,9 @@
 Thumbs.db
 .env
 
+# Per-machine Claude Code settings (local-only Paperclip hooks/permissions).
+.claude/
+
 # GTNH server files live in the gtnh-data volume; only the compose file is tracked
 gtnh/*
 !gtnh/docker-compose.yml

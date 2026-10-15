@@ -1,0 +1,27 @@
+[Unit]
+Description=Foundry nightly prod smoke routine
+# After network-online so kanban-cli can reach vault.imapps.uk + prod apps.
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=home
+Group=home
+WorkingDirectory=/home/home/imapps/foundry
+EnvironmentFile=/etc/foundry/smoke.env
+# PATH limited on Purpose=oneshot units in some systemd versions; set explicitly.
+Environment=PATH=/home/home/.bun/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+ExecStart=/home/home/imapps/foundry/smoke/bin/run-smoke.sh
+# Captured for triage — rotated by journald.
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=foundry-smoke
+# Hard cap so a hung app doesn't block the next run.
+TimeoutStartSec=30min
+# Vaultwarden lives on this host — never leave BW_SESSION exported beyond a
+# single render step (AGENTS.md hard rule). The service reads its env from
+# /etc/foundry/smoke.env, which is rendered once by hand, never live.
+
+[Install]
+WantedBy=multi-user.target
