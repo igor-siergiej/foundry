@@ -1,0 +1,13 @@
+[Unit]
+Description=Run foundry nightly prod smoke routine at 03:15
+# Gatus runs on its own cron; offset by a few minutes so the Gatus alert
+# (if any) fires first and triage has a fresh "is it just Gatus?" datapoint.
+
+[Timer]
+OnCalendar=*-*-* 03:15:00
+# Catch up after a long downtime (host was off for hours).
+Persistent=true
+Unit=foundry-smoke.service
+
+[Install]
+WantedBy=timers.target

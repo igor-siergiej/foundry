@@ -224,7 +224,31 @@ None of these publish a host port (`ports:` block) — confirmed against the liv
 - `192.168.68.13` is **not** the storage backend — that claim was stale, left over from before the 2026-08-20 bare-metal migration. The device still answers ICMP intermittently but has no open ports and nothing in this repo mounts from it. Gatus's "NFS Server" check against it was removed 2026-09-28 for exactly this reason.
 - **Local (host-disk) volumes with no NFS + no backup:** `immich-pgdata`, `minio-data` (external). Host disk loss = data loss. See `../SECURITY-AUDIT.md` #5.
 
-## 8. Gotchas checklist (for future agents)
+## 8. Nightly prod smoke routine
+
+A `systemd` timer (`smoke/systemd/foundry-smoke.timer`) runs nightly at
+**03:15** and invokes `smoke/bin/run-smoke.sh`. The script shells out to
+`kanban-cli e2e live <repo> --url <prod>` for each of shoppingo,
+jewellery-catalogue, kivo and mixtape — which by default runs only that
+repo's `@smoke`-tagged Playwright tests against production. Gatus is the
+fast "is it up at all" layer; this is the nightly "does the actual flow
+still work" layer (the failures Gatus can't see: images 404/401, the
+shoppingo fal key stale, a redirect misconfigured, etc.).
+
+- One **Discord alert per run** (not per app) summarises every failing
+  app with: failing test names, a 40-line container log tail from the
+  matching app container, and the last 3 Dokploy deploys for that app.
+- Green runs stay silent — exit 0, no message.
+- Each app needs a dedicated test account whose creds live in Vaultwarden
+  (`smoke.<app>.account` items, fed via `bw-run` at test time). The
+  routine **does not** create these; create them by hand following
+  `docs/secrets.md`.
+- Env file `/etc/foundry/smoke.env` (mode 600, root) holds the Discord
+  webhook URL. Rendered once by hand; the systemd unit reads it via
+  `EnvironmentFile=`. No `BW_SESSION` exported from the service.
+- Deploy instructions and full failure-mode notes: `../smoke/README.md`.
+
+## 9. Gotchas checklist (for future agents)
 
 - [ ] Compose change → commit + push (`dangerouslyDisableSandbox:true`) → **explicit `compose-deploy`** (webhook unreliable).
 - [ ] dokploy/cloudflare/grafana/tailscale/trello are `mcp-cli`-only, not deferred tools — see §4.
@@ -241,3 +265,4 @@ None of these publish a host port (`ports:` block) — confirmed against the liv
 - [ ] **Drifted again, found 2026-09-28:** doc claimed "most volumes are NFS on the NAS `192.168.68.13`" — false, every compose `driver_opts` is a local bind mount to `zpool tank`, and `.13` has no open ports. Also found: Gatus's bare-apex `https://imapps.uk` cert check always failed (Traefik has no router for the apex host, only `*.imapps.uk`, so it serves Traefik's default self-signed cert) and its MinIO check hit `host.docker.internal:9000`, which MinIO doesn't publish on (bound to `192.168.68.17`/`100.79.92.93` only). Fixed in the Gatus config (now `monitoring/config/gatus/config.yaml`): dropped the NFS + apex checks, repointed MinIO at `minio:9000` over `dokploy-network`.
 - [ ] **Gatus config lives at `monitoring/config/gatus/config.yaml`, mounted as a directory** so Gatus hot-reloads it after a deploy. It used to be a single-file bind mount of `gatus-config.yml`, which never saw the file git replaced, so new checks silently didn't load until a manual restart (2026-10-14). `homelab-status` now flags a mismatch between deployed and live check counts. Dokploy apps are checked via their public hostname (`https://<app>.imapps.uk/...`), not the suffixed swarm service name; the exception is sentinel-api, whose `/health` isn't reachable through Traefik.
 - [ ] **This homelab and `taisei-karate` (AWS) share no infrastructure** — different clouds, different auth models, different deploy pipelines. See [`taisei-karate.md`](./taisei-karate.md).
+- [ ] **Nightly smoke tests reuse `kanban-cli e2e live`** — same scoped `@smoke` filter each repo declares in `.kanban-cli.json` `e2e.smokeGrep`. An app with no `.kanban-cli.json` is logged-and-skipped, not failed. Don't add `@smoke` tags speculatively; the smoke tier runs against production.
