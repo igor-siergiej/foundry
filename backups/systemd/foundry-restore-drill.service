@@ -1,0 +1,19 @@
+[Unit]
+Description=Foundry weekly restore drill
+After=foundry-backup.service network-online.target docker.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=root
+WorkingDirectory=/home/home/imapps/foundry
+EnvironmentFile=/etc/foundry/backup.env
+Environment=PATH=/home/home/.bun/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+ExecStart=/home/home/imapps/foundry/backups/bin/restore-drill.sh
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=foundry-restore-drill
+TimeoutStartSec=90min
+
+[Install]
+WantedBy=multi-user.target
