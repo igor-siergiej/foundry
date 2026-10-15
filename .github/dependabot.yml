@@ -1,0 +1,58 @@
+# Dependabot for foundry (homelab IaC).
+#
+# foundry is purely Docker-Compose + docs + cron scripts; there is no
+# application package.json or requirements.txt here. The only deps that
+# matter are the Docker images in each <stack>/docker-compose.yml —
+# SECURITY-AUDIT.md #8. Adding Dependabot for docker closes that gap
+# without paying for Renovate.
+#
+# Auto-merge behaviour is governed by .github/workflows/dependabot-merge.yml:
+# patch-level bumps auto-merge, minor and major do not and become manual
+# PRs to review.
+
+version: 2
+
+updates:
+  # SECURITY-AUDIT #8: the `:latest` images in compose files. Dependabot
+  # can't track a literal `:latest` (no version to compare against) but
+  # will track a digest-pinned or semver tag. The expected workflow:
+  # 1. The first run after this PR lands opens a tracking-PR per compose
+  #    directory, pinning each image to its current upstream tag (the
+  #    manual step this commit doesn't do — see docs/dependency-sweep.md).
+  # 2. From then on, every upstream release becomes a Dependabot PR.
+  # 3. Patch + minor auto-merge; major becomes a Backlog card.
+  - package-ecosystem: docker
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "04:00"
+    open-pull-requests-limit: 10
+    labels:
+      - dependencies
+      - compose
+    commit-message:
+      prefix: "compose"
+    groups:
+      patch:
+        applies-to: version-updates
+        update-types:
+          - minor
+          - patch
+      # SECURITY-AUDIT #6: minio is the only `:latest` image that's also
+      # stuck on a frozen upstream. Keep its updates visible at PR level,
+      # not auto-merged, until the image situation is decided.
+
+  # GitHub Actions versions in .github/workflows/*.yml.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "04:00"
+    open-pull-requests-limit: 5
+    labels:
+      - dependencies
+      - ci
+    commit-message:
+      prefix: "ci"
