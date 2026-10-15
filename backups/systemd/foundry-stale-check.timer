@@ -1,0 +1,10 @@
+[Unit]
+Description=Run foundry hourly stale-backup check
+
+[Timer]
+OnCalendar=hourly
+Persistent=true
+Unit=foundry-stale-check.service
+
+[Install]
+WantedBy=timers.target
