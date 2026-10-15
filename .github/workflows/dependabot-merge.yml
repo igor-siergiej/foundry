@@ -1,0 +1,60 @@
+name: dependabot-merge
+
+# Auto-merge Dependabot PRs labeled `dependencies` whose update type is
+# patch or minor. Major bumps (and anything Dependabot flags as a
+# security advisory with a major version jump) stay as manual PRs.
+#
+# Why this exists separately from the Dependabot config: Dependabot
+# doesn't decide merge policy — it just opens PRs. The "merge patch +
+# minor" decision is a repo-level policy, so it lives here.
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  dependabot:
+    if: github.actor == 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fetch metadata
+        id: metadata
+        uses: dependabot/fetch-metadata@v2
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Auto-merge patch / minor docker + ci bumps
+        if: |
+          steps.metadata.outputs.update-type == 'patch' ||
+          steps.metadata.outputs.update-type == 'minor'
+        run: gh pr merge --auto --squash "$PR_URL"
+        env:
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Card on major bumps
+        if: steps.metadata.outputs.update-type == 'major'
+        run: |
+          echo "## Major Dependabot bump needs review"
+          gh pr edit "$PR_URL" \
+            --add-label "needs-major-review" \
+            --add-label "dependencies" \
+            --body "/kanban This is a major Dependabot bump. Review and either merge manually or convert to a Backlog card."
+        env:
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Card on security updates
+        if: steps.metadata.outputs.update-type == 'security'
+        run: |
+          gh pr edit "$PR_URL" \
+            --add-label "security" \
+            --add-label "dependencies" \
+            --body "/kanban Security Dependabot bump — review and merge ASAP."
+        env:
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
