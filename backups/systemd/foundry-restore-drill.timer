@@ -1,0 +1,10 @@
+[Unit]
+Description=Run foundry weekly restore drill Sunday at 02:30
+
+[Timer]
+OnCalendar=Sun *-*-* 02:30:00
+Persistent=true
+Unit=foundry-restore-drill.service
+
+[Install]
+WantedBy=timers.target

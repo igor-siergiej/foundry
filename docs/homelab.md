@@ -248,7 +248,54 @@ shoppingo fal key stale, a redirect misconfigured, etc.).
   `EnvironmentFile=`. No `BW_SESSION` exported from the service.
 - Deploy instructions and full failure-mode notes: `../smoke/README.md`.
 
-## 9. Gotchas checklist (for future agents)
+## 9. Backups & restore drill
+
+The `backups/` directory ships a nightly backup suite + a weekly restore
+drill. Both run as systemd timers on the foundry host and post to the
+same Discord webhook as Gatus / smoke routine.
+
+**Backup** (`backups/bin/backup.sh`, daily at **02:00**) — iterates
+`backups/config/<service>.sh`, dumps each to
+`/mnt/tank/shared/backups/<service>/<timestamp>/` (or `.tar.gz`),
+prunes by `RETENTION_DAYS`, and exits non-zero on any failure.
+
+| Service | Config | Strategy |
+|---|---|---|
+| mongodb | `backups/config/mongodb.sh` | `mongodump --gzip` via docker exec |
+| immich Postgres | `backups/config/immich-pg.sh` | `pg_dumpall` via docker exec, gzipped |
+| vaultwarden | `backups/config/vaultwarden.sh` | SQLite `.backup` + RSA key, tar'd |
+| navidrome | `backups/config/navidrome.sh` | SQLite `.backup` of `navidrome.db` |
+| homeassistant | `backups/config/homeassistant.sh` | tar of `/mnt/tank/shared/homeassistant/config` (excludes deps, recorder DB) |
+| gtnh | `backups/config/gtnh.sh` | `rcon-cli save-all` then alpine sidecar tar |
+
+Not yet backed up: minio (large `mc mirror`), opensearch (rebuild from
+mongo), jellyfin / audiobookshelf / monitoring / mixtape / resilio-sync
+(metadata-only SQLite, rebuild-from-scratch cheap). Tracked as a single
+follow-up card.
+
+**Restore drill** (`backups/bin/restore-drill.sh`, weekly **Sun 02:30**)
+— for every config, restores the newest dump into a throwaway container
+with `--network none` and a non-prod port, runs a sanity query (row
+count + integrity check), and tears down. If a service can't be
+restored, that means a backup is silently broken — exactly the kind of
+failure a `cron + ls` backup loop won't notice.
+
+**Stale check** (`backups/bin/stale-check.sh`, **hourly**) — alerts on
+any service whose newest dump is older than 2× its schedule (so a weekly
+service flags after 2 days; a nightly service flags after 2 days).
+
+Env: `/etc/foundry/backup.env` (mode 600, root) holds the Discord
+webhook URL and `MONGO_ROOT_USER`/`MONGO_ROOT_PASSWORD`. No
+`BW_SESSION` is exported from any timer — the mongo creds live in
+Dokploy env, not Vaultwarden; if that ever moves, follow the
+`bw-render-template` pattern in `dotfiles/docs/secrets.md` from a
+one-shot session.
+
+What this is **not**: not off-host. `/mnt/tank/shared/backups` is the
+same ZFS mirror as the source data. An off-host copy (rclone to
+Backblaze B2 or a friend's box) is a separate follow-up.
+
+## 10. Gotchas checklist (for future agents)
 
 - [ ] Compose change → commit + push (`dangerouslyDisableSandbox:true`) → **explicit `compose-deploy`** (webhook unreliable).
 - [ ] dokploy/cloudflare/grafana/tailscale/trello are `mcp-cli`-only, not deferred tools — see §4.
