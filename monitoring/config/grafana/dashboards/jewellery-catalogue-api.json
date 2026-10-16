@@ -181,7 +181,7 @@
       "datasource": {"type": "loki", "uid": "P8E80F9AEF21F6940"},
       "gridPos": {"h": 8, "w": 12, "x": 0, "y": 28},
       "targets": [
-        {"refId": "A", "expr": "topk(15, sum by (level, message, detail) (count_over_time({container=~\"apps-jewellerycatalogueapi-.*\"} | json | level=~\"error|warn\" | json detail=\"meta[0].error\", detail2=\"meta[0].message\" | label_format detail=`{{ or .detail .detail2 }}` [$__range])))", "instant": true, "queryType": "instant"}
+        {"refId": "A", "expr": "topk(15, sum by (level, message, detail) (count_over_time({container=~\"apps-jewellerycatalogueapi-.*\"} | json | level=~\"error|warn\" | json src=\"meta[0].source\" | src!=\"frontend\" | json detail=\"meta[0].error\", detail2=\"meta[0].message\" | label_format detail=`{{ or .detail .detail2 }}` [$__range])))", "instant": true, "queryType": "instant"}
       ],
       "transformations": [{"id": "reduce", "options": {"mode": "seriesToRows", "reducers": ["lastNotNull"], "labelsToFields": true}}, {"id": "organize", "options": {"excludeByName": {"Field": true}, "renameByName": {"Last *": "count"}}}],
       "options": {"showHeader": true, "sortBy": [{"displayName": "count", "desc": true}]}
