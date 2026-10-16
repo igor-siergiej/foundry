@@ -35,7 +35,7 @@
       "datasource": { "type": "loki", "uid": "P8E80F9AEF21F6940" },
       "gridPos": { "h": 4, "w": 6, "x": 6, "y": 0 },
       "targets": [
-        { "refId": "A", "expr": "sum(count_over_time({container=~\"shoppingo-api.*\"} | json | source=\"frontend\" | level=\"error\" [24h]))", "instant": true }
+        { "refId": "A", "expr": "sum(count_over_time({container=~\"shoppingo-api.*\"} | json level, source=\"meta[0].source\" | source=\"frontend\" | level=\"error\" [24h]))", "instant": true }
       ],
       "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "value" },
       "fieldConfig": { "defaults": { "color": { "mode": "thresholds" }, "thresholds": { "mode": "absolute", "steps": [{ "color": "green" }, { "color": "red", "value": 1 }] } } }
@@ -47,7 +47,7 @@
       "datasource": { "type": "loki", "uid": "P8E80F9AEF21F6940" },
       "gridPos": { "h": 4, "w": 6, "x": 12, "y": 0 },
       "targets": [
-        { "refId": "A", "expr": "count(count by (userAgent) (count_over_time({container=~\"shoppingo-api.*\"} | json | source=\"frontend\" | userAgent != \"\" [24h])))", "instant": true }
+        { "refId": "A", "expr": "count(count by (userAgent) (count_over_time({container=~\"shoppingo-api.*\"} | json source=\"meta[0].source\", userAgent=\"meta[0].userAgent\" | source=\"frontend\" | userAgent != \"\" [24h])))", "instant": true }
       ],
       "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "value" }
     },
@@ -69,7 +69,7 @@
       "datasource": { "type": "loki", "uid": "P8E80F9AEF21F6940" },
       "gridPos": { "h": 8, "w": 12, "x": 0, "y": 4 },
       "targets": [
-        { "refId": "A", "expr": "sum by (level) (rate({container=~\"shoppingo-api.*\"} | json | source=\"frontend\" [5m]))", "legendFormat": "{{level}}" }
+        { "refId": "A", "expr": "sum by (level) (rate({container=~\"shoppingo-api.*\"} | json level, source=\"meta[0].source\" | source=\"frontend\" [5m]))", "legendFormat": "{{level}}" }
       ],
       "fieldConfig": { "defaults": { "unit": "reqps" } }
     },
@@ -91,8 +91,8 @@
       "datasource": { "type": "loki", "uid": "P8E80F9AEF21F6940" },
       "gridPos": { "h": 8, "w": 12, "x": 0, "y": 12 },
       "targets": [
-        { "refId": "A", "expr": "sum(rate({container=~\"shoppingo-api.*\"} | json | source=\"frontend\" | level=\"error\" [5m]))", "legendFormat": "errors" },
-        { "refId": "B", "expr": "sum(rate({container=~\"shoppingo-api.*\"} | json | source=\"frontend\" | level=\"warn\" [5m]))", "legendFormat": "warnings" }
+        { "refId": "A", "expr": "sum(rate({container=~\"shoppingo-api.*\"} | json level, source=\"meta[0].source\" | source=\"frontend\" | level=\"error\" [5m]))", "legendFormat": "errors" },
+        { "refId": "B", "expr": "sum(rate({container=~\"shoppingo-api.*\"} | json level, source=\"meta[0].source\" | source=\"frontend\" | level=\"warn\" [5m]))", "legendFormat": "warnings" }
       ],
       "fieldConfig": { "defaults": { "unit": "reqps" } }
     },
@@ -103,7 +103,7 @@
       "datasource": { "type": "loki", "uid": "P8E80F9AEF21F6940" },
       "gridPos": { "h": 8, "w": 12, "x": 12, "y": 12 },
       "targets": [
-        { "refId": "A", "expr": "topk(10, sum by (message) (count_over_time({container=~\"shoppingo-api.*\"} | json | source=\"frontend\" | level=\"error\" [24h])))", "instant": true, "format": "table" }
+        { "refId": "A", "expr": "topk(10, sum by (message) (count_over_time({container=~\"shoppingo-api.*\"} | json level, message, source=\"meta[0].source\" | source=\"frontend\" | level=\"error\" [24h])))", "instant": true, "format": "table" }
       ]
     },
     {
@@ -135,7 +135,7 @@
       "datasource": { "type": "loki", "uid": "P8E80F9AEF21F6940" },
       "gridPos": { "h": 10, "w": 24, "x": 0, "y": 28 },
       "targets": [
-        { "refId": "A", "expr": "{container=~\"shoppingo-api.*\"} | json | source=\"frontend\" | level=~\"error|warn\"" }
+        { "refId": "A", "expr": "{container=~\"shoppingo-api.*\"} | json level, source=\"meta[0].source\" | source=\"frontend\" | level=~\"error|warn\"" }
       ],
       "options": { "showTime": true, "wrapLogMessage": true, "sortOrder": "Descending" }
     }

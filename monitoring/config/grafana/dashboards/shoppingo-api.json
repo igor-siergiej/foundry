@@ -175,7 +175,7 @@
       "datasource": { "type": "loki", "uid": "P8E80F9AEF21F6940" },
       "gridPos": { "h": 8, "w": 12, "x": 12, "y": 36 },
       "targets": [
-        { "refId": "A", "expr": "count(count by (userId) (count_over_time({container=~\"shoppingo-api.*\"} | json | userId != \"\" [24h])))", "instant": true }
+        { "refId": "A", "expr": "count(count by (userId) (count_over_time({container=~\"shoppingo-api.*\"} | json userId=\"meta[0].userId\" | userId != \"\" [24h])))", "instant": true }
       ],
       "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "value" }
     },
