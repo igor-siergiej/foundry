@@ -234,7 +234,7 @@
       "targets": [
         {"refId": "A", "expr": "{container=~\"apps-jewellerycatalogueapi-.*\"} |= \"\\\"AI call\\\"\" | json feature=\"meta[0].feature\", model=\"meta[0].model\", latencyMs=\"meta[0].latencyMs\", success=\"meta[0].success\", status=\"meta[0].status\", userId=\"meta[0].userId\"", "queryType": "range"}
       ],
-      "transformations": [{"id": "extractFields", "options": {"source": "labels", "keepLabels": true}}, {"id": "organize", "options": {"excludeByName": {"labels": true, "tsNs": true, "id": true, "Line": true, "container": true, "job": true, "service_name": true, "stream": true, "detected_level": true, "level": true, "message": true, "meta": true}, "renameByName": {"Time": "time", "latencyMs": "latency (ms)"}, "indexByName": {"Time": 0, "feature": 1, "model": 2, "latencyMs": 3, "success": 4, "status": 5, "userId": 6}}}],
+      "transformations": [{"id": "extractFields", "options": {"source": "labels", "keepLabels": true}}, {"id": "organize", "options": {"excludeByName": {"labels": true, "tsNs": true, "id": true, "Line": true, "container": true, "job": true, "service_name": true, "stream": true, "detected_level": true, "level": true, "message": true, "meta": true, "labelTypes": true}, "renameByName": {"Time": "time", "latencyMs": "latency (ms)"}, "indexByName": {"Time": 0, "feature": 1, "model": 2, "latencyMs": 3, "success": 4, "status": 5, "userId": 6}}}],
       "options": {"showHeader": true, "sortBy": [{"displayName": "time", "desc": true}]}
     },
     {
