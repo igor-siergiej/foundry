@@ -24,7 +24,7 @@
       "datasource": {"type": "loki", "uid": "P8E80F9AEF21F6940"},
       "gridPos": {"h": 4, "w": 4, "x": 0, "y": 0},
       "targets": [
-        {"refId": "A", "expr": "sum(count_over_time({container=~\"apps-jewellerycatalogueweb-.*\"} |= \"HTTP/\" != \"Gatus/1.0\" | pattern `<_> - <_> [<_>] \"<method> <path> <_>\" <status> <bytes> \"<referer>\" \"<ua>\" \"<xff>\"` | status=~\"[0-9]{3}\" | path=\"/config.json\" [$__range])) or vector(0)", "instant": true}
+        {"refId": "A", "expr": "sum(count_over_time({container=~\"apps-jewellerycatalogueweb-.*\"} |= \"HTTP/\" != \"Gatus/1.0\" | pattern `<_> - <_> [<_>] \"<method> <path> <_>\" <status> <bytes> \"<referer>\" \"<ua>\" \"<xff>\"` | status=~\"[0-9]{3}\" | path=\"/config.json\" [$__range])) or vector(0)", "instant": true, "queryType": "instant"}
       ],
       "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "colorMode": "value"},
       "fieldConfig": {"defaults": {"unit": "short", "decimals": 0}},
@@ -37,7 +37,7 @@
       "datasource": {"type": "loki", "uid": "P8E80F9AEF21F6940"},
       "gridPos": {"h": 4, "w": 4, "x": 4, "y": 0},
       "targets": [
-        {"refId": "A", "expr": "sum(count_over_time({container=~\"apps-jewellerycatalogueweb-.*\"} |= \"HTTP/\" != \"Gatus/1.0\" | pattern `<_> - <_> [<_>] \"<method> <path> <_>\" <status> <bytes> \"<referer>\" \"<ua>\" \"<xff>\"` | status=~\"[0-9]{3}\" [$__range])) or vector(0)", "instant": true}
+        {"refId": "A", "expr": "sum(count_over_time({container=~\"apps-jewellerycatalogueweb-.*\"} |= \"HTTP/\" != \"Gatus/1.0\" | pattern `<_> - <_> [<_>] \"<method> <path> <_>\" <status> <bytes> \"<referer>\" \"<ua>\" \"<xff>\"` | status=~\"[0-9]{3}\" [$__range])) or vector(0)", "instant": true, "queryType": "instant"}
       ],
       "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "colorMode": "value"},
       "fieldConfig": {"defaults": {"unit": "short", "decimals": 0}}
@@ -49,7 +49,7 @@
       "datasource": {"type": "loki", "uid": "P8E80F9AEF21F6940"},
       "gridPos": {"h": 4, "w": 4, "x": 8, "y": 0},
       "targets": [
-        {"refId": "A", "expr": "count(sum by (ua) (count_over_time({container=~\"apps-jewellerycatalogueweb-.*\"} |= \"HTTP/\" != \"Gatus/1.0\" | pattern `<_> - <_> [<_>] \"<method> <path> <_>\" <status> <bytes> \"<referer>\" \"<ua>\" \"<xff>\"` | status=~\"[0-9]{3}\" | ua=~\"Mozilla.*\" | ua!~\".*(HeadlessChrome|[Bb]ot|[Ss]can|[Ss]pider|[Cc]rawl|Palo Alto|Censys).*\" [$__range])))", "instant": true}
+        {"refId": "A", "expr": "count(sum by (ua) (count_over_time({container=~\"apps-jewellerycatalogueweb-.*\"} |= \"HTTP/\" != \"Gatus/1.0\" | pattern `<_> - <_> [<_>] \"<method> <path> <_>\" <status> <bytes> \"<referer>\" \"<ua>\" \"<xff>\"` | status=~\"[0-9]{3}\" | ua=~\"Mozilla.*\" | ua!~\".*(HeadlessChrome|[Bb]ot|[Ss]can|[Ss]pider|[Cc]rawl|Palo Alto|Censys).*\" [$__range])))", "instant": true, "queryType": "instant"}
       ],
       "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "colorMode": "value"},
       "fieldConfig": {"defaults": {"unit": "short", "decimals": 0}},
@@ -62,7 +62,7 @@
       "datasource": {"type": "loki", "uid": "P8E80F9AEF21F6940"},
       "gridPos": {"h": 4, "w": 4, "x": 12, "y": 0},
       "targets": [
-        {"refId": "A", "expr": "sum(count_over_time({container=~\"apps-jewellerycatalogueweb-.*\"} |= \"HTTP/\" != \"Gatus/1.0\" | pattern `<_> - <_> [<_>] \"<method> <path> <_>\" <status> <bytes> \"<referer>\" \"<ua>\" \"<xff>\"` | status=~\"[0-9]{3}\" | path=~\".*(\\\\.env|\\\\.php|\\\\.git|wp-|\\\\.aws|actuator|phpmyadmin|cgi|\\\\.alfa|\\\\.Eren).*\" [$__range])) or vector(0)", "instant": true}
+        {"refId": "A", "expr": "sum(count_over_time({container=~\"apps-jewellerycatalogueweb-.*\"} |= \"HTTP/\" != \"Gatus/1.0\" | pattern `<_> - <_> [<_>] \"<method> <path> <_>\" <status> <bytes> \"<referer>\" \"<ua>\" \"<xff>\"` | status=~\"[0-9]{3}\" | path=~\".*(\\\\.env|\\\\.php|\\\\.git|wp-|\\\\.aws|actuator|phpmyadmin|cgi|\\\\.alfa|\\\\.Eren).*\" [$__range])) or vector(0)", "instant": true, "queryType": "instant"}
       ],
       "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "colorMode": "value"},
       "fieldConfig": {"defaults": {"unit": "short", "decimals": 0}},
@@ -75,7 +75,7 @@
       "datasource": {"type": "loki", "uid": "P8E80F9AEF21F6940"},
       "gridPos": {"h": 4, "w": 4, "x": 16, "y": 0},
       "targets": [
-        {"refId": "A", "expr": "sum(count_over_time({container=~\"apps-jewellerycatalogueweb-.*\"} |= \"[error]\" |= \"No such file\" [$__range])) or vector(0)", "instant": true}
+        {"refId": "A", "expr": "sum(count_over_time({container=~\"apps-jewellerycatalogueweb-.*\"} |= \"[error]\" |= \"No such file\" [$__range])) or vector(0)", "instant": true, "queryType": "instant"}
       ],
       "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "colorMode": "value"},
       "fieldConfig": {"defaults": {"unit": "short", "decimals": 0, "color": {"mode": "thresholds"}, "thresholds": {"mode": "absolute", "steps": [{"color": "green"}, {"color": "red", "value": 1}]}}},
@@ -88,7 +88,7 @@
       "datasource": {"type": "loki", "uid": "P8E80F9AEF21F6940"},
       "gridPos": {"h": 4, "w": 4, "x": 20, "y": 0},
       "targets": [
-        {"refId": "A", "expr": "sum(count_over_time({container=~\"apps-jewellerycatalogueweb-.*\"} |= \"Configuration complete; ready for start up\" [$__range])) or vector(0)", "instant": true}
+        {"refId": "A", "expr": "sum(count_over_time({container=~\"apps-jewellerycatalogueweb-.*\"} |= \"Configuration complete; ready for start up\" [$__range])) or vector(0)", "instant": true, "queryType": "instant"}
       ],
       "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "colorMode": "value"},
       "fieldConfig": {"defaults": {"unit": "short", "decimals": 0}}
@@ -156,9 +156,9 @@
       "datasource": {"type": "loki", "uid": "P8E80F9AEF21F6940"},
       "gridPos": {"h": 8, "w": 12, "x": 0, "y": 20},
       "targets": [
-        {"refId": "A", "expr": "topk(15, sum by (path) (count_over_time({container=~\"apps-jewellerycatalogueweb-.*\"} |= \"HTTP/\" != \"Gatus/1.0\" | pattern `<_> - <_> [<_>] \"<method> <path> <_>\" <status> <bytes> \"<referer>\" \"<ua>\" \"<xff>\"` | status=~\"[0-9]{3}\" | path!~\".*(\\\\.env|\\\\.php|\\\\.git|wp-|\\\\.aws|actuator|phpmyadmin|cgi|\\\\.alfa|\\\\.Eren).*\" | label_format path=`{{ regexReplaceAll \"\\\\?.*\" .path \"\" }}` [$__range])))", "instant": true, "format": "table"}
+        {"refId": "A", "expr": "topk(15, sum by (path) (count_over_time({container=~\"apps-jewellerycatalogueweb-.*\"} |= \"HTTP/\" != \"Gatus/1.0\" | pattern `<_> - <_> [<_>] \"<method> <path> <_>\" <status> <bytes> \"<referer>\" \"<ua>\" \"<xff>\"` | status=~\"[0-9]{3}\" | path!~\".*(\\\\.env|\\\\.php|\\\\.git|wp-|\\\\.aws|actuator|phpmyadmin|cgi|\\\\.alfa|\\\\.Eren).*\" | label_format path=`{{ regexReplaceAll \"\\\\?.*\" .path \"\" }}` [$__range])))", "instant": true, "queryType": "instant"}
       ],
-      "transformations": [{"id": "organize", "options": {"excludeByName": {"Time": true}, "renameByName": {"Value #A": "requests"}}}],
+      "transformations": [{"id": "reduce", "options": {"mode": "seriesToRows", "reducers": ["lastNotNull"], "labelsToFields": true}}, {"id": "organize", "options": {"excludeByName": {"Field": true}, "renameByName": {"Last *": "requests"}}}],
       "options": {"showHeader": true, "sortBy": [{"displayName": "requests", "desc": true}]}
     },
     {
@@ -168,9 +168,9 @@
       "datasource": {"type": "loki", "uid": "P8E80F9AEF21F6940"},
       "gridPos": {"h": 8, "w": 12, "x": 12, "y": 20},
       "targets": [
-        {"refId": "A", "expr": "topk(15, sum by (path, status) (count_over_time({container=~\"apps-jewellerycatalogueweb-.*\"} |= \"HTTP/\" != \"Gatus/1.0\" | pattern `<_> - <_> [<_>] \"<method> <path> <_>\" <status> <bytes> \"<referer>\" \"<ua>\" \"<xff>\"` | status=~\"[0-9]{3}\" | path=~\".*(\\\\.env|\\\\.php|\\\\.git|wp-|\\\\.aws|actuator|phpmyadmin|cgi|\\\\.alfa|\\\\.Eren).*\" [$__range])))", "instant": true, "format": "table"}
+        {"refId": "A", "expr": "topk(15, sum by (path, status) (count_over_time({container=~\"apps-jewellerycatalogueweb-.*\"} |= \"HTTP/\" != \"Gatus/1.0\" | pattern `<_> - <_> [<_>] \"<method> <path> <_>\" <status> <bytes> \"<referer>\" \"<ua>\" \"<xff>\"` | status=~\"[0-9]{3}\" | path=~\".*(\\\\.env|\\\\.php|\\\\.git|wp-|\\\\.aws|actuator|phpmyadmin|cgi|\\\\.alfa|\\\\.Eren).*\" [$__range])))", "instant": true, "queryType": "instant"}
       ],
-      "transformations": [{"id": "organize", "options": {"excludeByName": {"Time": true}, "renameByName": {"Value #A": "hits"}}}],
+      "transformations": [{"id": "reduce", "options": {"mode": "seriesToRows", "reducers": ["lastNotNull"], "labelsToFields": true}}, {"id": "organize", "options": {"excludeByName": {"Field": true}, "renameByName": {"Last *": "hits"}}}],
       "options": {"showHeader": true, "sortBy": [{"displayName": "hits", "desc": true}]}
     },
     {
@@ -180,9 +180,9 @@
       "datasource": {"type": "loki", "uid": "P8E80F9AEF21F6940"},
       "gridPos": {"h": 8, "w": 12, "x": 0, "y": 28},
       "targets": [
-        {"refId": "A", "expr": "topk(15, sum by (ua) (count_over_time({container=~\"apps-jewellerycatalogueweb-.*\"} |= \"HTTP/\" != \"Gatus/1.0\" | pattern `<_> - <_> [<_>] \"<method> <path> <_>\" <status> <bytes> \"<referer>\" \"<ua>\" \"<xff>\"` | status=~\"[0-9]{3}\" [$__range])))", "instant": true, "format": "table"}
+        {"refId": "A", "expr": "topk(15, sum by (ua) (count_over_time({container=~\"apps-jewellerycatalogueweb-.*\"} |= \"HTTP/\" != \"Gatus/1.0\" | pattern `<_> - <_> [<_>] \"<method> <path> <_>\" <status> <bytes> \"<referer>\" \"<ua>\" \"<xff>\"` | status=~\"[0-9]{3}\" [$__range])))", "instant": true, "queryType": "instant"}
       ],
-      "transformations": [{"id": "organize", "options": {"excludeByName": {"Time": true}, "renameByName": {"Value #A": "requests", "ua": "user agent"}}}],
+      "transformations": [{"id": "reduce", "options": {"mode": "seriesToRows", "reducers": ["lastNotNull"], "labelsToFields": true}}, {"id": "organize", "options": {"excludeByName": {"Field": true}, "renameByName": {"ua": "user agent", "Last *": "requests"}}}],
       "options": {"showHeader": true, "sortBy": [{"displayName": "requests", "desc": true}]}
     },
     {
@@ -192,9 +192,9 @@
       "datasource": {"type": "loki", "uid": "P8E80F9AEF21F6940"},
       "gridPos": {"h": 8, "w": 12, "x": 12, "y": 28},
       "targets": [
-        {"refId": "A", "expr": "topk(15, sum by (path) (count_over_time({container=~\"apps-jewellerycatalogueweb-.*\"} |= \"[error]\" |= \"No such file\" | regexp \"request: \\\"(?P<method>\\\\S+) (?P<path>\\\\S+) \" [$__range])))", "instant": true, "format": "table"}
+        {"refId": "A", "expr": "topk(15, sum by (path) (count_over_time({container=~\"apps-jewellerycatalogueweb-.*\"} |= \"[error]\" |= \"No such file\" | regexp \"request: \\\"(?P<method>\\\\S+) (?P<path>\\\\S+) \" [$__range])))", "instant": true, "queryType": "instant"}
       ],
-      "transformations": [{"id": "organize", "options": {"excludeByName": {"Time": true}, "renameByName": {"Value #A": "errors"}}}],
+      "transformations": [{"id": "reduce", "options": {"mode": "seriesToRows", "reducers": ["lastNotNull"], "labelsToFields": true}}, {"id": "organize", "options": {"excludeByName": {"Field": true}, "renameByName": {"Last *": "errors"}}}],
       "options": {"showHeader": true, "sortBy": [{"displayName": "errors", "desc": true}]}
     },
     {
@@ -204,9 +204,9 @@
       "datasource": {"type": "loki", "uid": "P8E80F9AEF21F6940"},
       "gridPos": {"h": 8, "w": 24, "x": 0, "y": 36},
       "targets": [
-        {"refId": "A", "expr": "topk(15, sum by (method, path, status) (count_over_time({container=~\"apps-jewellerycatalogueweb-.*\"} |= \"HTTP/\" != \"Gatus/1.0\" | pattern `<_> - <_> [<_>] \"<method> <path> <_>\" <status> <bytes> \"<referer>\" \"<ua>\" \"<xff>\"` | status=~\"[0-9]{3}\" | status=~\"[45]..\" [$__range])))", "instant": true, "format": "table"}
+        {"refId": "A", "expr": "topk(15, sum by (method, path, status) (count_over_time({container=~\"apps-jewellerycatalogueweb-.*\"} |= \"HTTP/\" != \"Gatus/1.0\" | pattern `<_> - <_> [<_>] \"<method> <path> <_>\" <status> <bytes> \"<referer>\" \"<ua>\" \"<xff>\"` | status=~\"[0-9]{3}\" | status=~\"[45]..\" [$__range])))", "instant": true, "queryType": "instant"}
       ],
-      "transformations": [{"id": "organize", "options": {"excludeByName": {"Time": true}, "renameByName": {"Value #A": "count"}}}],
+      "transformations": [{"id": "reduce", "options": {"mode": "seriesToRows", "reducers": ["lastNotNull"], "labelsToFields": true}}, {"id": "organize", "options": {"excludeByName": {"Field": true}, "renameByName": {"Last *": "count"}}}],
       "options": {"showHeader": true, "sortBy": [{"displayName": "count", "desc": true}]}
     },
     {
