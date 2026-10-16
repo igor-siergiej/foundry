@@ -69,10 +69,10 @@ services:
   cadvisor:
     # 0.52.1 only exports id="/" on foundry's Docker 29 + containerd snapshotter
     # ("failed to identify the read-write layer ID" spams the logs and there are no
-    # per-container series). Bumped to 0.55.0 which supports the containerd
+    # per-container series). Bumped to 0.55.1 which supports the containerd
     # snapshotter; per-container `name=` labels come back for the
     # shoppingo/jewellery/kivo panels. Dependabot bumps further from here.
-    image: gcr.io/cadvisor/cadvisor:v0.55.0
+    image: gcr.io/cadvisor/cadvisor:v0.55.1
     container_name: cadvisor
     restart: unless-stopped
     privileged: true
