@@ -241,12 +241,34 @@
       "id": 18,
       "type": "logs",
       "title": "Recent errors & warnings",
-      "datasource": {"type": "loki", "uid": "P8E80F9AEF21F6940"},
-      "gridPos": {"h": 10, "w": 24, "x": 0, "y": 52},
+      "datasource": { "type": "loki", "uid": "P8E80F9AEF21F6940" },
+      "gridPos": { "h": 10, "w": 24, "x": 0, "y": 52 },
       "targets": [
-        {"refId": "A", "expr": "{container=~\"apps-jewellerycatalogueapi-.*\"} |~ \"\\\"level\\\":\\\"(error|warn)\\\"|^Authentication error\""}
+        { "refId": "A", "expr": "{container=~\"apps-jewellerycatalogueapi-.*\"} |~ \"\\\"level\\\":\\\"(error|warn)\\\"|^Authentication error\"" }
       ],
-      "options": {"showTime": true, "wrapLogMessage": true, "sortOrder": "Descending"}
+      "options": { "showTime": true, "wrapLogMessage": true, "sortOrder": "Descending" }
+    },
+    {
+      "id": 19,
+      "type": "timeseries",
+      "title": "Container CPU",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 62 },
+      "targets": [
+        { "refId": "A", "expr": "sum by (name) (rate(container_cpu_usage_seconds_total{name=~\"apps-jewellerycatalogueapi-.*\"}[5m]))", "legendFormat": "{{name}}" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "percentunit" } }
+    },
+    {
+      "id": 20,
+      "type": "timeseries",
+      "title": "Container memory (working set)",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 62 },
+      "targets": [
+        { "refId": "A", "expr": "sum by (name) (container_memory_working_set_bytes{name=~\"apps-jewellerycatalogueapi-.*\"})", "legendFormat": "{{name}}" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "bytes" } }
     }
   ]
 }
