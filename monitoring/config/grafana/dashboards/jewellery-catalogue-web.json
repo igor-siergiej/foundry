@@ -315,6 +315,28 @@
         {"refId": "A", "expr": "{container=~\"apps-jewellerycatalogueapi-.*\"} | json level, message, source=\"meta[0].source\" | source=\"frontend\" | level=~\"error|warn\""}
       ],
       "options": {"showTime": true, "wrapLogMessage": true, "sortOrder": "Descending"}
+    },
+    {
+      "id": 25,
+      "type": "timeseries",
+      "title": "Container CPU",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 77},
+      "targets": [
+        {"refId": "A", "expr": "sum by (name) (rate(container_cpu_usage_seconds_total{name=~\"apps-jewellerycatalogueweb-.*\"}[5m]))", "legendFormat": "{{name}}"}
+      ],
+      "fieldConfig": {"defaults": {"unit": "percentunit"}}
+    },
+    {
+      "id": 26,
+      "type": "timeseries",
+      "title": "Container memory (working set)",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 77},
+      "targets": [
+        {"refId": "A", "expr": "sum by (name) (container_memory_working_set_bytes{name=~\"apps-jewellerycatalogueweb-.*\"})", "legendFormat": "{{name}}"}
+      ],
+      "fieldConfig": {"defaults": {"unit": "bytes"}}
     }
   ]
 }
