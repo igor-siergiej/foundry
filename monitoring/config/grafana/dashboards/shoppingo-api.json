@@ -120,9 +120,12 @@
       "datasource": { "type": "prometheus", "uid": "prometheus" },
       "gridPos": { "h": 8, "w": 12, "x": 0, "y": 20 },
       "targets": [
-        { "refId": "A", "expr": "topk(10, sum by (route, method) (rate(shoppingo_api_http_requests_total[5m])))", "format": "table", "instant": true }
+        { "refId": "A", "expr": "topk(10, sum by (route, method) (rate(shoppingo_api_http_requests_total[5m])))", "instant": true, "queryType": "instant", "format": "table" }
       ],
-      "transformations": [{ "id": "organize", "options": { "excludeByName": { "Time": true, "__name__": true, "job": true, "instance": true, "service": true } } }]
+      "transformations": [
+        { "id": "reduce", "options": { "mode": "seriesToRows", "reducers": ["lastNotNull"], "labelsToFields": true } },
+        { "id": "organize", "options": { "excludeByName": { "Field": true, "Time": true, "__name__": true, "job": true, "instance": true, "service": true }, "renameByName": { "Last *": "req/s" } } }
+      ]
     },
     {
       "id": 10,
@@ -131,10 +134,13 @@
       "datasource": { "type": "prometheus", "uid": "prometheus" },
       "gridPos": { "h": 8, "w": 12, "x": 12, "y": 20 },
       "targets": [
-        { "refId": "A", "expr": "topk(10, histogram_quantile(0.95, sum by (le, route) (rate(shoppingo_api_http_request_duration_seconds_bucket[5m]))))", "format": "table", "instant": true }
+        { "refId": "A", "expr": "topk(10, histogram_quantile(0.95, sum by (le, route) (rate(shoppingo_api_http_request_duration_seconds_bucket[5m]))))", "instant": true, "queryType": "instant", "format": "table" }
       ],
       "fieldConfig": { "defaults": { "unit": "s" } },
-      "transformations": [{ "id": "organize", "options": { "excludeByName": { "Time": true, "__name__": true, "job": true, "instance": true, "service": true } } }]
+      "transformations": [
+        { "id": "reduce", "options": { "mode": "seriesToRows", "reducers": ["lastNotNull"], "labelsToFields": true } },
+        { "id": "organize", "options": { "excludeByName": { "Field": true, "Time": true, "__name__": true, "job": true, "instance": true, "service": true }, "renameByName": { "Last *": "p95" } } }
+      ]
     },
     {
       "id": 11,
@@ -175,7 +181,7 @@
       "datasource": { "type": "loki", "uid": "P8E80F9AEF21F6940" },
       "gridPos": { "h": 8, "w": 12, "x": 12, "y": 36 },
       "targets": [
-        { "refId": "A", "expr": "count(count by (userId) (count_over_time({container=~\"shoppingo-api.*\"} | json userId=\"meta[0].userId\" | userId != \"\" [24h])))", "instant": true }
+        { "refId": "A", "expr": "count(count by (userId) (count_over_time({container=~\"shoppingo-api.*\"} | json userId=\"meta[0].userId\" | userId != \"\" [24h])))", "instant": true, "queryType": "instant" }
       ],
       "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "value" }
     },
