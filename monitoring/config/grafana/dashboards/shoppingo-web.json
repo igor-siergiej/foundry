@@ -24,7 +24,7 @@
       "datasource": { "type": "loki", "uid": "P8E80F9AEF21F6940" },
       "gridPos": { "h": 4, "w": 6, "x": 0, "y": 0 },
       "targets": [
-        { "refId": "A", "expr": "sum(count_over_time({container=~\"shoppingo-web.*\"} [5m]))", "instant": true }
+        { "refId": "A", "expr": "sum(count_over_time({container=~\"shoppingo-web.*\"} [5m]))", "instant": true, "queryType": "instant" }
       ],
       "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "value" }
     },
@@ -35,7 +35,7 @@
       "datasource": { "type": "loki", "uid": "P8E80F9AEF21F6940" },
       "gridPos": { "h": 4, "w": 6, "x": 6, "y": 0 },
       "targets": [
-        { "refId": "A", "expr": "sum(count_over_time({container=~\"shoppingo-api.*\"} | json level, source=\"meta[0].source\" | source=\"frontend\" | level=\"error\" [24h]))", "instant": true }
+        { "refId": "A", "expr": "sum(count_over_time({container=~\"shoppingo-api.*\"} | json level, source=\"meta[0].source\" | source=\"frontend\" | level=\"error\" [24h]))", "instant": true, "queryType": "instant" }
       ],
       "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "value" },
       "fieldConfig": { "defaults": { "color": { "mode": "thresholds" }, "thresholds": { "mode": "absolute", "steps": [{ "color": "green" }, { "color": "red", "value": 1 }] } } }
@@ -47,7 +47,7 @@
       "datasource": { "type": "loki", "uid": "P8E80F9AEF21F6940" },
       "gridPos": { "h": 4, "w": 6, "x": 12, "y": 0 },
       "targets": [
-        { "refId": "A", "expr": "count(count by (userAgent) (count_over_time({container=~\"shoppingo-api.*\"} | json source=\"meta[0].source\", userAgent=\"meta[0].userAgent\" | source=\"frontend\" | userAgent != \"\" [24h])))", "instant": true }
+        { "refId": "A", "expr": "count(count by (userAgent) (count_over_time({container=~\"shoppingo-api.*\"} | json source=\"meta[0].source\", userAgent=\"meta[0].userAgent\" | source=\"frontend\" | userAgent != \"\" [24h])))", "instant": true, "queryType": "instant" }
       ],
       "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "value" }
     },
@@ -58,7 +58,7 @@
       "datasource": { "type": "loki", "uid": "P8E80F9AEF21F6940" },
       "gridPos": { "h": 4, "w": 6, "x": 18, "y": 0 },
       "targets": [
-        { "refId": "A", "expr": "sum(count_over_time({container=~\"shoppingo-api.*\"} |~ \"Frontend logs rate limit exceeded\" [24h]))", "instant": true }
+        { "refId": "A", "expr": "sum(count_over_time({container=~\"shoppingo-api.*\"} |~ \"Frontend logs rate limit exceeded\" [24h]))", "instant": true, "queryType": "instant" }
       ],
       "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "value" }
     },
@@ -103,7 +103,11 @@
       "datasource": { "type": "loki", "uid": "P8E80F9AEF21F6940" },
       "gridPos": { "h": 8, "w": 12, "x": 12, "y": 12 },
       "targets": [
-        { "refId": "A", "expr": "topk(10, sum by (message) (count_over_time({container=~\"shoppingo-api.*\"} | json level, message, source=\"meta[0].source\" | source=\"frontend\" | level=\"error\" [24h])))", "instant": true, "format": "table" }
+        { "refId": "A", "expr": "topk(10, sum by (message) (count_over_time({container=~\"shoppingo-api.*\"} | json level, message, source=\"meta[0].source\" | source=\"frontend\" | level=\"error\" [24h])))", "instant": true, "queryType": "instant", "format": "table" }
+      ],
+      "transformations": [
+        { "id": "reduce", "options": { "mode": "seriesToRows", "reducers": ["lastNotNull"], "labelsToFields": true } },
+        { "id": "organize", "options": { "excludeByName": { "Field": true }, "renameByName": { "Last *": "count" } } }
       ]
     },
     {
