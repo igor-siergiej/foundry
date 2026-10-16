@@ -26,7 +26,10 @@ services:
     user: "10001:10001"
     command: -config.file=/etc/loki/loki.yml
     volumes:
-      - ./config/loki/loki.yml:/etc/loki/loki.yml:ro
+      # Stable host path, refreshed on every deploy by monitoring/bin/sync-config.sh.
+      # Mounting from the cloned repo path leaves the bind pointing at the
+      # deleted directory inode for any container that isn't recreated.
+      - /etc/foundry/monitoring/loki/loki.yml:/etc/loki/loki.yml:ro
       - loki-data:/loki
     networks:
       - monitoring
@@ -37,7 +40,8 @@ services:
     restart: unless-stopped
     command: -config.file=/etc/promtail/promtail.yml
     volumes:
-      - ./config/promtail/promtail.yml:/etc/promtail/promtail.yml:ro
+      # Stable host path, refreshed on every deploy by monitoring/bin/sync-config.sh.
+      - /etc/foundry/monitoring/promtail/promtail.yml:/etc/promtail/promtail.yml:ro
       - /var/lib/docker/containers:/var/lib/docker/containers:ro
       - promtail-positions:/var/lib/promtail
     networks:
@@ -59,8 +63,9 @@ services:
       - --storage.tsdb.retention.time=30d
       - --web.enable-lifecycle
     volumes:
-      - ./config/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
-      - ./config/prometheus/alerts.yml:/etc/prometheus/alerts.yml:ro
+      # Stable host paths, refreshed on every deploy by monitoring/bin/sync-config.sh.
+      - /etc/foundry/monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - /etc/foundry/monitoring/prometheus/alerts.yml:/etc/prometheus/alerts.yml:ro
       - prometheus-data:/prometheus
     networks:
       - monitoring
@@ -113,8 +118,13 @@ services:
       DISCORD_WEBHOOK_URL: ${DISCORD_WEBHOOK_URL}
     volumes:
       - grafana-data:/var/lib/grafana
-      - ./config/grafana/provisioning:/etc/grafana/provisioning:ro
-      - ./config/grafana/dashboards:/etc/grafana/dashboards:ro
+      # Stable host paths, refreshed on every deploy by monitoring/bin/sync-config.sh.
+      # The cloned repo path was used previously; after a Dokploy redeploy
+      # the cloned tree is replaced and unchanged services keep a bind
+      # mount to the now-deleted inode, so new dashboards silently never
+      # loaded until a manual `docker restart grafana`.
+      - /etc/foundry/monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - /etc/foundry/monitoring/grafana/dashboards:/etc/grafana/dashboards:ro
     networks:
       - monitoring
       - dokploy-network
@@ -144,10 +154,15 @@ services:
     environment:
       DISCORD_WEBHOOK_URL: ${DISCORD_WEBHOOK_URL}
     volumes:
-      # Mount the directory, not the file: a git pull replaces config.yaml with
-      # a new inode, which a single-file bind mount never sees. Gatus
-      # hot-reloads the file when it changes.
-      - ./config/gatus:/config:ro
+      # Mount the directory from a stable host path, refreshed on every
+      # deploy by monitoring/bin/sync-config.sh. Two reasons over the
+      # previous `./config/gatus` bind:
+      # 1. Gatus hot-reloads a directory mount, but not a single-file
+      #    bind whose source inode gets replaced by `git pull`.
+      # 2. The cloned repo path is replaced on every Dokploy redeploy, so
+      #    unchanged services keep a bind mount to the deleted directory
+      #    and run on stale (in-memory) config until a manual restart.
+      - /etc/foundry/monitoring/gatus:/config:ro
       - gatus-data:/data
     networks:
       - dokploy-network
