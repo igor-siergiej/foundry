@@ -45,3 +45,12 @@ scrape_configs:
         labels:
           service: kivo
     metrics_path: /metrics
+
+  # Jewellery Catalogue API — exposes Prometheus metrics at /api/metrics.
+  # Reachable on dokploy-network via the dokploy-managed service DNS alias.
+  - job_name: jewellery-catalogue-api
+    static_configs:
+      - targets: ["apps-jewellerycatalogueapi-e7gjl7:4001"]
+        labels:
+          service: jewellery-catalogue-api
+    metrics_path: /api/metrics
