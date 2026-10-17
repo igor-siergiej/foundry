@@ -1,5 +1,7 @@
 {
-  "annotations": { "list": [] },
+  "annotations": {
+    "list": []
+  },
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
@@ -7,9 +9,17 @@
   "liveNow": false,
   "refresh": "1m",
   "schemaVersion": 39,
-  "tags": ["jewellery-catalogue", "api"],
-  "templating": { "list": [] },
-  "time": {"from": "now-7d", "to": "now"},
+  "tags": [
+    "jewellery-catalogue",
+    "api"
+  ],
+  "templating": {
+    "list": []
+  },
+  "time": {
+    "from": "now-7d",
+    "to": "now"
+  },
   "timepicker": {},
   "timezone": "",
   "title": "Jewellery Catalogue API",
@@ -21,254 +31,1011 @@
       "id": 1,
       "type": "stat",
       "title": "Requests (excl. health checks)",
-      "datasource": {"type": "loki", "uid": "P8E80F9AEF21F6940"},
-      "gridPos": {"h": 4, "w": 4, "x": 0, "y": 0},
+      "datasource": {
+        "type": "loki",
+        "uid": "P8E80F9AEF21F6940"
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 0,
+        "y": 0
+      },
       "targets": [
-        {"refId": "A", "expr": "sum(count_over_time({container=~\"apps-jewellerycatalogueapi-.*\"} |~ \" - [0-9]{3} [0-9]+ms\\\"\" | json | line_format \"{{.message}}\" | regexp \"^(?P<method>[A-Z]+) (?P<path>\\\\S+) - (?P<status>\\\\d{3}) (?P<duration>\\\\d+)ms$\" | path!=\"/api/health\" [$__range])) or vector(0)", "instant": true, "queryType": "instant"}
+        {
+          "refId": "A",
+          "expr": "sum(count_over_time({container=~\"apps-jewellerycatalogueapi-.*\"} |~ \" - [0-9]{3} [0-9]+ms\\\"\" | json | line_format \"{{.message}}\" | regexp \"^(?P<method>[A-Z]+) (?P<path>\\\\S+) - (?P<status>\\\\d{3}) (?P<duration>\\\\d+)ms$\" | path!=\"/api/health\" [$__range])) or vector(0)",
+          "instant": true,
+          "queryType": "instant"
+        }
       ],
-      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "colorMode": "value"},
-      "fieldConfig": {"defaults": {"unit": "short", "decimals": 0}},
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "colorMode": "value"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "decimals": 0
+        }
+      },
       "description": "Parsed from the requestLogger completion line \"METHOD /url - STATUS Nms\". /api/health (Gatus, 1/min) excluded."
     },
     {
       "id": 2,
       "type": "stat",
       "title": "4xx responses",
-      "datasource": {"type": "loki", "uid": "P8E80F9AEF21F6940"},
-      "gridPos": {"h": 4, "w": 4, "x": 4, "y": 0},
+      "datasource": {
+        "type": "loki",
+        "uid": "P8E80F9AEF21F6940"
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 4,
+        "y": 0
+      },
       "targets": [
-        {"refId": "A", "expr": "sum(count_over_time({container=~\"apps-jewellerycatalogueapi-.*\"} |~ \" - [0-9]{3} [0-9]+ms\\\"\" | json | line_format \"{{.message}}\" | regexp \"^(?P<method>[A-Z]+) (?P<path>\\\\S+) - (?P<status>\\\\d{3}) (?P<duration>\\\\d+)ms$\" | path!=\"/api/health\" | status=~\"4..\" [$__range])) or vector(0)", "instant": true, "queryType": "instant"}
+        {
+          "refId": "A",
+          "expr": "sum(count_over_time({container=~\"apps-jewellerycatalogueapi-.*\"} |~ \" - [0-9]{3} [0-9]+ms\\\"\" | json | line_format \"{{.message}}\" | regexp \"^(?P<method>[A-Z]+) (?P<path>\\\\S+) - (?P<status>\\\\d{3}) (?P<duration>\\\\d+)ms$\" | path!=\"/api/health\" | status=~\"4..\" [$__range])) or vector(0)",
+          "instant": true,
+          "queryType": "instant"
+        }
       ],
-      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "colorMode": "value"},
-      "fieldConfig": {"defaults": {"unit": "short", "decimals": 0, "color": {"mode": "thresholds"}, "thresholds": {"mode": "absolute", "steps": [{"color": "green"}, {"color": "red", "value": 1}]}}}
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "colorMode": "value"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "decimals": 0,
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green"
+              },
+              {
+                "color": "red",
+                "value": 1
+              }
+            ]
+          }
+        }
+      }
     },
     {
       "id": 3,
       "type": "stat",
       "title": "5xx responses",
-      "datasource": {"type": "loki", "uid": "P8E80F9AEF21F6940"},
-      "gridPos": {"h": 4, "w": 4, "x": 8, "y": 0},
+      "datasource": {
+        "type": "loki",
+        "uid": "P8E80F9AEF21F6940"
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 8,
+        "y": 0
+      },
       "targets": [
-        {"refId": "A", "expr": "sum(count_over_time({container=~\"apps-jewellerycatalogueapi-.*\"} |~ \" - [0-9]{3} [0-9]+ms\\\"\" | json | line_format \"{{.message}}\" | regexp \"^(?P<method>[A-Z]+) (?P<path>\\\\S+) - (?P<status>\\\\d{3}) (?P<duration>\\\\d+)ms$\" | path!=\"/api/health\" | status=~\"5..\" [$__range])) or vector(0)", "instant": true, "queryType": "instant"}
+        {
+          "refId": "A",
+          "expr": "sum(count_over_time({container=~\"apps-jewellerycatalogueapi-.*\"} |~ \" - [0-9]{3} [0-9]+ms\\\"\" | json | line_format \"{{.message}}\" | regexp \"^(?P<method>[A-Z]+) (?P<path>\\\\S+) - (?P<status>\\\\d{3}) (?P<duration>\\\\d+)ms$\" | path!=\"/api/health\" | status=~\"5..\" [$__range])) or vector(0)",
+          "instant": true,
+          "queryType": "instant"
+        }
       ],
-      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "colorMode": "value"},
-      "fieldConfig": {"defaults": {"unit": "short", "decimals": 0, "color": {"mode": "thresholds"}, "thresholds": {"mode": "absolute", "steps": [{"color": "green"}, {"color": "red", "value": 1}]}}}
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "colorMode": "value"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "decimals": 0,
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green"
+              },
+              {
+                "color": "red",
+                "value": 1
+              }
+            ]
+          }
+        }
+      }
     },
     {
       "id": 4,
       "type": "stat",
       "title": "p95 latency (excl. health checks)",
-      "datasource": {"type": "loki", "uid": "P8E80F9AEF21F6940"},
-      "gridPos": {"h": 4, "w": 4, "x": 12, "y": 0},
+      "datasource": {
+        "type": "loki",
+        "uid": "P8E80F9AEF21F6940"
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 12,
+        "y": 0
+      },
       "targets": [
-        {"refId": "A", "expr": "quantile_over_time(0.95, {container=~\"apps-jewellerycatalogueapi-.*\"} |~ \" - [0-9]{3} [0-9]+ms\\\"\" | json | line_format \"{{.message}}\" | regexp \"^(?P<method>[A-Z]+) (?P<path>\\\\S+) - (?P<status>\\\\d{3}) (?P<duration>\\\\d+)ms$\" | path!=\"/api/health\" | unwrap duration [$__range]) by ()", "instant": true, "queryType": "instant"}
+        {
+          "refId": "A",
+          "expr": "quantile_over_time(0.95, {container=~\"apps-jewellerycatalogueapi-.*\"} |~ \" - [0-9]{3} [0-9]+ms\\\"\" | json | line_format \"{{.message}}\" | regexp \"^(?P<method>[A-Z]+) (?P<path>\\\\S+) - (?P<status>\\\\d{3}) (?P<duration>\\\\d+)ms$\" | path!=\"/api/health\" | unwrap duration [$__range]) by ()",
+          "instant": true,
+          "queryType": "instant"
+        }
       ],
-      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "colorMode": "value"},
-      "fieldConfig": {"defaults": {"unit": "ms", "decimals": 0}}
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "colorMode": "value"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms",
+          "decimals": 0
+        }
+      }
     },
     {
       "id": 5,
       "type": "stat",
       "title": "Errors logged",
-      "datasource": {"type": "loki", "uid": "P8E80F9AEF21F6940"},
-      "gridPos": {"h": 4, "w": 4, "x": 16, "y": 0},
+      "datasource": {
+        "type": "loki",
+        "uid": "P8E80F9AEF21F6940"
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 16,
+        "y": 0
+      },
       "targets": [
-        {"refId": "A", "expr": "sum(count_over_time({container=~\"apps-jewellerycatalogueapi-.*\"} |~ \"\\\"level\\\":\\\"error\\\"|^Authentication error\" [$__range])) or vector(0)", "instant": true, "queryType": "instant"}
+        {
+          "refId": "A",
+          "expr": "sum(count_over_time({container=~\"apps-jewellerycatalogueapi-.*\"} |~ \"\\\"level\\\":\\\"error\\\"|^Authentication error\" [$__range])) or vector(0)",
+          "instant": true,
+          "queryType": "instant"
+        }
       ],
-      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "colorMode": "value"},
-      "fieldConfig": {"defaults": {"unit": "short", "decimals": 0, "color": {"mode": "thresholds"}, "thresholds": {"mode": "absolute", "steps": [{"color": "green"}, {"color": "red", "value": 1}]}}},
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "colorMode": "value"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "decimals": 0,
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green"
+              },
+              {
+                "color": "red",
+                "value": 1
+              }
+            ]
+          }
+        }
+      },
       "description": "JSON lines with level=error plus the raw console.error 'Authentication error:' from the Kivo auth middleware."
     },
     {
       "id": 6,
       "type": "stat",
       "title": "API starts (deploys / restarts)",
-      "datasource": {"type": "loki", "uid": "P8E80F9AEF21F6940"},
-      "gridPos": {"h": 4, "w": 4, "x": 20, "y": 0},
+      "datasource": {
+        "type": "loki",
+        "uid": "P8E80F9AEF21F6940"
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 20,
+        "y": 0
+      },
       "targets": [
-        {"refId": "A", "expr": "sum(count_over_time({container=~\"apps-jewellerycatalogueapi-.*\"} |= \"Api server running on port\" [$__range])) or vector(0)", "instant": true, "queryType": "instant"}
+        {
+          "refId": "A",
+          "expr": "sum(count_over_time({container=~\"apps-jewellerycatalogueapi-.*\"} |= \"Api server running on port\" [$__range])) or vector(0)",
+          "instant": true,
+          "queryType": "instant"
+        }
       ],
-      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "colorMode": "value"},
-      "fieldConfig": {"defaults": {"unit": "short", "decimals": 0}}
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "colorMode": "value"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "decimals": 0
+        }
+      }
     },
     {
       "id": 7,
       "type": "timeseries",
       "title": "Requests by status (excl. health checks)",
-      "datasource": {"type": "loki", "uid": "P8E80F9AEF21F6940"},
-      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 4},
+      "datasource": {
+        "type": "loki",
+        "uid": "P8E80F9AEF21F6940"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 4
+      },
       "interval": "5m",
       "targets": [
-        {"refId": "A", "expr": "sum by (status) (count_over_time({container=~\"apps-jewellerycatalogueapi-.*\"} |~ \" - [0-9]{3} [0-9]+ms\\\"\" | json | line_format \"{{.message}}\" | regexp \"^(?P<method>[A-Z]+) (?P<path>\\\\S+) - (?P<status>\\\\d{3}) (?P<duration>\\\\d+)ms$\" | path!=\"/api/health\" [$__interval]))", "legendFormat": "{{status}}"}
+        {
+          "refId": "A",
+          "expr": "sum by (status) (count_over_time({container=~\"apps-jewellerycatalogueapi-.*\"} |~ \" - [0-9]{3} [0-9]+ms\\\"\" | json | line_format \"{{.message}}\" | regexp \"^(?P<method>[A-Z]+) (?P<path>\\\\S+) - (?P<status>\\\\d{3}) (?P<duration>\\\\d+)ms$\" | path!=\"/api/health\" [$__interval]))",
+          "legendFormat": "{{status}}"
+        }
       ],
-      "fieldConfig": {"defaults": {"unit": "short", "custom": {"drawStyle": "bars", "fillOpacity": 80, "stacking": {"mode": "normal"}}}},
-      "options": {"legend": {"displayMode": "list", "placement": "bottom"}}
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "drawStyle": "bars",
+            "fillOpacity": 80,
+            "stacking": {
+              "mode": "normal"
+            }
+          }
+        }
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      }
     },
     {
       "id": 8,
       "type": "timeseries",
       "title": "Latency p50 / p95 / max (excl. health checks)",
-      "datasource": {"type": "loki", "uid": "P8E80F9AEF21F6940"},
-      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 4},
+      "datasource": {
+        "type": "loki",
+        "uid": "P8E80F9AEF21F6940"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 4
+      },
       "interval": "5m",
       "targets": [
-        {"refId": "A", "expr": "quantile_over_time(0.50, {container=~\"apps-jewellerycatalogueapi-.*\"} |~ \" - [0-9]{3} [0-9]+ms\\\"\" | json | line_format \"{{.message}}\" | regexp \"^(?P<method>[A-Z]+) (?P<path>\\\\S+) - (?P<status>\\\\d{3}) (?P<duration>\\\\d+)ms$\" | path!=\"/api/health\" | unwrap duration [$__interval]) by ()", "legendFormat": "p50"},
-        {"refId": "B", "expr": "quantile_over_time(0.95, {container=~\"apps-jewellerycatalogueapi-.*\"} |~ \" - [0-9]{3} [0-9]+ms\\\"\" | json | line_format \"{{.message}}\" | regexp \"^(?P<method>[A-Z]+) (?P<path>\\\\S+) - (?P<status>\\\\d{3}) (?P<duration>\\\\d+)ms$\" | path!=\"/api/health\" | unwrap duration [$__interval]) by ()", "legendFormat": "p95"},
-        {"refId": "C", "expr": "max_over_time({container=~\"apps-jewellerycatalogueapi-.*\"} |~ \" - [0-9]{3} [0-9]+ms\\\"\" | json | line_format \"{{.message}}\" | regexp \"^(?P<method>[A-Z]+) (?P<path>\\\\S+) - (?P<status>\\\\d{3}) (?P<duration>\\\\d+)ms$\" | path!=\"/api/health\" | unwrap duration [$__interval]) by ()", "legendFormat": "max"}
+        {
+          "refId": "A",
+          "expr": "quantile_over_time(0.50, {container=~\"apps-jewellerycatalogueapi-.*\"} |~ \" - [0-9]{3} [0-9]+ms\\\"\" | json | line_format \"{{.message}}\" | regexp \"^(?P<method>[A-Z]+) (?P<path>\\\\S+) - (?P<status>\\\\d{3}) (?P<duration>\\\\d+)ms$\" | path!=\"/api/health\" | unwrap duration [$__interval]) by ()",
+          "legendFormat": "p50"
+        },
+        {
+          "refId": "B",
+          "expr": "quantile_over_time(0.95, {container=~\"apps-jewellerycatalogueapi-.*\"} |~ \" - [0-9]{3} [0-9]+ms\\\"\" | json | line_format \"{{.message}}\" | regexp \"^(?P<method>[A-Z]+) (?P<path>\\\\S+) - (?P<status>\\\\d{3}) (?P<duration>\\\\d+)ms$\" | path!=\"/api/health\" | unwrap duration [$__interval]) by ()",
+          "legendFormat": "p95"
+        },
+        {
+          "refId": "C",
+          "expr": "max_over_time({container=~\"apps-jewellerycatalogueapi-.*\"} |~ \" - [0-9]{3} [0-9]+ms\\\"\" | json | line_format \"{{.message}}\" | regexp \"^(?P<method>[A-Z]+) (?P<path>\\\\S+) - (?P<status>\\\\d{3}) (?P<duration>\\\\d+)ms$\" | path!=\"/api/health\" | unwrap duration [$__interval]) by ()",
+          "legendFormat": "max"
+        }
       ],
-      "fieldConfig": {"defaults": {"unit": "ms", "custom": {"drawStyle": "line", "fillOpacity": 10, "stacking": {"mode": "none"}, "showPoints": "always"}}},
-      "options": {"legend": {"displayMode": "list", "placement": "bottom"}}
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms",
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "stacking": {
+              "mode": "none"
+            },
+            "showPoints": "always"
+          }
+        }
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      }
     },
     {
       "id": 9,
       "type": "timeseries",
       "title": "Log volume by level",
-      "datasource": {"type": "loki", "uid": "P8E80F9AEF21F6940"},
-      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 12},
+      "datasource": {
+        "type": "loki",
+        "uid": "P8E80F9AEF21F6940"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 12
+      },
       "interval": "5m",
       "targets": [
-        {"refId": "A", "expr": "sum by (level) (count_over_time({container=~\"apps-jewellerycatalogueapi-.*\"} | json [$__interval]))", "legendFormat": "{{level}}"}
+        {
+          "refId": "A",
+          "expr": "sum by (level) (count_over_time({container=~\"apps-jewellerycatalogueapi-.*\"} | json [$__interval]))",
+          "legendFormat": "{{level}}"
+        }
       ],
-      "fieldConfig": {"defaults": {"unit": "short", "custom": {"drawStyle": "bars", "fillOpacity": 80, "stacking": {"mode": "normal"}}}},
-      "options": {"legend": {"displayMode": "list", "placement": "bottom"}}
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "drawStyle": "bars",
+            "fillOpacity": 80,
+            "stacking": {
+              "mode": "normal"
+            }
+          }
+        }
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      }
     },
     {
       "id": 10,
       "type": "timeseries",
       "title": "Etsy order sync (runs every 15 min)",
-      "datasource": {"type": "loki", "uid": "P8E80F9AEF21F6940"},
-      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 12},
+      "datasource": {
+        "type": "loki",
+        "uid": "P8E80F9AEF21F6940"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 12
+      },
       "interval": "5m",
       "targets": [
-        {"refId": "A", "expr": "sum(count_over_time({container=~\"apps-jewellerycatalogueapi-.*\"} |= \"Synced Etsy orders\" [$__interval]))", "legendFormat": "synced (per user)"},
-        {"refId": "B", "expr": "sum(count_over_time({container=~\"apps-jewellerycatalogueapi-.*\"} |~ \"Failed to sync Etsy orders|Etsy order sync failed\" [$__interval]))", "legendFormat": "failed"},
-        {"refId": "C", "expr": "sum(sum_over_time({container=~\"apps-jewellerycatalogueapi-.*\"} |= \"Synced Etsy orders\" | json imported=\"meta[0].imported\" | unwrap imported [$__interval]))", "legendFormat": "orders imported"},
-        {"refId": "D", "expr": "sum(sum_over_time({container=~\"apps-jewellerycatalogueapi-.*\"} |= \"Synced Etsy orders\" | json unmatched=\"meta[0].unmatched\" | unwrap unmatched [$__interval]))", "legendFormat": "orders unmatched"}
+        {
+          "refId": "A",
+          "expr": "sum(count_over_time({container=~\"apps-jewellerycatalogueapi-.*\"} |= \"Synced Etsy orders\" [$__interval]))",
+          "legendFormat": "synced (per user)"
+        },
+        {
+          "refId": "B",
+          "expr": "sum(count_over_time({container=~\"apps-jewellerycatalogueapi-.*\"} |~ \"Failed to sync Etsy orders|Etsy order sync failed\" [$__interval]))",
+          "legendFormat": "failed"
+        },
+        {
+          "refId": "C",
+          "expr": "sum(sum_over_time({container=~\"apps-jewellerycatalogueapi-.*\"} |= \"Synced Etsy orders\" | json imported=\"meta[0].imported\" | unwrap imported [$__interval]))",
+          "legendFormat": "orders imported"
+        },
+        {
+          "refId": "D",
+          "expr": "sum(sum_over_time({container=~\"apps-jewellerycatalogueapi-.*\"} |= \"Synced Etsy orders\" | json unmatched=\"meta[0].unmatched\" | unwrap unmatched [$__interval]))",
+          "legendFormat": "orders unmatched"
+        }
       ],
-      "fieldConfig": {"defaults": {"unit": "short", "custom": {"drawStyle": "bars", "fillOpacity": 80, "stacking": {"mode": "none"}}}},
-      "options": {"legend": {"displayMode": "list", "placement": "bottom"}}
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "drawStyle": "bars",
+            "fillOpacity": 80,
+            "stacking": {
+              "mode": "none"
+            }
+          }
+        }
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      }
     },
     {
       "id": 11,
       "type": "table",
       "title": "Top routes (excl. health checks)",
-      "datasource": {"type": "loki", "uid": "P8E80F9AEF21F6940"},
-      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 20},
+      "datasource": {
+        "type": "loki",
+        "uid": "P8E80F9AEF21F6940"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 20
+      },
       "targets": [
-        {"refId": "A", "expr": "topk(15, sum by (method, route) (count_over_time({container=~\"apps-jewellerycatalogueapi-.*\"} |~ \" - [0-9]{3} [0-9]+ms\\\"\" | json | line_format \"{{.message}}\" | regexp \"^(?P<method>[A-Z]+) (?P<path>\\\\S+) - (?P<status>\\\\d{3}) (?P<duration>\\\\d+)ms$\" | path!=\"/api/health\" | label_format route=`{{ regexReplaceAll \"[0-9a-f]{24}\" .path \":id\" }}` [$__range])))", "instant": true, "queryType": "instant"}
+        {
+          "refId": "A",
+          "expr": "topk(15, sum by (method, route) (count_over_time({container=~\"apps-jewellerycatalogueapi-.*\"} |~ \" - [0-9]{3} [0-9]+ms\\\"\" | json | line_format \"{{.message}}\" | regexp \"^(?P<method>[A-Z]+) (?P<path>\\\\S+) - (?P<status>\\\\d{3}) (?P<duration>\\\\d+)ms$\" | path!=\"/api/health\" | label_format route=`{{ regexReplaceAll \"[0-9a-f]{24}\" .path \":id\" }}` [$__range])))",
+          "instant": true,
+          "queryType": "instant"
+        }
       ],
-      "transformations": [{"id": "reduce", "options": {"mode": "seriesToRows", "reducers": ["lastNotNull"], "labelsToFields": true}}, {"id": "organize", "options": {"excludeByName": {"Field": true}, "renameByName": {"Last *": "requests"}}}],
-      "options": {"showHeader": true, "sortBy": [{"displayName": "requests", "desc": true}]},
+      "transformations": [
+        {
+          "id": "reduce",
+          "options": {
+            "mode": "seriesToRows",
+            "reducers": [
+              "lastNotNull"
+            ],
+            "labelsToFields": true
+          }
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Field": true
+            },
+            "renameByName": {
+              "Last *": "requests"
+            }
+          }
+        }
+      ],
+      "options": {
+        "showHeader": true,
+        "sortBy": [
+          {
+            "displayName": "requests",
+            "desc": true
+          }
+        ]
+      },
       "description": "Mongo ObjectIds in the path collapsed to :id."
     },
     {
       "id": 12,
       "type": "table",
       "title": "Slowest routes (p95, excl. health checks)",
-      "datasource": {"type": "loki", "uid": "P8E80F9AEF21F6940"},
-      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 20},
+      "datasource": {
+        "type": "loki",
+        "uid": "P8E80F9AEF21F6940"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 20
+      },
       "targets": [
-        {"refId": "A", "expr": "topk(10, quantile_over_time(0.95, {container=~\"apps-jewellerycatalogueapi-.*\"} |~ \" - [0-9]{3} [0-9]+ms\\\"\" | json | line_format \"{{.message}}\" | regexp \"^(?P<method>[A-Z]+) (?P<path>\\\\S+) - (?P<status>\\\\d{3}) (?P<duration>\\\\d+)ms$\" | path!=\"/api/health\" | label_format route=`{{ regexReplaceAll \"[0-9a-f]{24}\" .path \":id\" }}` | unwrap duration [$__range]) by (route))", "instant": true, "queryType": "instant"}
+        {
+          "refId": "A",
+          "expr": "topk(10, quantile_over_time(0.95, {container=~\"apps-jewellerycatalogueapi-.*\"} |~ \" - [0-9]{3} [0-9]+ms\\\"\" | json | line_format \"{{.message}}\" | regexp \"^(?P<method>[A-Z]+) (?P<path>\\\\S+) - (?P<status>\\\\d{3}) (?P<duration>\\\\d+)ms$\" | path!=\"/api/health\" | label_format route=`{{ regexReplaceAll \"[0-9a-f]{24}\" .path \":id\" }}` | unwrap duration [$__range]) by (route))",
+          "instant": true,
+          "queryType": "instant"
+        }
       ],
-      "transformations": [{"id": "reduce", "options": {"mode": "seriesToRows", "reducers": ["lastNotNull"], "labelsToFields": true}}, {"id": "organize", "options": {"excludeByName": {"Field": true}, "renameByName": {"Last *": "p95"}}}],
-      "options": {"showHeader": true, "sortBy": [{"displayName": "p95", "desc": true}]},
-      "fieldConfig": {"defaults": {"unit": "ms"}}
+      "transformations": [
+        {
+          "id": "reduce",
+          "options": {
+            "mode": "seriesToRows",
+            "reducers": [
+              "lastNotNull"
+            ],
+            "labelsToFields": true
+          }
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Field": true
+            },
+            "renameByName": {
+              "Last *": "p95"
+            }
+          }
+        }
+      ],
+      "options": {
+        "showHeader": true,
+        "sortBy": [
+          {
+            "displayName": "p95",
+            "desc": true
+          }
+        ]
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms"
+        }
+      }
     },
     {
       "id": 13,
       "type": "table",
       "title": "Top error / warning messages",
-      "datasource": {"type": "loki", "uid": "P8E80F9AEF21F6940"},
-      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 28},
+      "datasource": {
+        "type": "loki",
+        "uid": "P8E80F9AEF21F6940"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 28
+      },
       "targets": [
-        {"refId": "A", "expr": "topk(15, sum by (level, message, detail) (count_over_time({container=~\"apps-jewellerycatalogueapi-.*\"} | json | level=~\"error|warn\" | json src=\"meta[0].source\" | src!=\"frontend\" | json detail=\"meta[0].error\", detail2=\"meta[0].message\" | label_format detail=`{{ or .detail .detail2 }}` [$__range])))", "instant": true, "queryType": "instant"}
+        {
+          "refId": "A",
+          "expr": "topk(15, sum by (level, message, detail) (count_over_time({container=~\"apps-jewellerycatalogueapi-.*\"} | json | level=~\"error|warn\" | json src=\"meta[0].source\" | src!=\"frontend\" | json detail=\"meta[0].error\", detail2=\"meta[0].message\" | label_format detail=`{{ or .detail .detail2 }}` [$__range])))",
+          "instant": true,
+          "queryType": "instant"
+        }
       ],
-      "transformations": [{"id": "reduce", "options": {"mode": "seriesToRows", "reducers": ["lastNotNull"], "labelsToFields": true}}, {"id": "organize", "options": {"excludeByName": {"Field": true}, "renameByName": {"Last *": "count"}}}],
-      "options": {"showHeader": true, "sortBy": [{"displayName": "count", "desc": true}]}
+      "transformations": [
+        {
+          "id": "reduce",
+          "options": {
+            "mode": "seriesToRows",
+            "reducers": [
+              "lastNotNull"
+            ],
+            "labelsToFields": true
+          }
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Field": true
+            },
+            "renameByName": {
+              "Last *": "count"
+            }
+          }
+        }
+      ],
+      "options": {
+        "showHeader": true,
+        "sortBy": [
+          {
+            "displayName": "count",
+            "desc": true
+          }
+        ]
+      }
     },
     {
       "id": 14,
       "type": "table",
-      "title": "Unknown routes hit (404 — mostly scanners)",
-      "datasource": {"type": "loki", "uid": "P8E80F9AEF21F6940"},
-      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 28},
+      "title": "Unknown routes hit (404 \u2014 mostly scanners)",
+      "datasource": {
+        "type": "loki",
+        "uid": "P8E80F9AEF21F6940"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 28
+      },
       "targets": [
-        {"refId": "A", "expr": "topk(15, sum by (method, path) (count_over_time({container=~\"apps-jewellerycatalogueapi-.*\"} |~ \" - [0-9]{3} [0-9]+ms\\\"\" | json | line_format \"{{.message}}\" | regexp \"^(?P<method>[A-Z]+) (?P<path>\\\\S+) - (?P<status>\\\\d{3}) (?P<duration>\\\\d+)ms$\" | path!=\"/api/health\" | status=\"404\" [$__range])))", "instant": true, "queryType": "instant"}
+        {
+          "refId": "A",
+          "expr": "topk(15, sum by (method, path) (count_over_time({container=~\"apps-jewellerycatalogueapi-.*\"} |~ \" - [0-9]{3} [0-9]+ms\\\"\" | json | line_format \"{{.message}}\" | regexp \"^(?P<method>[A-Z]+) (?P<path>\\\\S+) - (?P<status>\\\\d{3}) (?P<duration>\\\\d+)ms$\" | path!=\"/api/health\" | status=\"404\" [$__range])))",
+          "instant": true,
+          "queryType": "instant"
+        }
       ],
-      "transformations": [{"id": "reduce", "options": {"mode": "seriesToRows", "reducers": ["lastNotNull"], "labelsToFields": true}}, {"id": "organize", "options": {"excludeByName": {"Field": true}, "renameByName": {"Last *": "hits"}}}],
-      "options": {"showHeader": true, "sortBy": [{"displayName": "hits", "desc": true}]}
+      "transformations": [
+        {
+          "id": "reduce",
+          "options": {
+            "mode": "seriesToRows",
+            "reducers": [
+              "lastNotNull"
+            ],
+            "labelsToFields": true
+          }
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Field": true
+            },
+            "renameByName": {
+              "Last *": "hits"
+            }
+          }
+        }
+      ],
+      "options": {
+        "showHeader": true,
+        "sortBy": [
+          {
+            "displayName": "hits",
+            "desc": true
+          }
+        ]
+      }
     },
     {
       "id": 15,
       "type": "stat",
       "title": "Users seen in logs (Etsy sync / AI calls)",
-      "datasource": {"type": "loki", "uid": "P8E80F9AEF21F6940"},
-      "gridPos": {"h": 8, "w": 6, "x": 0, "y": 36},
+      "datasource": {
+        "type": "loki",
+        "uid": "P8E80F9AEF21F6940"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 6,
+        "x": 0,
+        "y": 36
+      },
       "targets": [
-        {"refId": "A", "expr": "count(sum by (userId) (count_over_time({container=~\"apps-jewellerycatalogueapi-.*\"} | json userId=\"meta[0].userId\" | userId!=\"\" [$__range])))", "instant": true, "queryType": "instant"}
+        {
+          "refId": "A",
+          "expr": "count(sum by (userId) (count_over_time({container=~\"apps-jewellerycatalogueapi-.*\"} | json userId=\"meta[0].userId\" | userId!=\"\" [$__range])))",
+          "instant": true,
+          "queryType": "instant"
+        }
       ],
-      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "colorMode": "value"},
-      "fieldConfig": {"defaults": {"unit": "short", "decimals": 0}},
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "colorMode": "value"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "decimals": 0
+        }
+      },
       "description": "Only Etsy order sync, AI-call and Etsy push logs carry a userId; per-request logs do not."
     },
     {
       "id": 16,
       "type": "timeseries",
       "title": "AI calls by feature",
-      "datasource": {"type": "loki", "uid": "P8E80F9AEF21F6940"},
-      "gridPos": {"h": 8, "w": 18, "x": 6, "y": 36},
+      "datasource": {
+        "type": "loki",
+        "uid": "P8E80F9AEF21F6940"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 18,
+        "x": 6,
+        "y": 36
+      },
       "interval": "5m",
       "targets": [
-        {"refId": "A", "expr": "sum by (feature) (count_over_time({container=~\"apps-jewellerycatalogueapi-.*\"} |= \"\\\"AI call\\\"\" | json feature=\"meta[0].feature\" [$__interval]))", "legendFormat": "{{feature}}"},
-        {"refId": "B", "expr": "sum(count_over_time({container=~\"apps-jewellerycatalogueapi-.*\"} |= \"AI usage limit reached\" [$__interval]))", "legendFormat": "rate-limited (429)"}
+        {
+          "refId": "A",
+          "expr": "sum by (feature) (count_over_time({container=~\"apps-jewellerycatalogueapi-.*\"} |= \"\\\"AI call\\\"\" | json feature=\"meta[0].feature\" [$__interval]))",
+          "legendFormat": "{{feature}}"
+        },
+        {
+          "refId": "B",
+          "expr": "sum(count_over_time({container=~\"apps-jewellerycatalogueapi-.*\"} |= \"AI usage limit reached\" [$__interval]))",
+          "legendFormat": "rate-limited (429)"
+        }
       ],
-      "fieldConfig": {"defaults": {"unit": "short", "custom": {"drawStyle": "bars", "fillOpacity": 80, "stacking": {"mode": "none"}}}},
-      "options": {"legend": {"displayMode": "list", "placement": "bottom"}}
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "drawStyle": "bars",
+            "fillOpacity": 80,
+            "stacking": {
+              "mode": "none"
+            }
+          }
+        }
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      }
     },
     {
       "id": 17,
       "type": "table",
       "title": "AI calls",
-      "datasource": {"type": "loki", "uid": "P8E80F9AEF21F6940"},
-      "gridPos": {"h": 8, "w": 24, "x": 0, "y": 44},
+      "datasource": {
+        "type": "loki",
+        "uid": "P8E80F9AEF21F6940"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 44
+      },
       "targets": [
-        {"refId": "A", "expr": "{container=~\"apps-jewellerycatalogueapi-.*\"} |= \"\\\"AI call\\\"\" | json feature=\"meta[0].feature\", model=\"meta[0].model\", latencyMs=\"meta[0].latencyMs\", success=\"meta[0].success\", status=\"meta[0].status\", userId=\"meta[0].userId\"", "queryType": "range"}
+        {
+          "refId": "A",
+          "expr": "{container=~\"apps-jewellerycatalogueapi-.*\"} |= \"\\\"AI call\\\"\" | json feature=\"meta[0].feature\", model=\"meta[0].model\", latencyMs=\"meta[0].latencyMs\", success=\"meta[0].success\", status=\"meta[0].status\", userId=\"meta[0].userId\"",
+          "queryType": "range"
+        }
       ],
-      "transformations": [{"id": "extractFields", "options": {"source": "labels", "keepLabels": true}}, {"id": "organize", "options": {"excludeByName": {"labels": true, "tsNs": true, "id": true, "Line": true, "container": true, "job": true, "service_name": true, "stream": true, "detected_level": true, "level": true, "message": true, "meta": true, "labelTypes": true}, "renameByName": {"Time": "time", "latencyMs": "latency (ms)"}, "indexByName": {"Time": 0, "feature": 1, "model": 2, "latencyMs": 3, "success": 4, "status": 5, "userId": 6}}}],
-      "options": {"showHeader": true, "sortBy": [{"displayName": "time", "desc": true}]}
+      "transformations": [
+        {
+          "id": "extractFields",
+          "options": {
+            "source": "labels",
+            "keepLabels": true
+          }
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "labels": true,
+              "tsNs": true,
+              "id": true,
+              "Line": true,
+              "container": true,
+              "job": true,
+              "service_name": true,
+              "stream": true,
+              "detected_level": true,
+              "level": true,
+              "message": true,
+              "meta": true,
+              "labelTypes": true
+            },
+            "renameByName": {
+              "Time": "time",
+              "latencyMs": "latency (ms)"
+            },
+            "indexByName": {
+              "Time": 0,
+              "feature": 1,
+              "model": 2,
+              "latencyMs": 3,
+              "success": 4,
+              "status": 5,
+              "userId": 6
+            }
+          }
+        }
+      ],
+      "options": {
+        "showHeader": true,
+        "sortBy": [
+          {
+            "displayName": "time",
+            "desc": true
+          }
+        ]
+      }
     },
     {
       "id": 18,
       "type": "logs",
       "title": "Recent errors & warnings",
-      "datasource": { "type": "loki", "uid": "P8E80F9AEF21F6940" },
-      "gridPos": { "h": 10, "w": 24, "x": 0, "y": 52 },
+      "datasource": {
+        "type": "loki",
+        "uid": "P8E80F9AEF21F6940"
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 24,
+        "x": 0,
+        "y": 52
+      },
       "targets": [
-        { "refId": "A", "expr": "{container=~\"apps-jewellerycatalogueapi-.*\"} |~ \"\\\"level\\\":\\\"(error|warn)\\\"|^Authentication error\"" }
+        {
+          "refId": "A",
+          "expr": "{container=~\"apps-jewellerycatalogueapi-.*\"} |~ \"\\\"level\\\":\\\"(error|warn)\\\"|^Authentication error\""
+        }
       ],
-      "options": { "showTime": true, "wrapLogMessage": true, "sortOrder": "Descending" }
+      "options": {
+        "showTime": true,
+        "wrapLogMessage": true,
+        "sortOrder": "Descending"
+      }
     },
     {
       "id": 19,
       "type": "timeseries",
       "title": "Container CPU",
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 62 },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 62
+      },
       "targets": [
-        { "refId": "A", "expr": "sum by (name) (rate(container_cpu_usage_seconds_total{name=~\"apps-jewellerycatalogueapi-.*\"}[5m]))", "legendFormat": "{{name}}" }
+        {
+          "refId": "A",
+          "expr": "sum by (name) (rate(container_cpu_usage_seconds_total{name=~\"apps-jewellerycatalogueapi-.*\"}[5m]))",
+          "legendFormat": "{{name}}"
+        }
       ],
-      "fieldConfig": { "defaults": { "unit": "percentunit" } }
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit"
+        }
+      }
     },
     {
       "id": 20,
       "type": "timeseries",
       "title": "Container memory (working set)",
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 62 },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 62
+      },
       "targets": [
-        { "refId": "A", "expr": "sum by (name) (container_memory_working_set_bytes{name=~\"apps-jewellerycatalogueapi-.*\"})", "legendFormat": "{{name}}" }
+        {
+          "refId": "A",
+          "expr": "sum by (name) (container_memory_working_set_bytes{name=~\"apps-jewellerycatalogueapi-.*\"})",
+          "legendFormat": "{{name}}"
+        }
       ],
-      "fieldConfig": { "defaults": { "unit": "bytes" } }
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bytes"
+        }
+      }
+    },
+    {
+      "id": 21,
+      "type": "timeseries",
+      "title": "Activity by event (create / update / delete)",
+      "datasource": {
+        "type": "loki",
+        "uid": "P8E80F9AEF21F6940"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 70
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (event) (count_over_time({apps-jewellerycatalogueapi-.*} | json | __error__=\"\" | event=~\".+\\.(created|updated|deleted|produced|synced_from_etsy)\" [$__interval]))",
+          "legendFormat": "{{event}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 1,
+            "fillOpacity": 10,
+            "stacking": {
+              "mode": "normal"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": 22,
+      "type": "table",
+      "title": "Top domain events",
+      "datasource": {
+        "type": "loki",
+        "uid": "P8E80F9AEF21F6940"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 70
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "topk(15, sum by (event) (count_over_time({apps-jewellerycatalogueapi-.*} | json | __error__=\"\" | event!=\"\" | event=~\".+\\.(created|updated|deleted|produced|synced_from_etsy)\" [$__range])))",
+          "legendFormat": "{{event}}"
+        }
+      ],
+      "options": {
+        "showHeader": true,
+        "sortBy": [
+          {
+            "displayName": "Value",
+            "desc": true
+          }
+        ]
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto",
+            "displayMode": "color-text"
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "event"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 240
+              }
+            ]
+          }
+        ]
+      }
     }
   ]
 }
