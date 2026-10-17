@@ -1,5 +1,7 @@
 {
-  "annotations": { "list": [] },
+  "annotations": {
+    "list": []
+  },
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
@@ -7,9 +9,17 @@
   "liveNow": false,
   "refresh": "1m",
   "schemaVersion": 39,
-  "tags": ["jewellery-catalogue", "web"],
-  "templating": { "list": [] },
-  "time": {"from": "now-7d", "to": "now"},
+  "tags": [
+    "jewellery-catalogue",
+    "web"
+  ],
+  "templating": {
+    "list": []
+  },
+  "time": {
+    "from": "now-7d",
+    "to": "now"
+  },
   "timepicker": {},
   "timezone": "",
   "title": "Jewellery Catalogue Web",
@@ -21,322 +31,1251 @@
       "id": 1,
       "type": "stat",
       "title": "App loads (/config.json fetches)",
-      "datasource": {"type": "loki", "uid": "P8E80F9AEF21F6940"},
-      "gridPos": {"h": 4, "w": 4, "x": 0, "y": 0},
+      "datasource": {
+        "type": "loki",
+        "uid": "P8E80F9AEF21F6940"
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 0,
+        "y": 0
+      },
       "targets": [
-        {"refId": "A", "expr": "sum(count_over_time({container=~\"apps-jewellerycatalogueweb-.*\"} |= \"HTTP/\" != \"Gatus/1.0\" | pattern `<_> - <_> [<_>] \"<method> <path> <_>\" <status> <bytes> \"<referer>\" \"<ua>\" \"<xff>\"` | status=~\"[0-9]{3}\" | path=\"/config.json\" [$__range])) or vector(0)", "instant": true, "queryType": "instant"}
+        {
+          "refId": "A",
+          "expr": "sum(count_over_time({container=~\"apps-jewellerycatalogueweb-.*\"} |= \"HTTP/\" != \"Gatus/1.0\" | json | __error__=\"\" | method!=\"\" | status=~\"[0-9]{3}\" | path=\"/config.json\" [$__range])) or vector(0)",
+          "instant": true,
+          "queryType": "instant"
+        }
       ],
-      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "colorMode": "value"},
-      "fieldConfig": {"defaults": {"unit": "short", "decimals": 0}},
-      "description": "The SPA fetches /config.json once per boot (NetworkFirst in the service worker) — best available proxy for app opens. Excludes Gatus."
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "colorMode": "value"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "decimals": 0
+        }
+      },
+      "description": "The SPA fetches /config.json once per boot (NetworkFirst in the service worker) \u2014 best available proxy for app opens. Excludes Gatus."
     },
     {
       "id": 2,
       "type": "stat",
       "title": "Requests (excl. Gatus)",
-      "datasource": {"type": "loki", "uid": "P8E80F9AEF21F6940"},
-      "gridPos": {"h": 4, "w": 4, "x": 4, "y": 0},
+      "datasource": {
+        "type": "loki",
+        "uid": "P8E80F9AEF21F6940"
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 4,
+        "y": 0
+      },
       "targets": [
-        {"refId": "A", "expr": "sum(count_over_time({container=~\"apps-jewellerycatalogueweb-.*\"} |= \"HTTP/\" != \"Gatus/1.0\" | pattern `<_> - <_> [<_>] \"<method> <path> <_>\" <status> <bytes> \"<referer>\" \"<ua>\" \"<xff>\"` | status=~\"[0-9]{3}\" [$__range])) or vector(0)", "instant": true, "queryType": "instant"}
+        {
+          "refId": "A",
+          "expr": "sum(count_over_time({container=~\"apps-jewellerycatalogueweb-.*\"} |= \"HTTP/\" != \"Gatus/1.0\" | json | __error__=\"\" | method!=\"\" | status=~\"[0-9]{3}\" [$__range])) or vector(0)",
+          "instant": true,
+          "queryType": "instant"
+        }
       ],
-      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "colorMode": "value"},
-      "fieldConfig": {"defaults": {"unit": "short", "decimals": 0}}
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "colorMode": "value"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "decimals": 0
+        }
+      }
     },
     {
       "id": 3,
       "type": "stat",
       "title": "Distinct browser user-agents",
-      "datasource": {"type": "loki", "uid": "P8E80F9AEF21F6940"},
-      "gridPos": {"h": 4, "w": 4, "x": 8, "y": 0},
+      "datasource": {
+        "type": "loki",
+        "uid": "P8E80F9AEF21F6940"
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 8,
+        "y": 0
+      },
       "targets": [
-        {"refId": "A", "expr": "count(sum by (ua) (count_over_time({container=~\"apps-jewellerycatalogueweb-.*\"} |= \"HTTP/\" != \"Gatus/1.0\" | pattern `<_> - <_> [<_>] \"<method> <path> <_>\" <status> <bytes> \"<referer>\" \"<ua>\" \"<xff>\"` | status=~\"[0-9]{3}\" | ua=~\"Mozilla.*\" | ua!~\".*(HeadlessChrome|[Bb]ot|[Ss]can|[Ss]pider|[Cc]rawl|Palo Alto|Censys).*\" [$__range])))", "instant": true, "queryType": "instant"}
+        {
+          "refId": "A",
+          "expr": "count(sum by (ua) (count_over_time({container=~\"apps-jewellerycatalogueweb-.*\"} |= \"HTTP/\" != \"Gatus/1.0\" | json | __error__=\"\" | method!=\"\" | status=~\"[0-9]{3}\" | ua=~\"Mozilla.*\" | ua!~\".*(HeadlessChrome|[Bb]ot|[Ss]can|[Ss]pider|[Cc]rawl|Palo Alto|Censys).*\" [$__range])))",
+          "instant": true,
+          "queryType": "instant"
+        }
       ],
-      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "colorMode": "value"},
-      "fieldConfig": {"defaults": {"unit": "short", "decimals": 0}},
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "colorMode": "value"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "decimals": 0
+        }
+      },
       "description": "No user identity or real client IP reaches nginx (X-Forwarded-For is the cloudflared/Traefik hop), so distinct UAs is the closest client count."
     },
     {
       "id": 4,
       "type": "stat",
       "title": "Scanner probes",
-      "datasource": {"type": "loki", "uid": "P8E80F9AEF21F6940"},
-      "gridPos": {"h": 4, "w": 4, "x": 12, "y": 0},
+      "datasource": {
+        "type": "loki",
+        "uid": "P8E80F9AEF21F6940"
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 12,
+        "y": 0
+      },
       "targets": [
-        {"refId": "A", "expr": "sum(count_over_time({container=~\"apps-jewellerycatalogueweb-.*\"} |= \"HTTP/\" != \"Gatus/1.0\" | pattern `<_> - <_> [<_>] \"<method> <path> <_>\" <status> <bytes> \"<referer>\" \"<ua>\" \"<xff>\"` | status=~\"[0-9]{3}\" | path=~\".*(\\\\.env|\\\\.php|\\\\.git|wp-|\\\\.aws|actuator|phpmyadmin|cgi|\\\\.alfa|\\\\.Eren).*\" [$__range])) or vector(0)", "instant": true, "queryType": "instant"}
+        {
+          "refId": "A",
+          "expr": "sum(count_over_time({container=~\"apps-jewellerycatalogueweb-.*\"} |= \"HTTP/\" != \"Gatus/1.0\" | json | __error__=\"\" | method!=\"\" | status=~\"[0-9]{3}\" | path=~\".*(\\\\.env|\\\\.php|\\\\.git|wp-|\\\\.aws|actuator|phpmyadmin|cgi|\\\\.alfa|\\\\.Eren).*\" [$__range])) or vector(0)",
+          "instant": true,
+          "queryType": "instant"
+        }
       ],
-      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "colorMode": "value"},
-      "fieldConfig": {"defaults": {"unit": "short", "decimals": 0}},
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "colorMode": "value"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "decimals": 0
+        }
+      },
       "description": "Requests for .env/.php/.git/wp-*/cgi etc. nginx SPA fallback answers them 200 with index.html."
     },
     {
       "id": 5,
       "type": "stat",
       "title": "Missing static files (nginx)",
-      "datasource": {"type": "loki", "uid": "P8E80F9AEF21F6940"},
-      "gridPos": {"h": 4, "w": 4, "x": 16, "y": 0},
+      "datasource": {
+        "type": "loki",
+        "uid": "P8E80F9AEF21F6940"
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 16,
+        "y": 0
+      },
       "targets": [
-        {"refId": "A", "expr": "sum(count_over_time({container=~\"apps-jewellerycatalogueweb-.*\"} |= \"[error]\" |= \"No such file\" [$__range])) or vector(0)", "instant": true, "queryType": "instant"}
+        {
+          "refId": "A",
+          "expr": "sum(count_over_time({container=~\"apps-jewellerycatalogueweb-.*\"} |= \"[error]\" |= \"No such file\" [$__range])) or vector(0)",
+          "instant": true,
+          "queryType": "instant"
+        }
       ],
-      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "colorMode": "value"},
-      "fieldConfig": {"defaults": {"unit": "short", "decimals": 0, "color": {"mode": "thresholds"}, "thresholds": {"mode": "absolute", "steps": [{"color": "green"}, {"color": "red", "value": 1}]}}},
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "colorMode": "value"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "decimals": 0,
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green"
+              },
+              {
+                "color": "red",
+                "value": 1
+              }
+            ]
+          }
+        }
+      },
       "description": "Usually stale clients requesting a hashed bundle from a previous deploy."
     },
     {
       "id": 6,
       "type": "stat",
       "title": "nginx starts (deploys / restarts)",
-      "datasource": {"type": "loki", "uid": "P8E80F9AEF21F6940"},
-      "gridPos": {"h": 4, "w": 4, "x": 20, "y": 0},
+      "datasource": {
+        "type": "loki",
+        "uid": "P8E80F9AEF21F6940"
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 20,
+        "y": 0
+      },
       "targets": [
-        {"refId": "A", "expr": "sum(count_over_time({container=~\"apps-jewellerycatalogueweb-.*\"} |= \"Configuration complete; ready for start up\" [$__range])) or vector(0)", "instant": true, "queryType": "instant"}
+        {
+          "refId": "A",
+          "expr": "sum(count_over_time({container=~\"apps-jewellerycatalogueweb-.*\"} |= \"Configuration complete; ready for start up\" [$__range])) or vector(0)",
+          "instant": true,
+          "queryType": "instant"
+        }
       ],
-      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "colorMode": "value"},
-      "fieldConfig": {"defaults": {"unit": "short", "decimals": 0}}
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "colorMode": "value"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "decimals": 0
+        }
+      }
     },
     {
       "id": 7,
       "type": "timeseries",
       "title": "Requests by status (excl. Gatus)",
-      "datasource": {"type": "loki", "uid": "P8E80F9AEF21F6940"},
-      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 4},
+      "datasource": {
+        "type": "loki",
+        "uid": "P8E80F9AEF21F6940"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 4
+      },
       "interval": "5m",
       "targets": [
-        {"refId": "A", "expr": "sum by (status) (count_over_time({container=~\"apps-jewellerycatalogueweb-.*\"} |= \"HTTP/\" != \"Gatus/1.0\" | pattern `<_> - <_> [<_>] \"<method> <path> <_>\" <status> <bytes> \"<referer>\" \"<ua>\" \"<xff>\"` | status=~\"[0-9]{3}\" [$__interval]))", "legendFormat": "{{status}}"}
+        {
+          "refId": "A",
+          "expr": "sum by (status) (count_over_time({container=~\"apps-jewellerycatalogueweb-.*\"} |= \"HTTP/\" != \"Gatus/1.0\" | json | __error__=\"\" | method!=\"\" | status=~\"[0-9]{3}\" [$__interval]))",
+          "legendFormat": "{{status}}"
+        }
       ],
-      "fieldConfig": {"defaults": {"unit": "short", "custom": {"drawStyle": "bars", "fillOpacity": 80, "stacking": {"mode": "normal"}}}},
-      "options": {"legend": {"displayMode": "list", "placement": "bottom"}}
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "drawStyle": "bars",
+            "fillOpacity": 80,
+            "stacking": {
+              "mode": "normal"
+            }
+          }
+        }
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      }
     },
     {
       "id": 8,
       "type": "timeseries",
       "title": "Traffic by client type",
-      "datasource": {"type": "loki", "uid": "P8E80F9AEF21F6940"},
-      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 4},
+      "datasource": {
+        "type": "loki",
+        "uid": "P8E80F9AEF21F6940"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 4
+      },
       "interval": "5m",
       "targets": [
-        {"refId": "A", "expr": "sum(count_over_time({container=~\"apps-jewellerycatalogueweb-.*\"} |= \"HTTP/\" != \"Gatus/1.0\" | pattern `<_> - <_> [<_>] \"<method> <path> <_>\" <status> <bytes> \"<referer>\" \"<ua>\" \"<xff>\"` | status=~\"[0-9]{3}\" | ua=~\"Mozilla.*\" | ua!~\".*(HeadlessChrome|[Bb]ot|[Ss]can|[Ss]pider|[Cc]rawl|Palo Alto|Censys).*\" [$__interval]))", "legendFormat": "browsers"},
-        {"refId": "B", "expr": "sum(count_over_time({container=~\"apps-jewellerycatalogueweb-.*\"} |= \"HTTP/\" != \"Gatus/1.0\" | pattern `<_> - <_> [<_>] \"<method> <path> <_>\" <status> <bytes> \"<referer>\" \"<ua>\" \"<xff>\"` | status=~\"[0-9]{3}\" | ua=~\".*HeadlessChrome.*\" [$__interval]))", "legendFormat": "smoke tests (HeadlessChrome)"},
-        {"refId": "C", "expr": "sum(count_over_time({container=~\"apps-jewellerycatalogueweb-.*\"} |= \"HTTP/\" != \"Gatus/1.0\" | pattern `<_> - <_> [<_>] \"<method> <path> <_>\" <status> <bytes> \"<referer>\" \"<ua>\" \"<xff>\"` | status=~\"[0-9]{3}\" | ua=~\"-|.*([Bb]ot|[Ss]can|[Ss]pider|[Cc]rawl|curl|[Pp]ython|Go-http|Palo Alto|Censys|zgrab|wget|GoogleAssociationService).*\" [$__interval]))", "legendFormat": "bots / scanners / no UA"},
-        {"refId": "D", "expr": "sum(count_over_time({container=~\"apps-jewellerycatalogueweb-.*\"} |= \"Gatus/1.0\" [$__interval]))", "legendFormat": "Gatus health checks"}
+        {
+          "refId": "A",
+          "expr": "sum(count_over_time({container=~\"apps-jewellerycatalogueweb-.*\"} |= \"HTTP/\" != \"Gatus/1.0\" | json | __error__=\"\" | method!=\"\" | status=~\"[0-9]{3}\" | ua=~\"Mozilla.*\" | ua!~\".*(HeadlessChrome|[Bb]ot|[Ss]can|[Ss]pider|[Cc]rawl|Palo Alto|Censys).*\" [$__interval]))",
+          "legendFormat": "browsers"
+        },
+        {
+          "refId": "B",
+          "expr": "sum(count_over_time({container=~\"apps-jewellerycatalogueweb-.*\"} |= \"HTTP/\" != \"Gatus/1.0\" | json | __error__=\"\" | method!=\"\" | status=~\"[0-9]{3}\" | ua=~\".*HeadlessChrome.*\" [$__interval]))",
+          "legendFormat": "smoke tests (HeadlessChrome)"
+        },
+        {
+          "refId": "C",
+          "expr": "sum(count_over_time({container=~\"apps-jewellerycatalogueweb-.*\"} |= \"HTTP/\" != \"Gatus/1.0\" | json | __error__=\"\" | method!=\"\" | status=~\"[0-9]{3}\" | ua=~\"-|.*([Bb]ot|[Ss]can|[Ss]pider|[Cc]rawl|curl|[Pp]ython|Go-http|Palo Alto|Censys|zgrab|wget|GoogleAssociationService).*\" [$__interval]))",
+          "legendFormat": "bots / scanners / no UA"
+        },
+        {
+          "refId": "D",
+          "expr": "sum(count_over_time({container=~\"apps-jewellerycatalogueweb-.*\"} |= \"Gatus/1.0\" [$__interval]))",
+          "legendFormat": "Gatus health checks"
+        }
       ],
-      "fieldConfig": {"defaults": {"unit": "short", "custom": {"drawStyle": "bars", "fillOpacity": 80, "stacking": {"mode": "normal"}}}},
-      "options": {"legend": {"displayMode": "list", "placement": "bottom"}}
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "drawStyle": "bars",
+            "fillOpacity": 80,
+            "stacking": {
+              "mode": "normal"
+            }
+          }
+        }
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      }
     },
     {
       "id": 9,
       "type": "timeseries",
       "title": "App loads over time",
-      "datasource": {"type": "loki", "uid": "P8E80F9AEF21F6940"},
-      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 12},
+      "datasource": {
+        "type": "loki",
+        "uid": "P8E80F9AEF21F6940"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 12
+      },
       "interval": "5m",
       "targets": [
-        {"refId": "A", "expr": "sum(count_over_time({container=~\"apps-jewellerycatalogueweb-.*\"} |= \"HTTP/\" != \"Gatus/1.0\" | pattern `<_> - <_> [<_>] \"<method> <path> <_>\" <status> <bytes> \"<referer>\" \"<ua>\" \"<xff>\"` | status=~\"[0-9]{3}\" | path=\"/config.json\" [$__interval]))", "legendFormat": "config.json (app boots)"},
-        {"refId": "B", "expr": "sum(count_over_time({container=~\"apps-jewellerycatalogueweb-.*\"} |= \"HTTP/\" != \"Gatus/1.0\" | pattern `<_> - <_> [<_>] \"<method> <path> <_>\" <status> <bytes> \"<referer>\" \"<ua>\" \"<xff>\"` | status=~\"[0-9]{3}\" | path=~\"/|/index.html\" [$__interval]))", "legendFormat": "HTML loads"}
+        {
+          "refId": "A",
+          "expr": "sum(count_over_time({container=~\"apps-jewellerycatalogueweb-.*\"} |= \"HTTP/\" != \"Gatus/1.0\" | json | __error__=\"\" | method!=\"\" | status=~\"[0-9]{3}\" | path=\"/config.json\" [$__interval]))",
+          "legendFormat": "config.json (app boots)"
+        },
+        {
+          "refId": "B",
+          "expr": "sum(count_over_time({container=~\"apps-jewellerycatalogueweb-.*\"} |= \"HTTP/\" != \"Gatus/1.0\" | json | __error__=\"\" | method!=\"\" | status=~\"[0-9]{3}\" | path=~\"/|/index.html\" [$__interval]))",
+          "legendFormat": "HTML loads"
+        }
       ],
-      "fieldConfig": {"defaults": {"unit": "short", "custom": {"drawStyle": "bars", "fillOpacity": 80, "stacking": {"mode": "none"}}}},
-      "options": {"legend": {"displayMode": "list", "placement": "bottom"}}
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "drawStyle": "bars",
+            "fillOpacity": 80,
+            "stacking": {
+              "mode": "none"
+            }
+          }
+        }
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      }
     },
     {
       "id": 10,
       "type": "timeseries",
       "title": "Nginx log volume by stream",
-      "datasource": {"type": "loki", "uid": "P8E80F9AEF21F6940"},
-      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 12},
+      "datasource": {
+        "type": "loki",
+        "uid": "P8E80F9AEF21F6940"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 12
+      },
       "interval": "5m",
       "targets": [
-        {"refId": "A", "expr": "sum by (stream) (count_over_time({container=~\"apps-jewellerycatalogueweb-.*\"} [$__interval]))", "legendFormat": "{{stream}}"}
+        {
+          "refId": "A",
+          "expr": "sum by (stream) (count_over_time({container=~\"apps-jewellerycatalogueweb-.*\"} [$__interval]))",
+          "legendFormat": "{{stream}}"
+        }
       ],
-      "fieldConfig": {"defaults": {"unit": "short", "custom": {"drawStyle": "bars", "fillOpacity": 80, "stacking": {"mode": "normal"}}}},
-      "options": {"legend": {"displayMode": "list", "placement": "bottom"}}
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "drawStyle": "bars",
+            "fillOpacity": 80,
+            "stacking": {
+              "mode": "normal"
+            }
+          }
+        }
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      }
     },
     {
       "id": 11,
       "type": "table",
       "title": "Top paths (excl. Gatus & scanner probes)",
-      "datasource": {"type": "loki", "uid": "P8E80F9AEF21F6940"},
-      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 20},
+      "datasource": {
+        "type": "loki",
+        "uid": "P8E80F9AEF21F6940"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 20
+      },
       "targets": [
-        {"refId": "A", "expr": "topk(15, sum by (path) (count_over_time({container=~\"apps-jewellerycatalogueweb-.*\"} |= \"HTTP/\" != \"Gatus/1.0\" | pattern `<_> - <_> [<_>] \"<method> <path> <_>\" <status> <bytes> \"<referer>\" \"<ua>\" \"<xff>\"` | status=~\"[0-9]{3}\" | path!~\".*(\\\\.env|\\\\.php|\\\\.git|wp-|\\\\.aws|actuator|phpmyadmin|cgi|\\\\.alfa|\\\\.Eren).*\" | label_format path=`{{ regexReplaceAll \"\\\\?.*\" .path \"\" }}` [$__range])))", "instant": true, "queryType": "instant"}
+        {
+          "refId": "A",
+          "expr": "topk(15, sum by (path) (count_over_time({container=~\"apps-jewellerycatalogueweb-.*\"} |= \"HTTP/\" != \"Gatus/1.0\" | json | __error__=\"\" | method!=\"\" | status=~\"[0-9]{3}\" | path!~\".*(\\\\.env|\\\\.php|\\\\.git|wp-|\\\\.aws|actuator|phpmyadmin|cgi|\\\\.alfa|\\\\.Eren).*\" | label_format path=`{{ regexReplaceAll \"\\\\?.*\" .path \"\" }}` [$__range])))",
+          "instant": true,
+          "queryType": "instant"
+        }
       ],
-      "transformations": [{"id": "reduce", "options": {"mode": "seriesToRows", "reducers": ["lastNotNull"], "labelsToFields": true}}, {"id": "organize", "options": {"excludeByName": {"Field": true}, "renameByName": {"Last *": "requests"}}}],
-      "options": {"showHeader": true, "sortBy": [{"displayName": "requests", "desc": true}]}
+      "transformations": [
+        {
+          "id": "reduce",
+          "options": {
+            "mode": "seriesToRows",
+            "reducers": [
+              "lastNotNull"
+            ],
+            "labelsToFields": true
+          }
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Field": true
+            },
+            "renameByName": {
+              "Last *": "requests"
+            }
+          }
+        }
+      ],
+      "options": {
+        "showHeader": true,
+        "sortBy": [
+          {
+            "displayName": "requests",
+            "desc": true
+          }
+        ]
+      }
     },
     {
       "id": 12,
       "type": "table",
       "title": "Top scanner probe paths",
-      "datasource": {"type": "loki", "uid": "P8E80F9AEF21F6940"},
-      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 20},
+      "datasource": {
+        "type": "loki",
+        "uid": "P8E80F9AEF21F6940"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 20
+      },
       "targets": [
-        {"refId": "A", "expr": "topk(15, sum by (path, status) (count_over_time({container=~\"apps-jewellerycatalogueweb-.*\"} |= \"HTTP/\" != \"Gatus/1.0\" | pattern `<_> - <_> [<_>] \"<method> <path> <_>\" <status> <bytes> \"<referer>\" \"<ua>\" \"<xff>\"` | status=~\"[0-9]{3}\" | path=~\".*(\\\\.env|\\\\.php|\\\\.git|wp-|\\\\.aws|actuator|phpmyadmin|cgi|\\\\.alfa|\\\\.Eren).*\" [$__range])))", "instant": true, "queryType": "instant"}
+        {
+          "refId": "A",
+          "expr": "topk(15, sum by (path, status) (count_over_time({container=~\"apps-jewellerycatalogueweb-.*\"} |= \"HTTP/\" != \"Gatus/1.0\" | json | __error__=\"\" | method!=\"\" | status=~\"[0-9]{3}\" | path=~\".*(\\\\.env|\\\\.php|\\\\.git|wp-|\\\\.aws|actuator|phpmyadmin|cgi|\\\\.alfa|\\\\.Eren).*\" [$__range])))",
+          "instant": true,
+          "queryType": "instant"
+        }
       ],
-      "transformations": [{"id": "reduce", "options": {"mode": "seriesToRows", "reducers": ["lastNotNull"], "labelsToFields": true}}, {"id": "organize", "options": {"excludeByName": {"Field": true}, "renameByName": {"Last *": "hits"}}}],
-      "options": {"showHeader": true, "sortBy": [{"displayName": "hits", "desc": true}]}
+      "transformations": [
+        {
+          "id": "reduce",
+          "options": {
+            "mode": "seriesToRows",
+            "reducers": [
+              "lastNotNull"
+            ],
+            "labelsToFields": true
+          }
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Field": true
+            },
+            "renameByName": {
+              "Last *": "hits"
+            }
+          }
+        }
+      ],
+      "options": {
+        "showHeader": true,
+        "sortBy": [
+          {
+            "displayName": "hits",
+            "desc": true
+          }
+        ]
+      }
     },
     {
       "id": 13,
       "type": "table",
       "title": "Top user agents (excl. Gatus)",
-      "datasource": {"type": "loki", "uid": "P8E80F9AEF21F6940"},
-      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 28},
+      "datasource": {
+        "type": "loki",
+        "uid": "P8E80F9AEF21F6940"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 28
+      },
       "targets": [
-        {"refId": "A", "expr": "topk(15, sum by (ua) (count_over_time({container=~\"apps-jewellerycatalogueweb-.*\"} |= \"HTTP/\" != \"Gatus/1.0\" | pattern `<_> - <_> [<_>] \"<method> <path> <_>\" <status> <bytes> \"<referer>\" \"<ua>\" \"<xff>\"` | status=~\"[0-9]{3}\" [$__range])))", "instant": true, "queryType": "instant"}
+        {
+          "refId": "A",
+          "expr": "topk(15, sum by (ua) (count_over_time({container=~\"apps-jewellerycatalogueweb-.*\"} |= \"HTTP/\" != \"Gatus/1.0\" | json | __error__=\"\" | method!=\"\" | status=~\"[0-9]{3}\" [$__range])))",
+          "instant": true,
+          "queryType": "instant"
+        }
       ],
-      "transformations": [{"id": "reduce", "options": {"mode": "seriesToRows", "reducers": ["lastNotNull"], "labelsToFields": true}}, {"id": "organize", "options": {"excludeByName": {"Field": true}, "renameByName": {"ua": "user agent", "Last *": "requests"}}}],
-      "options": {"showHeader": true, "sortBy": [{"displayName": "requests", "desc": true}]}
+      "transformations": [
+        {
+          "id": "reduce",
+          "options": {
+            "mode": "seriesToRows",
+            "reducers": [
+              "lastNotNull"
+            ],
+            "labelsToFields": true
+          }
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Field": true
+            },
+            "renameByName": {
+              "ua": "user agent",
+              "Last *": "requests"
+            }
+          }
+        }
+      ],
+      "options": {
+        "showHeader": true,
+        "sortBy": [
+          {
+            "displayName": "requests",
+            "desc": true
+          }
+        ]
+      }
     },
     {
       "id": 14,
       "type": "table",
       "title": "Missing static files by path",
-      "datasource": {"type": "loki", "uid": "P8E80F9AEF21F6940"},
-      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 28},
+      "datasource": {
+        "type": "loki",
+        "uid": "P8E80F9AEF21F6940"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 28
+      },
       "targets": [
-        {"refId": "A", "expr": "topk(15, sum by (path) (count_over_time({container=~\"apps-jewellerycatalogueweb-.*\"} |= \"[error]\" |= \"No such file\" | regexp \"request: \\\"(?P<method>\\\\S+) (?P<path>\\\\S+) \" [$__range])))", "instant": true, "queryType": "instant"}
+        {
+          "refId": "A",
+          "expr": "topk(15, sum by (path) (count_over_time({container=~\"apps-jewellerycatalogueweb-.*\"} |= \"[error]\" |= \"No such file\" | regexp \"request: \\\"(?P<method>\\\\S+) (?P<path>\\\\S+) \" [$__range])))",
+          "instant": true,
+          "queryType": "instant"
+        }
       ],
-      "transformations": [{"id": "reduce", "options": {"mode": "seriesToRows", "reducers": ["lastNotNull"], "labelsToFields": true}}, {"id": "organize", "options": {"excludeByName": {"Field": true}, "renameByName": {"Last *": "errors"}}}],
-      "options": {"showHeader": true, "sortBy": [{"displayName": "errors", "desc": true}]}
+      "transformations": [
+        {
+          "id": "reduce",
+          "options": {
+            "mode": "seriesToRows",
+            "reducers": [
+              "lastNotNull"
+            ],
+            "labelsToFields": true
+          }
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Field": true
+            },
+            "renameByName": {
+              "Last *": "errors"
+            }
+          }
+        }
+      ],
+      "options": {
+        "showHeader": true,
+        "sortBy": [
+          {
+            "displayName": "errors",
+            "desc": true
+          }
+        ]
+      }
     },
     {
       "id": 15,
       "type": "table",
       "title": "Non-2xx/3xx responses by path (excl. Gatus)",
-      "datasource": {"type": "loki", "uid": "P8E80F9AEF21F6940"},
-      "gridPos": {"h": 8, "w": 24, "x": 0, "y": 36},
+      "datasource": {
+        "type": "loki",
+        "uid": "P8E80F9AEF21F6940"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 36
+      },
       "targets": [
-        {"refId": "A", "expr": "topk(15, sum by (method, path, status) (count_over_time({container=~\"apps-jewellerycatalogueweb-.*\"} |= \"HTTP/\" != \"Gatus/1.0\" | pattern `<_> - <_> [<_>] \"<method> <path> <_>\" <status> <bytes> \"<referer>\" \"<ua>\" \"<xff>\"` | status=~\"[0-9]{3}\" | status=~\"[45]..\" [$__range])))", "instant": true, "queryType": "instant"}
+        {
+          "refId": "A",
+          "expr": "topk(15, sum by (method, path, status) (count_over_time({container=~\"apps-jewellerycatalogueweb-.*\"} |= \"HTTP/\" != \"Gatus/1.0\" | json | __error__=\"\" | method!=\"\" | status=~\"[0-9]{3}\" | status=~\"[45]..\" [$__range])))",
+          "instant": true,
+          "queryType": "instant"
+        }
       ],
-      "transformations": [{"id": "reduce", "options": {"mode": "seriesToRows", "reducers": ["lastNotNull"], "labelsToFields": true}}, {"id": "organize", "options": {"excludeByName": {"Field": true}, "renameByName": {"Last *": "count"}}}],
-      "options": {"showHeader": true, "sortBy": [{"displayName": "count", "desc": true}]}
+      "transformations": [
+        {
+          "id": "reduce",
+          "options": {
+            "mode": "seriesToRows",
+            "reducers": [
+              "lastNotNull"
+            ],
+            "labelsToFields": true
+          }
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Field": true
+            },
+            "renameByName": {
+              "Last *": "count"
+            }
+          }
+        }
+      ],
+      "options": {
+        "showHeader": true,
+        "sortBy": [
+          {
+            "displayName": "count",
+            "desc": true
+          }
+        ]
+      }
     },
     {
       "id": 16,
       "type": "logs",
       "title": "nginx errors & warnings",
-      "datasource": {"type": "loki", "uid": "P8E80F9AEF21F6940"},
-      "gridPos": {"h": 10, "w": 24, "x": 0, "y": 44},
+      "datasource": {
+        "type": "loki",
+        "uid": "P8E80F9AEF21F6940"
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 24,
+        "x": 0,
+        "y": 44
+      },
       "targets": [
-        {"refId": "A", "expr": "{container=~\"apps-jewellerycatalogueweb-.*\"} |~ \"\\\\[(error|warn|crit|alert|emerg)\\\\]\" != \"duplicate extension\""}
+        {
+          "refId": "A",
+          "expr": "{container=~\"apps-jewellerycatalogueweb-.*\"} |~ \"\\\\[(error|warn|crit|alert|emerg)\\\\]\" != \"duplicate extension\""
+        }
       ],
-      "options": {"showTime": true, "wrapLogMessage": true, "sortOrder": "Descending"}
+      "options": {
+        "showTime": true,
+        "wrapLogMessage": true,
+        "sortOrder": "Descending"
+      }
     },
     {
       "id": 17,
       "type": "row",
       "title": "Browser logs (sent by the web app to POST /api/logs)",
       "collapsed": false,
-      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 54},
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 54
+      },
       "panels": []
     },
     {
       "id": 18,
       "type": "stat",
       "title": "Browser errors",
-      "datasource": {"type": "loki", "uid": "P8E80F9AEF21F6940"},
-      "gridPos": {"h": 4, "w": 6, "x": 0, "y": 55},
+      "datasource": {
+        "type": "loki",
+        "uid": "P8E80F9AEF21F6940"
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 0,
+        "y": 55
+      },
       "targets": [
-        {"refId": "A", "expr": "sum(count_over_time({container=~\"apps-jewellerycatalogueapi-.*\"} | json level, message, source=\"meta[0].source\" | source=\"frontend\" | level=\"error\" [$__range])) or vector(0)", "instant": true, "queryType": "instant"}
+        {
+          "refId": "A",
+          "expr": "sum(count_over_time({container=~\"apps-jewellerycatalogueapi-.*\"} | json level, message, source=\"meta[0].source\" | source=\"frontend\" | level=\"error\" [$__range])) or vector(0)",
+          "instant": true,
+          "queryType": "instant"
+        }
       ],
-      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "colorMode": "value"},
-      "fieldConfig": {"defaults": {"unit": "short", "decimals": 0, "color": {"mode": "thresholds"}, "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "red", "value": 1}]}}},
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "colorMode": "value"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "decimals": 0,
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 1
+              }
+            ]
+          }
+        }
+      },
       "description": "Uncaught errors, unhandled rejections and 5xx API calls the browser reported."
     },
     {
       "id": 19,
       "type": "stat",
       "title": "Browser warnings",
-      "datasource": {"type": "loki", "uid": "P8E80F9AEF21F6940"},
-      "gridPos": {"h": 4, "w": 6, "x": 6, "y": 55},
+      "datasource": {
+        "type": "loki",
+        "uid": "P8E80F9AEF21F6940"
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 6,
+        "y": 55
+      },
       "targets": [
-        {"refId": "A", "expr": "sum(count_over_time({container=~\"apps-jewellerycatalogueapi-.*\"} | json level, message, source=\"meta[0].source\" | source=\"frontend\" | level=\"warn\" [$__range])) or vector(0)", "instant": true, "queryType": "instant"}
+        {
+          "refId": "A",
+          "expr": "sum(count_over_time({container=~\"apps-jewellerycatalogueapi-.*\"} | json level, message, source=\"meta[0].source\" | source=\"frontend\" | level=\"warn\" [$__range])) or vector(0)",
+          "instant": true,
+          "queryType": "instant"
+        }
       ],
-      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "colorMode": "value"},
-      "fieldConfig": {"defaults": {"unit": "short", "decimals": 0}},
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "colorMode": "value"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "decimals": 0
+        }
+      },
       "description": "Mostly non-401 4xx API calls."
     },
     {
       "id": 20,
       "type": "stat",
       "title": "Users hitting errors",
-      "datasource": {"type": "loki", "uid": "P8E80F9AEF21F6940"},
-      "gridPos": {"h": 4, "w": 6, "x": 12, "y": 55},
+      "datasource": {
+        "type": "loki",
+        "uid": "P8E80F9AEF21F6940"
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 12,
+        "y": 55
+      },
       "targets": [
-        {"refId": "A", "expr": "count(sum by (userId) (count_over_time({container=~\"apps-jewellerycatalogueapi-.*\"} | json level, message, source=\"meta[0].source\" | source=\"frontend\" | level=\"error\" | json userId=\"meta[0].userId\" [$__range]))) or vector(0)", "instant": true, "queryType": "instant"}
+        {
+          "refId": "A",
+          "expr": "count(sum by (userId) (count_over_time({container=~\"apps-jewellerycatalogueapi-.*\"} | json level, message, source=\"meta[0].source\" | source=\"frontend\" | level=\"error\" | json userId=\"meta[0].userId\" [$__range]))) or vector(0)",
+          "instant": true,
+          "queryType": "instant"
+        }
       ],
-      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "colorMode": "value"},
-      "fieldConfig": {"defaults": {"unit": "short", "decimals": 0}},
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "colorMode": "value"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "decimals": 0
+        }
+      },
       "description": "Distinct userIds with at least one browser error."
     },
     {
       "id": 21,
       "type": "stat",
       "title": "Failed API calls (seen by the browser)",
-      "datasource": {"type": "loki", "uid": "P8E80F9AEF21F6940"},
-      "gridPos": {"h": 4, "w": 6, "x": 18, "y": 55},
+      "datasource": {
+        "type": "loki",
+        "uid": "P8E80F9AEF21F6940"
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 18,
+        "y": 55
+      },
       "targets": [
-        {"refId": "A", "expr": "sum(count_over_time({container=~\"apps-jewellerycatalogueapi-.*\"} | json level, message, source=\"meta[0].source\" | source=\"frontend\" | json status=\"meta[0].status\" | status!=\"\" [$__range])) or vector(0)", "instant": true, "queryType": "instant"}
+        {
+          "refId": "A",
+          "expr": "sum(count_over_time({container=~\"apps-jewellerycatalogueapi-.*\"} | json level, message, source=\"meta[0].source\" | source=\"frontend\" | json status=\"meta[0].status\" | status!=\"\" [$__range])) or vector(0)",
+          "instant": true,
+          "queryType": "instant"
+        }
       ],
-      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "colorMode": "value"},
-      "fieldConfig": {"defaults": {"unit": "short", "decimals": 0}},
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "colorMode": "value"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "decimals": 0
+        }
+      },
       "description": "makeRequest failures except 401s, which withTokenRefresh retries."
     },
     {
       "id": 22,
       "type": "timeseries",
       "title": "Browser errors & warnings",
-      "datasource": {"type": "loki", "uid": "P8E80F9AEF21F6940"},
-      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 59},
+      "datasource": {
+        "type": "loki",
+        "uid": "P8E80F9AEF21F6940"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 59
+      },
       "interval": "5m",
       "targets": [
-        {"refId": "A", "expr": "sum by (level) (count_over_time({container=~\"apps-jewellerycatalogueapi-.*\"} | json level, message, source=\"meta[0].source\" | source=\"frontend\" | level=~\"error|warn\" [$__interval]))", "legendFormat": "{{level}}"}
+        {
+          "refId": "A",
+          "expr": "sum by (level) (count_over_time({container=~\"apps-jewellerycatalogueapi-.*\"} | json level, message, source=\"meta[0].source\" | source=\"frontend\" | level=~\"error|warn\" [$__interval]))",
+          "legendFormat": "{{level}}"
+        }
       ],
-      "fieldConfig": {"defaults": {"unit": "short", "custom": {"drawStyle": "bars", "fillOpacity": 80, "stacking": {"mode": "normal"}}}},
-      "options": {"legend": {"displayMode": "list", "placement": "bottom"}}
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "drawStyle": "bars",
+            "fillOpacity": 80,
+            "stacking": {
+              "mode": "normal"
+            }
+          }
+        }
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      }
     },
     {
       "id": 23,
       "type": "table",
       "title": "Top browser errors & warnings",
-      "datasource": {"type": "loki", "uid": "P8E80F9AEF21F6940"},
-      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 59},
+      "datasource": {
+        "type": "loki",
+        "uid": "P8E80F9AEF21F6940"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 59
+      },
       "targets": [
-        {"refId": "A", "expr": "topk(15, sum by (level, message, detail) (count_over_time({container=~\"apps-jewellerycatalogueapi-.*\"} | json level, message, source=\"meta[0].source\" | source=\"frontend\" | level=~\"error|warn\" | json detail=\"meta[0].error\", detail2=\"meta[0].pathname\" | label_format detail=`{{ or .detail .detail2 }}` [$__range])))", "instant": true, "queryType": "instant"}
+        {
+          "refId": "A",
+          "expr": "topk(15, sum by (level, message, detail) (count_over_time({container=~\"apps-jewellerycatalogueapi-.*\"} | json level, message, source=\"meta[0].source\" | source=\"frontend\" | level=~\"error|warn\" | json detail=\"meta[0].error\", detail2=\"meta[0].pathname\" | label_format detail=`{{ or .detail .detail2 }}` [$__range])))",
+          "instant": true,
+          "queryType": "instant"
+        }
       ],
-      "transformations": [{"id": "reduce", "options": {"mode": "seriesToRows", "reducers": ["lastNotNull"], "labelsToFields": true}}, {"id": "organize", "options": {"excludeByName": {"Field": true}, "renameByName": {"Last *": "count"}}}],
-      "options": {"showHeader": true, "sortBy": [{"displayName": "count", "desc": true}]}
+      "transformations": [
+        {
+          "id": "reduce",
+          "options": {
+            "mode": "seriesToRows",
+            "reducers": [
+              "lastNotNull"
+            ],
+            "labelsToFields": true
+          }
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Field": true
+            },
+            "renameByName": {
+              "Last *": "count"
+            }
+          }
+        }
+      ],
+      "options": {
+        "showHeader": true,
+        "sortBy": [
+          {
+            "displayName": "count",
+            "desc": true
+          }
+        ]
+      }
     },
     {
       "id": 24,
       "type": "logs",
       "title": "Recent browser errors & warnings",
-      "datasource": {"type": "loki", "uid": "P8E80F9AEF21F6940"},
-      "gridPos": {"h": 10, "w": 24, "x": 0, "y": 67},
+      "datasource": {
+        "type": "loki",
+        "uid": "P8E80F9AEF21F6940"
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 24,
+        "x": 0,
+        "y": 67
+      },
       "targets": [
-        {"refId": "A", "expr": "{container=~\"apps-jewellerycatalogueapi-.*\"} | json level, message, source=\"meta[0].source\" | source=\"frontend\" | level=~\"error|warn\""}
+        {
+          "refId": "A",
+          "expr": "{container=~\"apps-jewellerycatalogueapi-.*\"} | json level, message, source=\"meta[0].source\" | source=\"frontend\" | level=~\"error|warn\""
+        }
       ],
-      "options": {"showTime": true, "wrapLogMessage": true, "sortOrder": "Descending"}
+      "options": {
+        "showTime": true,
+        "wrapLogMessage": true,
+        "sortOrder": "Descending"
+      }
     },
     {
       "id": 25,
       "type": "timeseries",
       "title": "Container CPU",
-      "datasource": {"type": "prometheus", "uid": "prometheus"},
-      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 77},
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 77
+      },
       "targets": [
-        {"refId": "A", "expr": "sum by (name) (rate(container_cpu_usage_seconds_total{name=~\"apps-jewellerycatalogueweb-.*\"}[5m]))", "legendFormat": "{{name}}"}
+        {
+          "refId": "A",
+          "expr": "sum by (name) (rate(container_cpu_usage_seconds_total{name=~\"apps-jewellerycatalogueweb-.*\"}[5m]))",
+          "legendFormat": "{{name}}"
+        }
       ],
-      "fieldConfig": {"defaults": {"unit": "percentunit"}}
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit"
+        }
+      }
     },
     {
       "id": 26,
       "type": "timeseries",
       "title": "Container memory (working set)",
-      "datasource": {"type": "prometheus", "uid": "prometheus"},
-      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 77},
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 77
+      },
       "targets": [
-        {"refId": "A", "expr": "sum by (name) (container_memory_working_set_bytes{name=~\"apps-jewellerycatalogueweb-.*\"})", "legendFormat": "{{name}}"}
+        {
+          "refId": "A",
+          "expr": "sum by (name) (container_memory_working_set_bytes{name=~\"apps-jewellerycatalogueweb-.*\"})",
+          "legendFormat": "{{name}}"
+        }
       ],
-      "fieldConfig": {"defaults": {"unit": "bytes"}}
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bytes"
+        }
+      }
+    },
+    {
+      "id": 27,
+      "type": "table",
+      "title": "Stale-bundle app versions (frontend errors by appVersion)",
+      "datasource": {
+        "type": "loki",
+        "uid": "P8E80F9AEF21F6940"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 85
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (appVersion) (count_over_time({container=~\"apps-jewellerycatalogueapi-.*\"} | json level, source=\"meta[0].source\", appVersion=\"meta[3].appVersion\" | source=\"frontend\" | level=\"error\" [$__range]))",
+          "legendFormat": "{{appVersion}}"
+        }
+      ],
+      "options": {
+        "showHeader": true,
+        "sortBy": [
+          {
+            "displayName": "Value",
+            "desc": true
+          }
+        ]
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto",
+            "displayMode": "color-text"
+          },
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 1
+              },
+              {
+                "color": "red",
+                "value": 50
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "appVersion"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 240
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": 28,
+      "type": "timeseries",
+      "title": "Request latency (p50 / p95 / p99)",
+      "datasource": {
+        "type": "loki",
+        "uid": "P8E80F9AEF21F6940"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 93
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "quantile_over_time(0.50, {apps-jewellerycatalogueweb-.*} | json | __error__=\"\" | method!=\"\" | unwrap(rt) [$__interval])",
+          "legendFormat": "p50"
+        },
+        {
+          "refId": "B",
+          "expr": "quantile_over_time(0.95, {apps-jewellerycatalogueweb-.*} | json | __error__=\"\" | method!=\"\" | unwrap(rt) [$__interval])",
+          "legendFormat": "p95"
+        },
+        {
+          "refId": "C",
+          "expr": "quantile_over_time(0.99, {apps-jewellerycatalogueweb-.*} | json | __error__=\"\" | method!=\"\" | unwrap(rt) [$__interval])",
+          "legendFormat": "p99"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 1,
+            "fillOpacity": 10
+          }
+        }
+      }
+    },
+    {
+      "id": 29,
+      "type": "table",
+      "title": "Top real clients (by CF-Connecting-IP, last 24h)",
+      "datasource": {
+        "type": "loki",
+        "uid": "P8E80F9AEF21F6940"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 93
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "topk(15, sum by (cf_ip) (count_over_time({apps-jewellerycatalogueweb-.*} | json | __error__=\"\" | cf_ip!=\"\" | cf_ip!=\"-\" [$__range])))",
+          "legendFormat": "{{cf_ip}}"
+        }
+      ],
+      "options": {
+        "showHeader": true,
+        "sortBy": [
+          {
+            "displayName": "Value",
+            "desc": true
+          }
+        ]
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto",
+            "displayMode": "color-text"
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "cf_ip"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 240
+              }
+            ]
+          }
+        ]
+      }
     }
   ]
 }
