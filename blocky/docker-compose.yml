@@ -1,6 +1,7 @@
 services:
   blocky:
-    image: spx01/blocky:latest
+    # Pinned 2026-10-18 (SECURITY-AUDIT #8); Dependabot bumps via :latest's new digest
+    image: spx01/blocky@sha256:595136fb127f4c952b621113e668c09acdcf15ac054d96ee6d4c51a76c35f5fd
     container_name: blocky
     # LAN-wide resolver: always come back, even after a daemon restart.
     restart: always

@@ -2,7 +2,8 @@ name: navidrome
 
 services:
   navidrome:
-    image: deluan/navidrome:latest
+    # Pinned 2026-10-18 (SECURITY-AUDIT #8); Dependabot bumps via :latest's new digest
+    image: deluan/navidrome@sha256:9012939114fbb1bb641b81cf96dec5ded15f0aafefe8d47a511d7cb919658e40
     container_name: navidrome
     restart: unless-stopped
     environment:
