@@ -2,8 +2,6 @@
 
 Agent-oriented map of `taisei-karate`'s AWS deployment. **Not part of the Dokploy homelab** — different cloud, different auth model, own repo (`taisei-karate`, sibling to `foundry` under `imapps/`), own Terraform state. See [`homelab.md`](./homelab.md) for the Dokploy side.
 
-Predecessor: `karate-promo` (repo `igor-siergiej/karate-promo`) ran the previous AWS stack; it was torn down in favour of `taisei-karate` and its deploy workflows disabled (commit `de61293`). Its Route 53 zone/records were kept live for this site.
-
 Source of truth for this stack is the code: `taisei-karate/infra/*.tf` (Terraform) and `taisei-karate/.github/workflows/*.yml` (CI/CD). This doc is a map to orient in that code, not a replacement for it — when they disagree, the code wins; update this doc. Repo-side diagram: [`docs/diagrams/architecture.excalidraw`](https://github.com/igor-siergiej/taisei-karate/blob/main/docs/diagrams/architecture.excalidraw).
 
 ## 1. What it is
