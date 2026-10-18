@@ -1,12 +1,10 @@
 name: umami
 
-# Shoppingo self-hosted analytics (#72). Tailscale-only: the public
-# hostname `analytics.imapps.uk` resolves to the foundry Tailscale IP
-# (100.79.92.93) via Cloudflare DNS, but the CGNAT range 100.64.0.0/10
-# isn't routable from the public internet, so non-tailnet clients drop
-# at L3. The Traefik listener already binds 0.0.0.0:443, which covers
-# both the LAN IP (192.168.68.17) and the Tailscale IP, so no extra
-# bind is needed here.
+# Shoppingo self-hosted analytics (#72). Tailnet/LAN-only: there is no
+# public DNS record for `analytics.imapps.uk`, so the Cloudflare edge never
+# routes it into the tunnel (homelab.md §3.5). LAN and tailnet clients
+# resolve it via blocky to 192.168.68.17 (the tailnet reaches that through
+# foundry's subnet route) and hit Traefik on :443.
 #
 # Infra shape (digest-pinned from day one):
 #
