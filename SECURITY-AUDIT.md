@@ -37,11 +37,6 @@ alternative; at minimum drop the `minio-console` Traefik route when not in use.
 Pinned `2024.12.3`. Upgrade in steps and check breaking changes; only the `sun` and `go2rtc`
 integrations remain, so risk is low.
 
-### 8. Unpinned `:latest` images — LOW
-blocky, minio, navidrome, audiobookshelf, filestash, gatus, resilio-sync, tailscale (×2),
-cloudflared. Every redeploy pulls whatever upstream published, with no review. Pin to versions and
-let Renovate/Dependabot bump them.
-
 ### 10. Docker socket mounted into promtail — LOW
 `:ro` on a socket bind does not restrict the API — promtail can create privileged containers. Put a
 read-only socket proxy (e.g. `tecnativa/docker-socket-proxy` with only `CONTAINERS=1`) in front.
@@ -94,10 +89,37 @@ container read `NODE_TLS_REJECT_UNAUTHORIZED=0` because the live `NODE_ENV` was 
 (`packages/api/src/index.ts:12-14` disables verification unless `NODE_ENV === "production"`).
 Set `NODE_ENV=production` via `docker service update --env-add NODE_ENV=production
 sentinel-api-vnfxap` for the immediate fix and `application.saveEnvironment` (dokploy-mcp) so
-the env survives a Dokploy-triggered redeploy. Swarm task restarted; `printenv NODE_ENV` in the
-new `sentinel-api-vnfxap.1.y7up9qv0lllo…` is `production`; a `bun` fetch to `$HA_URL/api/`
+the env survives a Dokploy-triggered redeploy. Swarm task restarted; `printenv NODE_ENV` in
+the new `sentinel-api-vnfxap.1.y7up9qv0lllo…` is `production`; a `bun` fetch to `$HA_URL/api/`
 returns `200` (TLS verification now active). Traefik route `sentinel.imapps.uk/api/gatus/statuses`
 still answers 200.
+
+### 8. Unpinned `:latest` images — was LOW
+Every unpinned `:latest` image in foundry (except `minio`, per the audit's note and #99) is now
+pinned to its running digest in `<stack>/docker-compose.yml`. Dependabot is already wired in
+`.github/dependabot.yml` (it can't track a literal `:latest`, but tracks a digest pin); every
+upstream release will open a digest-bump PR. Cloudflared has no compose in this repo (it's a
+Dokploy swarm service set up via the dashboard); pinning was applied via `docker service update
+--image cloudflare/cloudflared@sha256:9b49eed8...` and the service spec now reports the digest.
+Pin list (branch `pin-latest-images`):
+
+- blocky: `spx01/blocky@sha256:595136fb...`
+- navidrome: `deluan/navidrome@sha256:90129391...`
+- audiobookshelf: `advplyr/audiobookshelf@sha256:180acad3...`
+- minio-gallery (filestash): `machines/filestash@sha256:edb76ccd...`
+- gatus: `twinproduction/gatus@sha256:0009b90a...`
+- docker-socket-proxy: `tecnativa/docker-socket-proxy@sha256:1f5038b5...`
+- resilio-sync: `resilio/sync@sha256:c5dbffd4...`
+- foundry tailscale: `tailscale/tailscale@sha256:8c42c457...`
+- gtnh-tailscale: `tailscale/tailscale@sha256:c507f3a2...`
+- mixtape-api: `igurusama/imapps@sha256:33fcacdc...`
+- mixtape-web: `igurusama/imapps@sha256:69a2a45b...`
+- cloudflared (swarm): `cloudflare/cloudflared@sha256:9b49eed8...`
+
+`minio` is excluded: the upstream stopped publishing community Docker tags, see #99 for the
+migration plan. The nightly `foundry/smoke/bin/run-smoke.sh` (which itself calls `kanban-cli
+e2e live <repo> --url <prod>` for shoppingo / jewellery-catalogue / kivo / mixtape) is the
+post-redeploy check on every tracked app.
 
 ## Closed 2026-10-14
 
