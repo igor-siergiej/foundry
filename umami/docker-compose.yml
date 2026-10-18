@@ -1,0 +1,112 @@
+name: umami
+
+# Shoppingo self-hosted analytics (#72). Source of truth for the
+# Shoppingo-+-+-tracker-script so the same Umami instance can also back the
+# jewellery-catalogue app later.
+#
+# Infra shape (Pinned 2026-10-18; SECURITY-AUDIT #8 metadata only applies
+# to the embedded :latest work — here everything is already digest-pinned
+# from the first commit):
+#
+#   umami     (umami-software/umami v3) — host-published: NO; routed
+#             through Traefik at analytics.imapps.uk (Cloudflare-Accessed
+#             admin) on dokploy-network.
+#   umami-db  (postgres:16-alpine) — bind-mounted /mnt/tank/shared/umami,
+#             TZ=UTC (skip pg's America/Los_Angeles default; analytics
+#             want day-boundary UTC).
+#
+# Tracker endpoints to make adblock lists less effective:
+#   TRACKER_SCRIPT_NAME      = "p.js"            (was "script.js")
+#   COLLECT_API_ENDPOINT     = "/p"              (was "/api/send")
+#
+# DNS / split-horizon / gatus / blocky exception for `analytics.imapps.uk`
+# need follow-up ops changes — see foundry/docs/homelab.md note about
+# analytics stack.
+
+services:
+  umami-db:
+    image: postgres:16-alpine@sha256:1a66d744c1b459e13b05a8fca341da84cb63383e99ce262210efee5a319d4551
+    container_name: umami-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: umami
+      POSTGRES_USER: umami
+      POSTGRES_PASSWORD_FILE: /run/secrets/umami_db_password
+      TZ: UTC
+      PGTZ: UTC
+    volumes:
+      - type: bind
+        source: /mnt/tank/shared/umami
+        target: /var/lib/postgresql/data
+        bind:
+          create_host_path: true
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U umami -d umami"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    networks:
+      - umami
+    secrets:
+      - umami_db_password
+
+  umami:
+    image: docker.umami.is/umami-software/umami@sha256:6cd9d24a836fac5c226c3c90cb25141d4560b7270b7827f393ccf09bf3f83b18
+    container_name: umami
+    restart: unless-stopped
+    depends_on:
+      - umami-db
+    environment:
+      # Look up the umami-db hostname via the umami network, NOT dokploy-network —
+      # avoids leaking the analytics DB onto every other app's network.
+      DATABASE_URL_FILE: /run/secrets/umami_db_url
+      DATABASE_TYPE: postgresql
+      APP_NAME: "Homelab Analytics"
+      # Reduce exposure to common ad blockers / privacy tools.
+      TRACKER_SCRIPT_NAME: p.js
+      COLLECT_API_ENDPOINT: /p
+      BASE_PATH: /
+      # Cloudflare Access puts the dashboard behind `analytics.imapps.uk`
+      # (require-email) — the tracker + collect + replay endpoints are
+      # bypassed (no Access app) so anonymous visitors can still send.
+      DISABLE_BOT_CHECK: "1"
+      # TZ UTC so day boundaries line up with what humans expect.
+      TZ: UTC
+    labels:
+      - "traefik.enable=true"
+      # analytics.imapps.uk — admin UI (behind Cloudflare Access).
+      - "traefik.http.routers.umami-websecure.rule=Host(`analytics.imapps.uk`)"
+      - "traefik.http.routers.umami-websecure.entrypoints=websecure"
+      - "traefik.http.routers.umami-websecure.tls=true"
+      - "traefik.http.routers.umami-websecure.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.umami-websecure.service=umami"
+      - "traefik.http.services.umami.loadbalancer.server.port=3000"
+      # Force HTTPS from the `web` entrypoint.
+      - "traefik.http.routers.umami-web.rule=Host(`analytics.imapps.uk`)"
+      - "traefik.http.routers.umami-web.entrypoints=web"
+      - "traefik.http.routers.umami-web.middlewares=redirect-to-https@docker"
+    networks:
+      - dokploy-network
+      - umami
+    secrets:
+      - umami_db_password
+      - umami_db_url
+
+networks:
+  umami:
+    driver: bridge
+  dokploy-network:
+    external: true
+
+secrets:
+  umami_db_password:
+    # Rendered by the bw-render-template pattern documented in
+    # dotfiles/docs/secrets.md; sourced from the vaultwarden item
+    # `umami.db.password`. Until then, ops can `docker secret create
+    # umami_db_password /dev/stdin` interactively.
+    file: /etc/foundry/umami/db_password
+  umami_db_url:
+    # Same secret, rendered as a full `postgresql://umami:<pw>@umami-db:5432/umami`
+    # URL so the umami container can read it via DATABASE_URL_FILE without
+    # needing shell substitution (which YAML doesn't support).
+    file: /etc/foundry/umami/db_url
