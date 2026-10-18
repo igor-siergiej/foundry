@@ -79,66 +79,40 @@ IaC repo: `/home/home/imapps/foundry` on this host (path may differ on other mac
 - App code images (shoppingo, jewellery-catalogue, kivo, sentinel, mixtape) are built + pushed by each app's own repo CI to Docker Hub `igurusama/imapps:<tag>`, then Dokploy pulls. `pull_policy: always` on `:latest` tags forces re-pull.
 - **App deploy trigger:** app repo CI builds images with `utils/pipelines/scripts/publish-images.sh` (via the `.github/workflows-utils` submodule), `linux/amd64`, pushes to `igurusama/imapps`, then `curl`s the Dokploy app webhooks through a Cloudflare Access service token: `DEPLOY_WEB_URL` + `DEPLOY_API_URL` (shoppingo, jewellery-catalogue, sentinel), `DEPLOY_API_URL` only (kivo). mixtape is a single compose service hit via `DEPLOY_URL` with `X-GitHub-Event: push` (without it Dokploy ignores `ref` → "Branch Not Match"; `mixtape/.github/workflows/ci-cd.yml`).
 
-### 3.5. Public surface — the cloudflared tunnel hostname list
+### 3.5. Public surface — what is reachable from the internet
 
-The cloudflared tunnel (`0da10189-…`) is configured with a wildcard
-`*.imapps.uk` ingress. **That means every public name routed to
-foundry, regardless of whether Cloudflare DNS has an A record for it.**
-The DNS layer is only the casual-discoverability check; the tunnel
-itself is the actual exposure gate. A hostname that NXDOMAINs in
-public DNS is still routable through the tunnel if anyone
-`--resolve`s it to a Cloudflare IP.
+**Public DNS is the gate, not the tunnel ingress.** The tunnel's ingress is still a wildcard
+(`*.imapps.uk` → `https://dokploy-traefik:443`, else `http_status:404`; read via the
+cloudflare-api MCP, `GET /accounts/<acct>/cfd_tunnel/0da10189-…/configurations`, 2026-10-18), but
+Cloudflare's edge only forwards a hostname into the tunnel when the zone has a **proxied CNAME** for it
+pointing at `0da10189-66a3-49f1-b138-f1f617592567.cfargotunnel.com`. Without one, nothing reaches
+foundry, even if a client `--resolve`s the name to a Cloudflare IP. Checked 2026-10-18 with
+`curl --resolve <host>:443:104.21.45.248`:
 
-The canonical public hostname list — the exact set of names whose
-Host header cloudflared forwards to foundry's Traefik — is the
-inverse of the union of §5's "Ingress" + "Ports" columns:
+- Access-bypass hosts with no record (`immich`, `gatus`) → `530`, Cloudflare `error code: 1016`
+  (origin DNS error): the edge has no route to the tunnel.
+- Hosts under the wildcard owner-email Access app with no record (`grafana`, `vault`, `analytics`,
+  even a made-up `nonexistent-xyz`) → `302` to `imapps.cloudflareaccess.com`. That is Access answering
+  at the edge before origin lookup, not the tunnel; past Access they'd hit the same 1016
+  [inferred from the bypass hosts, not tested with an Access session].
 
-| Hostname | Source | Service |
+Public hostnames (the whole list; §2 has the history):
+
+| Hostname | Service | Access |
 |---|---|---|
-| `shoppingo.imapps.uk` | app | `shoppingo-web` |
-| `kivo.imapps.uk` | app | `kivo` |
-| `jewellery-catalogue.imapps.uk` | app | `jewellery-catalogue-web` |
-| `sentinel.imapps.uk` | app | `sentinel-web` |
-| `gatus.imapps.uk` | compose (monitoring) | `gatus:8080` |
-| `grafana.imapps.uk` | compose (monitoring) | `grafana:3000` |
-| `home-assistant.imapps.uk` | compose (home-assistant) | `home-assistant:8123` |
-| `minio.imapps.uk` | compose (minio) | minio:9000 |
-| `minio-console.imapps.uk` | compose (minio) | minio:9001 |
-| `minio-gallery.imapps.uk` | compose (minio-gallery) | minio-gallery:8334 |
-| `mixtape.imapps.uk` | compose (mixtape) | mixtape-web:3000 |
-| `audiobookshelf.imapps.uk` | compose (audiobookshelf) | audiobookshelf:80 |
-| `jellyfin.imapps.uk` | compose (jellyfin) | jellyfin:8096 |
-| `navidrome.imapps.uk` | compose (navidrome) | navidrome:4533 |
-| `immich.imapps.uk` | compose (immich) | immich:2283 |
-| `vault.imapps.uk` | compose (vaultwarden) | vaultwarden:80 |
-| `dokploy.imapps.uk` | app | dokploy admin |
-| `analytics.imapps.uk` | **Tailscale-only** (see below) | umami:3000 |
+| `shoppingo.imapps.uk` | `shoppingo-web` / `shoppingo-api` | bypass |
+| `kivo.imapps.uk` | `kivo` | bypass |
+| `dokploy.imapps.uk` | Dokploy (CI deploy webhooks, admin) | own require-email app |
 
-**Tailscale-only services (jott #72 + #101)** — explicitly excluded
-from the cloudflared tunnel ingress:
+Everything else in §5, including `analytics.imapps.uk` (umami, jott #72), is LAN/tailnet-only: blocky
+answers `192.168.68.17` and the tailnet reaches it via the foundry subnet route. jott has no hostname
+at all (`100.79.92.93:8787`).
 
-- `analytics.imapps.uk` (Umami). Tailnet-only; non-tailnet sees NXDOMAIN
-  on the public resolver. The tunnel's wildcard ingress makes
-  casual discovery of this hostname a security hole if the tunnel
-  still has the wildcard — the user-facing change is the tunnel
-  config, not the DNS.
-- `jott.imapps.uk` — sync server only. Currently `*.imapps.uk:8787`
-  is host-published on the foundry Tailscale IP only (per §5).
-  Should be added to the tunnel-exclusion list if/when the tunnel
-  wildcard is replaced with explicit hostnames.
-
-**When adding a new public service**, the host must be added to
-BOTH the Cloudflare tunnel ingress (in Cloudflare's tunnel UI,
-not in this repo) AND the Cloudflare DNS A record (so the name
-resolves). If you add the DNS A record but forget the tunnel
-host, requests to the name hit the tunnel but get a `404` from
-cloudflared's catch-all. If you add the tunnel host but forget
-the DNS, requests NXDOMAIN in public resolvers.
-
-**When adding a new Tailscale-only service**, DO NOT add it to
-either list. The Tailscale split-DNS for `imapps.uk` (see umami
-README §"Split-DNS setup") wins for tailnet members; everyone
-else sees NXDOMAIN.
+**Publishing a new service:** add one proxied CNAME `<app>.imapps.uk` →
+`0da10189-66a3-49f1-b138-f1f617592567.cfargotunnel.com` (cloudflare-api MCP, zone
+`e8069a9a6e586db3add05a408bd1e2d0`), plus an Access bypass app if it should be anonymous. No tunnel
+change needed while the ingress is a wildcard. **Tailnet/LAN-only service:** add nothing in
+Cloudflare.
 
 ## 4. MCP control planes (how an agent operates this homelab)
 
@@ -268,7 +242,7 @@ None of these publish a host port (`ports:` block) — confirmed against the liv
 | vaultwarden | `vaultwarden/server:1.37.2` | vault.imapps.uk | self-hosted secrets/password vault, replaces plaintext `~/notes/secrets/tokens.md`; ZFS bind mount (`/mnt/tank/shared/vaultwarden`); see [`README.md`](./README.md#secrets) and [`../vaultwarden/README.md`](../vaultwarden/README.md) |
 | opensearch | `opensearch:2.19.1` | 9200, internal-only on `dokploy-network`, no Traefik route | shoppingo recipe-discovery index; derived from mongo, not backed up; security plugin off. See [`../opensearch/README.md`](../opensearch/README.md) |
 | minio-gallery | `machines/filestash:latest` | 8334; Traefik `minio-gallery.imapps.uk` on the **`web` (HTTP) entrypoint only** | Filestash browser over MinIO; own admin login. HTTP-only router, see `../SECURITY-AUDIT.md` #11. See [`../minio-gallery/README.md`](../minio-gallery/README.md) |
-| umami | `umami-software/umami@sha256:6cd9d…` + `postgres:16-alpine@sha256:1a66d7…` | Tailscale-only (Cloudflare DNS NXDOMAIN for the public; tailnet split-DNS routes `*.imapps.uk` → blocky on 192.168.68.17, which the foundry subnet route carries over Tailscale) | shoppingo self-hosted analytics (tracker config in `packages/web/analytics.ts`); one Umami instance backs all consumers (jewellery-catalogue next). See [`../umami/README.md`](../umami/README.md) (added by #72). **Must be excluded from the cloudflared tunnel ingress** — see §3.5. |
+| umami | `umami-software/umami@sha256:6cd9d…` + `postgres:16-alpine@sha256:1a66d7…` | Tailscale/LAN-only: no public DNS record, so the Cloudflare edge never routes it into the tunnel (§3.5); tailnet split-DNS routes `*.imapps.uk` → blocky on 192.168.68.17, which the foundry subnet route carries over Tailscale | shoppingo self-hosted analytics (tracker config in `packages/web/analytics.ts`); one Umami instance backs all consumers (jewellery-catalogue next). See [`../umami/README.md`](../umami/README.md) (added by #72). Keep it out of Cloudflare DNS. |
 
 ### `gtnh` (game server)
 | Service | Image | Ingress | Notes |
