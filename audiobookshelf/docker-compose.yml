@@ -2,7 +2,8 @@ name: audiobookshelf
 
 services:
   audiobookshelf:
-    image: advplyr/audiobookshelf:latest
+    # Pinned 2026-10-18 (SECURITY-AUDIT #8); Dependabot bumps via :latest's new digest
+    image: advplyr/audiobookshelf@sha256:180acad33d69c99ed208676465d8edcb268fa46967735579a7810859885b1a8e
     container_name: audiobookshelf
     restart: unless-stopped
     environment:
