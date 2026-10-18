@@ -31,7 +31,7 @@ services:
     environment:
       POSTGRES_DB: umami
       POSTGRES_USER: umami
-      POSTGRES_PASSWORD_FILE: /run/secrets/umami_db_password
+      POSTGRES_PASSWORD: ${UMAMI_DB_PASSWORD}
       TZ: UTC
       PGTZ: UTC
     volumes:
@@ -47,8 +47,6 @@ services:
       retries: 3
     networks:
       - umami
-    secrets:
-      - umami_db_password
 
   umami:
     image: docker.umami.is/umami-software/umami@sha256:6cd9d24a836fac5c226c3c90cb25141d4560b7270b7827f393ccf09bf3f83b18
@@ -59,7 +57,7 @@ services:
     environment:
       # Look up the umami-db hostname via the umami network, NOT dokploy-network —
       # avoids leaking the analytics DB onto every other app's network.
-      DATABASE_URL_FILE: /run/secrets/umami_db_url
+      DATABASE_URL: postgresql://umami:${UMAMI_DB_PASSWORD}@umami-db:5432/umami
       DATABASE_TYPE: postgresql
       APP_NAME: "Homelab Analytics"
       # Reduce exposure to common ad blockers / privacy tools.
@@ -88,9 +86,6 @@ services:
     networks:
       - dokploy-network
       - umami
-    secrets:
-      - umami_db_password
-      - umami_db_url
 
 networks:
   umami:
@@ -98,15 +93,3 @@ networks:
   dokploy-network:
     external: true
 
-secrets:
-  umami_db_password:
-    # Rendered by the bw-render-template pattern documented in
-    # dotfiles/docs/secrets.md; sourced from the vaultwarden item
-    # `umami.db.password`. Until then, ops can `docker secret create
-    # umami_db_password /dev/stdin` interactively.
-    file: /etc/foundry/umami/db_password
-  umami_db_url:
-    # Same secret, rendered as a full `postgresql://umami:<pw>@umami-db:5432/umami`
-    # URL so the umami container can read it via DATABASE_URL_FILE without
-    # needing shell substitution (which YAML doesn't support).
-    file: /etc/foundry/umami/db_url
