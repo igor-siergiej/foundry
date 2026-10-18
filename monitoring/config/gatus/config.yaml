@@ -91,6 +91,16 @@ endpoints:
     alerts:
       - type: discord
 
+  - name: RustFS (Storage)
+    group: Storage
+    url: http://rustfs:9000/health/ready
+    interval: 60s
+    timeout: 10s
+    conditions:
+      - "[STATUS] == 200"
+    alerts:
+      - type: discord
+
   - name: Immich (Photos)
     group: Media
     url: http://immich-server:2283/api/server/ping
