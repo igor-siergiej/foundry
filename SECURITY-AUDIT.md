@@ -81,6 +81,15 @@ The Traefik router for `minio-gallery.imapps.uk` uses the `web` entrypoint only,
 Filestash admin login goes over plaintext HTTP. Remote traffic is TLS via Cloudflare. Fix: move the
 router to `websecure` with the letsencrypt certresolver.
 
+### 12. `sentinel-api` runs with outbound TLS verification disabled — LOW
+`sentinel/packages/api/src/index.ts` sets `NODE_TLS_REJECT_UNAUTHORIZED=0` whenever
+`NODE_ENV !== "production"`, and neither the root `Dockerfile.api` nor the Dokploy env sets
+`NODE_ENV` (live `printenv NODE_ENV` in `sentinel-api-vnfxap` is empty, checked 2026-10-17). Every
+outbound HTTPS call from the API — including Home Assistant calls carrying the long-lived
+`HA_TOKEN` — accepts any certificate. Severity rises to MEDIUM if `HA_URL` is an `https://` LAN
+hostname rather than the internal container address (value redacted in Dokploy, not determined).
+**Fix:** `ENV NODE_ENV=production` in `sentinel/Dockerfile.api`, or set it in the Dokploy env.
+
 ## Closed 2026-10-14
 
 ### Filestash (`minio-gallery`) admin console had no password — was HIGH

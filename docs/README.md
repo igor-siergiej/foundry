@@ -2,7 +2,7 @@
 
 Knowledge base for how everything we run is deployed and wired together. Two independent stacks, documented separately because they share no infrastructure:
 
-- **[`homelab.md`](./homelab.md)** — the Dokploy homelab (`imapps.uk`): everything in this `foundry` repo, single host, Cloudflare tunnel + Access, NFS storage.
+- **[`homelab.md`](./homelab.md)** — the Dokploy homelab (`imapps.uk`): everything in this `foundry` repo, single host, Cloudflare tunnel + Access, ZFS-backed bind mounts.
 - **[`taisei-karate.md`](./taisei-karate.md)** — `taisei-karate`'s AWS deployment (sibling repo): Astro static site on S3 + CloudFront via Terraform, GitHub Actions OIDC, no servers.
 
 ```mermaid
@@ -23,6 +23,20 @@ flowchart LR
 
     classDef note fill:#f2f0ea,stroke:#c8102e,color:#141414,stroke-dasharray: 3 3;
 ```
+
+## Diagrams
+
+Excalidraw files in [`diagrams/`](./diagrams/). Open them in excalidraw.com (drag the file in) or with the VS Code Excalidraw extension.
+
+| Diagram | Covers | Companion section |
+|---|---|---|
+| [`ingress-dns.excalidraw`](./diagrams/ingress-dns.excalidraw) | Remote path (Cloudflare DNS → Access → Tunnel → Traefik), LAN/tailnet path via blocky, tailnet-only services, internal `dokploy-network` hops | `homelab.md` §2, §6 |
+| [`service-inventory.excalidraw`](./diagrams/service-inventory.excalidraw) | Every service on `foundry` grouped by Dokploy project, swarm app vs compose stack, network membership, service dependencies | `homelab.md` §5 |
+| [`data-storage.excalidraw`](./diagrams/data-storage.excalidraw) | Shared datastores and their consumers, `/mnt/tank/shared/*` bind mounts (rw/ro), backup + restore-drill flow | `homelab.md` §7, §9 |
+| [`deploy-pipeline.excalidraw`](./diagrams/deploy-pipeline.excalidraw) | App repo CI/CD (semantic-release → Docker Hub → Dokploy webhook) and the foundry compose deploy flow | `homelab.md` §3 |
+| [`ops-automation.excalidraw`](./diagrams/ops-automation.excalidraw) | systemd timers (nightly smoke, backups, restore drill, stale check), Gatus/Grafana alerting → Discord | `homelab.md` §8, §9 |
+
+Per-app architecture diagrams live in each app repo at `docs/diagrams/architecture.excalidraw`.
 
 ## Secrets
 
