@@ -42,8 +42,7 @@ Per-app architecture diagrams live in each app repo at `docs/diagrams/architectu
 
 **Vaultwarden is live** at `vault.imapps.uk` (deployed 2026-08-23, `infra` project — see [`homelab.md` §5](./homelab.md#5-projects--services-dokploy-inventory)), pinned `1.37.2`, NFS-backed, no SMTP. Owner account + TOTP 2FA done, `ADMIN_TOKEN` set (Argon2id hash, admin panel confirmed gated), `SIGNUPS_ALLOWED=false`.
 
-CLI tooling for it lives in `~/dotfiles` (stow package `bin` → `~/.local/bin`, on `$PATH` on every machine that's stowed it), not per-repo — see the full plan at
-`docs/superpowers/plans/2026-08-23-vaultwarden-secrets-migration.md`:
+CLI tooling for it lives in `~/dotfiles` (stow package `bin` → `~/.local/bin`, on `$PATH` on every machine that's stowed it), not per-repo:
 
 - `bw-import-file <item-name> <file-path>` — upserts a file's contents into a Secure Note (creates or updates in place).
 - `pull-env <item-name> [out-file]` — writes a Secure Note's contents to a local file (default `.env`), for tools that need a real file on disk.
