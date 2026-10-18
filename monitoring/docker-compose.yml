@@ -8,7 +8,8 @@ services:
     # __meta_docker_network_* label is used). Everything else — image build,
     # exec, container create, volume mount — stays 403. Logs come from
     # /var/lib/docker/containers/* via a read bind, not the API.
-    image: tecnativa/docker-socket-proxy:latest
+    # Pinned 2026-10-18 (SECURITY-AUDIT #8); Dependabot bumps via :latest's new digest
+    image: tecnativa/docker-socket-proxy@sha256:1f5038b54f06c3e18422902cf00ba21803d1c97805aae032e5e6673d532d3459
     container_name: docker-socket-proxy
     restart: unless-stopped
     environment:
@@ -141,7 +142,8 @@ services:
       - traefik.http.services.grafana-websecure.loadbalancer.server.port=3000
 
   gatus:
-    image: twinproduction/gatus:latest
+    # Pinned 2026-10-18 (SECURITY-AUDIT #8); Dependabot bumps via :latest's new digest
+    image: twinproduction/gatus@sha256:0009b90a11c042809f7f988c05c3f398dbf24b7498a0b7083efe3b9e8e126550
     container_name: gatus
     restart: unless-stopped
     extra_hosts:
