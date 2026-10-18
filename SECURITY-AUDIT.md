@@ -47,7 +47,8 @@ later fixes (e.g. the October 2025 service-account privilege escalation). Migrat
 (jott #99): shoppingo, minio-gallery (Filestash) and jewellery-catalogue each use their own IAM user
 on `rustfs:9000`, objects mirrored and verified per key (ddc5fd7, 64bd87e). The `minio` compose,
 image and the `minio`/`minio-console` domains are removed (112a6c1); both hostnames now return 404
-from Traefik. `tank/shared/minio` is kept as a rollback copy until 2026-10-25.
+from Traefik. Dataset `tank/shared/minio` and its `sharenfs` export were destroyed the same day
+(`zfs list` no longer has it; `showmount -e` no longer lists it).
 
 ### 2. NFS export was read-write to the entire tailnet CGNAT range — was HIGH
 `/etc/exports` exported `/mnt/tank/shared 100.64.0.0/10(rw,sync,no_subtree_check,crossmnt)`, so
@@ -55,7 +56,8 @@ any tailnet node could mount and rewrite vaultwarden, mongodb, immich, grafana a
 data. No established `:2049` connections existed, so the line was removed rather than narrowed
 (commented out in `/etc/exports`, backup at `/etc/exports.bak-2026-10-18`; `sudo exportfs -ra`).
 `showmount -e localhost` now lists only the ZFS `sharenfs` exports: `/mnt/tank/k8s-nfs *` (#7 in
-jott) and `shared/{minio,jellyfin,immich}` to `192.168.69.250`. `nfs-server`/`rpcbind` stay up for
+jott) and `shared/{jellyfin,immich}` to `192.168.69.250` (the `shared/minio` export went with its
+dataset under #6). `nfs-server`/`rpcbind` stay up for
 those, so they were not firewalled.
 
 ### 4. SSH password authentication on the LAN — was MEDIUM
