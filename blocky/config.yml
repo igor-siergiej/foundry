@@ -7,8 +7,8 @@
 #   Secondary DNS 1.1.1.1        (fallback if blocky is down)
 #
 # Consequence of the secondary: while blocky is restarting, a client that falls
-# through to 1.1.1.1 gets the Cloudflare-proxied answer for *.imapps.uk and will
-# see a Cloudflare Access prompt until that record's TTL (~300s) expires.
+# through to 1.1.1.1 only resolves the public names (shoppingo, kivo, dokploy);
+# every other *.imapps.uk name has no public record and fails until blocky is back.
 
 ports:
   dns: 53
