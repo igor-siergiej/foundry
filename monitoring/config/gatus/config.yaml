@@ -319,8 +319,9 @@ endpoints:
   - name: Cloudflared Tunnel (remote path)
     group: Core
     # Resolve via 1.1.1.1 instead of blocky so the request takes the real
-    # remote path: CF edge -> tunnel -> Traefik. gatus is an Access bypass app.
-    url: https://gatus.imapps.uk/health
+    # remote path: CF edge -> tunnel -> Traefik. Must target a host that has a
+    # public DNS record (shoppingo, kivo, dokploy) and an Access bypass app.
+    url: https://shoppingo.imapps.uk/api/health
     client:
       dns-resolver: tcp://1.1.1.1:53
     interval: 120s

@@ -28,10 +28,10 @@ Blocky only serves clients that are told to ask it. Set this on the **TP-Link De
 Devices pick this up on their next DHCP lease renewal; a WiFi reconnect forces it.
 
 > **Secondary-DNS trade-off:** `1.1.1.1` keeps the internet working if blocky is
-> down, but while blocky restarts a client may fall through to it, get the
-> Cloudflare-proxied answer for `*.imapps.uk`, and see a Cloudflare Access prompt
-> until that record's ~300s TTL expires. Accepted deliberately over a
-> no-internet-if-blocky-dies setup.
+> down, but while blocky restarts a client may fall through to it. Only
+> shoppingo, kivo and dokploy have public Cloudflare records; every other
+> `*.imapps.uk` name gets no answer until blocky is back. Accepted deliberately
+> over a no-internet-if-blocky-dies setup.
 
 #### Deployment with Dokploy
 

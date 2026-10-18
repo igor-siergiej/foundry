@@ -34,7 +34,7 @@ flowchart TB
     lanUser([LAN / tailnet client]):::ext
 
     subgraph remote["REMOTE path"]
-        cfdns["*.imapps.uk<br/>(Cloudflare proxied DNS)"]
+        cfdns["shoppingo / kivo / dokploy .imapps.uk<br/>(Cloudflare proxied CNAMEs, no wildcard)"]
         access["Cloudflare Access<br/>(auth check)"]
         tunnel["Cloudflare Tunnel<br/>(cloudflared, outbound-only)"]
     end
@@ -53,11 +53,12 @@ flowchart TB
     classDef ext fill:#f2f0ea,stroke:#c8102e,color:#141414;
 ```
 
-- **One Cloudflare tunnel** `0da10189-66a3-49f1-b138-f1f617592567` → wildcard `*.imapps.uk` (proxied) → `dokploy-traefik:443` → Traefik hostname routing.
+- **One Cloudflare tunnel** `0da10189-66a3-49f1-b138-f1f617592567` → `dokploy-traefik:443` → Traefik hostname routing.
+- **Public DNS is per-app, no wildcard (since 2026-10-18).** The zone has exactly three proxied CNAMEs to `0da10189-66a3-49f1-b138-f1f617592567.cfargotunnel.com`: `shoppingo`, `kivo`, `dokploy` (kept for the CI deploy webhooks). The `*.imapps.uk` CNAME was deleted; every other hostname has no public record and is reachable only on LAN/tailnet via blocky. To publish another app, add a proxied CNAME for it (and an Access bypass app if it should be anonymous). Certs are unaffected: Traefik's ACME records (`_acme-challenge.*` TXT) don't need a public A/CNAME.
 - **blocky** (`infra/blocky`) does split-horizon DNS: `imapps.uk → 192.168.68.17` (the host's reserved LAN IP). On LAN/tailnet, traffic goes straight to Traefik and **bypasses Cloudflare + Access**. → **CF Access only protects REMOTE traffic. Zero protection on LAN/tailnet.**
 - Since 2026-09-22 the **Deco hands out `192.168.68.17` as DHCP primary DNS** (secondary `1.1.1.1`), so this applies to *every* device on the WiFi, not just tailnet clients. blocky also runs StevenBlack adware+malware blocklists for the whole LAN.
 - **Except it wasn't reaching `foundry`.** On 2026-09-27 the host's own DHCP lease still carried the ISP resolvers `188.31.250.128/129`, not `192.168.68.17` — so the box running blocky was the one device not using it. The host is now pinned in netplan (§4a); the Deco setting was left alone, so **assume other long-lease devices may be in the same state** and spot-check one before trusting LAN-wide adblock numbers.
-- **Secondary-DNS caveat:** during a blocky restart a client can fall through to `1.1.1.1`, receive the Cloudflare-proxied answer for `*.imapps.uk`, and hit an Access prompt until that ~300s TTL expires. Accepted trade-off vs. losing all internet when blocky is down.
+- **Secondary-DNS caveat:** during a blocky restart a client can fall through to `1.1.1.1`. For shoppingo/kivo/dokploy it gets the Cloudflare-proxied answer (dokploy then shows an Access prompt); every other `*.imapps.uk` name returns no answer until blocky is back and the negative cache expires. Accepted trade-off vs. losing all internet when blocky is down.
 - Traefik entrypoints: `web` (80, redirect→https), `websecure` (443, letsencrypt certresolver). Services attach via `dokploy-network` + traefik labels.
 - **Tailnet path** (not in the diagram): the `tailscale` stack advertises `192.168.68.0/24` as a subnet route, so tailnet devices reach the LAN (and blocky/Traefik on `192.168.68.17`) from anywhere. `gtnh` and `jott` are tailnet-only and never touch Traefik or Cloudflare (§5).
 - Internal service-to-service DB access goes container-to-container over
@@ -97,7 +98,7 @@ Notes:
 - `~/.mcp_servers.json` is vault-rendered (see dotfiles `docs/secrets.md`), not hand-edited — the checked-in shape lives at dotfiles `docs/mcp_servers.json.template`.
 - **`~` is not `/home/home` inside a Paperclip agent run.** Paperclip sandboxes `HOME` to a per-run temp dir, so every `~/.mcp_servers.json` above resolves to a nonexistent file and *all* of these MCPs look unreachable. Use the absolute path — `mcp-cli --config /home/home/.mcp_servers.json call-tool dokploy-mcp:<tool>`. Verified working 2026-09-27.
 - **MagicDNS on `foundry` — broken until 2026-09-27, now fixed.** See §4a. If `*.ts.net` stops resolving here again, that's the thing to check: the Paperclip control-plane MCPs (`home.tail2d4575.ts.net:8444`) fail at session start with `ENOTFOUND` and the fallback is `curl --resolve <host>:<port>:100.79.92.93`.
-- **`cloudflare-api` needs a one-time OAuth sign-in.** Its config entry is now an `npx mcp-remote` stdio wrapper (`mcp-cli` only speaks stdio; the old url-only entry failed with `The "file" argument must be of type string`). The wrapper works, but the first call blocks on Cloudflare's OAuth — see §4b for the sign-in procedure. Until someone completes it, everything this repo says about Cloudflare Access is carried forward from docs, unverified.
+- **`cloudflare-api` needs a one-time OAuth sign-in per machine.** Its config entry is an `npx mcp-remote` stdio wrapper (`mcp-cli` only speaks stdio). Signed in on `home` 2026-10-18 (token in `/home/home/.mcp-auth/mcp-remote-v1/*_tokens.json`); see §4b to redo it. Tools are `search` (OpenAPI spec), `execute` (JS calling `cloudflare.request()`), `docs`, `whoami`.
 - **Don't assume which machine you're on.** A SessionStart hook (`~/.claude/hooks/machine-context.sh`, dotfiles-managed) injects machine identity (hostname/tailscale IP → known role, e.g. this box IS `foundry` itself with direct docker access) at session start — read that context instead of assuming "laptop, reach host via tailscale". If the hook reports "unrecognized machine", check `hostname`/`tailscale status` yourself before trusting anything below that assumes a specific box.
 
 ## 4a. Host DNS resolution on `foundry` (fixed 2026-09-27)
@@ -224,7 +225,8 @@ None of these publish a host port (`ports:` block) — confirmed against the liv
 
 ## 6. Cloudflare Access model (set 2026, default-deny)
 
-- **Wildcard `*.imapps.uk`** app = require owner email (`igorsiergiej@gmail.com` + `gregormai@mail.de`). Catches everything not explicitly bypassed — incl. grafana, home-assistant, minio + minio-console.
+- Only `shoppingo`, `kivo` and `dokploy` have public DNS (§2), so the Access apps below only matter for those three; the rest are dormant config for hosts that no longer resolve remotely.
+- **Wildcard `*.imapps.uk`** app = require owner email (`igorsiergiej@gmail.com` + `gregormai@mail.de`). Catches everything not explicitly bypassed.
 - **Explicit Bypass** apps (public / own-auth): immich, shoppingo, jewellery-catalogue, kivo, mixtape, audiobookshelf, jellyfin, navidrome, gatus.
 - **dokploy** + **sentinel** keep their own require-email apps.
 - immich has a rate-limit rule on `/auth/login` (15 req / 10s / IP → block).
