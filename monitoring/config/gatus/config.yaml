@@ -362,3 +362,26 @@ endpoints:
       - "[STATUS] == 401"
     alerts:
       - type: discord
+
+  - name: Umami
+    group: Analytics
+    # Served through Traefik at analytics.imapps.uk (Cloudflare Access —
+    # bypass on the tracker/collect endpoints so anonymous visitors can
+    # still beacon). The dashboard is require-email-gated.
+    url: https://analytics.imapps.uk/api/health
+    interval: 60s
+    timeout: 10s
+    conditions:
+      - "[STATUS] == 200"
+    alerts:
+      - type: discord
+
+  - name: Umami Postgres
+    group: Analytics
+    url: http://umami-db:5432
+    interval: 60s
+    timeout: 5s
+    conditions:
+      - "[CONNECTED] == true"
+    alerts:
+      - type: discord
