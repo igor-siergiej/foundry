@@ -18,16 +18,6 @@ there reaches foundry on every port (SSH, Paperclip `:8443/:8444`, Resilio UI, N
 **Fix:** grant `autogroup:member → *`, `autogroup:shared → tag:mc-server:tcp:25565`, nothing from
 tagged nodes. Prepared policy needs applying via `tailscale:manage_acl` or the admin console.
 
-### 2. NFS export is read-write to the entire tailnet CGNAT range — HIGH
-`/etc/exports`: `/mnt/tank/shared 100.64.0.0/10(rw,sync,no_subtree_check,crossmnt)`. That share
-holds vaultwarden, mongodb, immich, grafana and Home Assistant data. NFS `AUTH_SYS` trusts the
-client's claimed UID, so `root_squash` only protects root-owned files. Combined with #1, any tailnet
-node can mount and rewrite it.
-**Fix (needs sudo):** restrict to the specific client IPs that actually mount it (e.g.
-`100.91.45.105` for `framework`) and add `all_squash` or a dedicated `anonuid` if the clients only
-need one identity; `sudo exportfs -ra`. Also `rpcbind`/`mountd` (`:111` and random high ports)
-listen on `0.0.0.0` — if nothing on the LAN mounts it, firewall them to `tailscale0`.
-
 ### 3. Dokploy UI published on `0.0.0.0:3000` over plain HTTP — HIGH
 The `dokploy` swarm service publishes `3000` in host mode. Any LAN device reaches the admin panel
 (root-equivalent on this host via Docker) without TLS, so the login is sniffable on WiFi. Traefik
@@ -35,12 +25,6 @@ already serves it at `dokploy.imapps.uk` via `http://dokploy:3000` over `dokploy
 dokploy MCP uses the domain, so nothing depends on the raw port.
 **Fix:** `docker service update --publish-rm published=3000,target=3000,mode=host dokploy`.
 Dokploy upgrades may re-add it — recheck after each upgrade.
-
-### 4. SSH password authentication enabled on the LAN — MEDIUM
-`sshd` listens on `0.0.0.0:22`; `PasswordAuthentication` is unset (default `yes`).
-**Fix (needs sudo):** drop-in `/etc/ssh/sshd_config.d/10-hardening.conf` with
-`PasswordAuthentication no` and `PermitRootLogin no`, then `sudo systemctl reload ssh`. Confirm a
-key login works in a second session first.
 
 ### 5. Host-disk volumes with no backup — MEDIUM
 Only `immich-pgdata` (557 MB) lives on the host disk; the audit previously also listed `minio-data`
@@ -89,6 +73,25 @@ outbound HTTPS call from the API — including Home Assistant calls carrying the
 `HA_TOKEN` — accepts any certificate. Severity rises to MEDIUM if `HA_URL` is an `https://` LAN
 hostname rather than the internal container address (value redacted in Dokploy, not determined).
 **Fix:** `ENV NODE_ENV=production` in `sentinel/Dockerfile.api`, or set it in the Dokploy env.
+
+## Closed 2026-10-18
+
+### 2. NFS export was read-write to the entire tailnet CGNAT range — was HIGH
+`/etc/exports` exported `/mnt/tank/shared 100.64.0.0/10(rw,sync,no_subtree_check,crossmnt)`, so
+any tailnet node could mount and rewrite vaultwarden, mongodb, immich, grafana and Home Assistant
+data. No established `:2049` connections existed, so the line was removed rather than narrowed
+(commented out in `/etc/exports`, backup at `/etc/exports.bak-2026-10-18`; `sudo exportfs -ra`).
+`showmount -e localhost` now lists only the ZFS `sharenfs` exports: `/mnt/tank/k8s-nfs *` (#7 in
+jott) and `shared/{minio,jellyfin,immich}` to `192.168.69.250`. `nfs-server`/`rpcbind` stay up for
+those, so they were not firewalled.
+
+### 4. SSH password authentication on the LAN — was MEDIUM
+Before the change `sshd -T` showed `passwordauthentication no` (set by `50-cloud-init.conf`) but
+`permitrootlogin prohibit-password`. Added `/etc/ssh/sshd_config.d/10-hardening.conf` with
+`PasswordAuthentication no` and `PermitRootLogin no` (sorts before `50-cloud-init.conf`, so it
+wins), `sshd -t` clean, `systemctl reload ssh`. `sshd -T` now shows `permitrootlogin no` and
+`passwordauthentication no`; a password-only login from `framework` is refused with
+`Permission denied (publickey)`.
 
 ## Closed 2026-10-14
 
