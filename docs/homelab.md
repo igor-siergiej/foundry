@@ -4,6 +4,8 @@ Agent-oriented map of how the Dokploy homelab fits together: topology, deploy fl
 
 > Companion docs: [`taisei-karate.md`](./taisei-karate.md) (separate AWS stack, not part of this homelab), `../SECURITY-AUDIT.md` (open findings), `../README.md` (blocky quickstart).
 
+> Diagrams (open in excalidraw.com or the VS Code Excalidraw extension): [ingress & DNS](./diagrams/ingress-dns.excalidraw), [service inventory](./diagrams/service-inventory.excalidraw), [data & storage](./diagrams/data-storage.excalidraw), [deploy pipeline](./diagrams/deploy-pipeline.excalidraw), [ops automation](./diagrams/ops-automation.excalidraw), [monitoring stack](../monitoring/monitoring.excalidraw).
+
 ---
 
 ## 1. Physical / network topology
@@ -11,7 +13,7 @@ Agent-oriented map of how the Dokploy homelab fits together: topology, deploy fl
 | Plane | Address | Notes |
 |---|---|---|
 | Dokploy host (`foundry`) LAN | `192.168.68.17` | single node, runs everything |
-| Dokploy host WAN | `92.40.218.136` | no inbound port-forward except none needed (tunnel is outbound) |
+| Dokploy host WAN | `92.40.218.136` | no inbound port-forwards (the Cloudflare tunnel is outbound-only) |
 | Dokploy host tailnet | `100.79.92.93` | tailscale, MagicDNS name `foundry` |
 | `192.168.68.13` | — | Responds to ICMP only, no open service ports; **not** an active dependency — see §7. Stale from before the 2026-08-20 bare-metal migration. |
 | LAN gateway | `192.168.68.1` | |
@@ -23,6 +25,8 @@ Single Docker host, swarm mode active with one node. Dokploy runs its `apps`/`se
 > Host was reinstalled bare-metal on 2026-08-20 (previously Proxmox), which changed LAN/tailnet IPs from `.18`/`100.85.189.60` to the values above — confirmed against the live `mongodb`/`minio`/`blocky` compose files and the `blocky` fix-hardcoded-IPs deployment, not from a prior copy of this doc. If you find another IP reference anywhere (scripts, other notes), it's stale — this file and the live compose files are the source of truth.
 
 ## 2. Ingress & DNS (how a request reaches a service)
+
+Diagram: [`diagrams/ingress-dns.excalidraw`](./diagrams/ingress-dns.excalidraw).
 
 ```mermaid
 flowchart TB
@@ -55,6 +59,7 @@ flowchart TB
 - **Except it wasn't reaching `foundry`.** On 2026-09-27 the host's own DHCP lease still carried the ISP resolvers `188.31.250.128/129`, not `192.168.68.17` — so the box running blocky was the one device not using it. The host is now pinned in netplan (§4a); the Deco setting was left alone, so **assume other long-lease devices may be in the same state** and spot-check one before trusting LAN-wide adblock numbers.
 - **Secondary-DNS caveat:** during a blocky restart a client can fall through to `1.1.1.1`, receive the Cloudflare-proxied answer for `*.imapps.uk`, and hit an Access prompt until that ~300s TTL expires. Accepted trade-off vs. losing all internet when blocky is down.
 - Traefik entrypoints: `web` (80, redirect→https), `websecure` (443, letsencrypt certresolver). Services attach via `dokploy-network` + traefik labels.
+- **Tailnet path** (not in the diagram): the `tailscale` stack advertises `192.168.68.0/24` as a subnet route, so tailnet devices reach the LAN (and blocky/Traefik on `192.168.68.17`) from anywhere. `gtnh` and `jott` are tailnet-only and never touch Traefik or Cloudflare (§5).
 - Internal service-to-service DB access goes container-to-container over
   `dokploy-network`: `mongodb:27017`, `minio:9000`. It deliberately does not
   use `*.imapps.uk` names — those resolve via blocky to the host LAN IP, so a
@@ -63,12 +68,15 @@ flowchart TB
 
 ## 3. Deploy flow (CRITICAL — read before any change)
 
+Diagram: [`diagrams/deploy-pipeline.excalidraw`](./diagrams/deploy-pipeline.excalidraw).
+
 IaC repo: `/home/home/imapps/foundry` on this host (path may differ on other machines) → `git@github.com:igor-siergiej/foundry.git`.
 
 - **Dokploy deploys from GitHub HEAD, not local files.** Compose changes must be **commit + push** first.
 - `autoDeploy=true` but the **webhook is unreliable — do NOT trust it to fire.** After push, deploy explicitly via `compose-deploy` (dokploy-mcp).
 - **`git push` needs `dangerouslyDisableSandbox: true`** (sandbox has no network egress; DNS to github.com is flaky — retry fetch).
 - App code images (shoppingo, jewellery-catalogue, kivo, sentinel, mixtape) are built + pushed by each app's own repo CI to Docker Hub `igurusama/imapps:<tag>`, then Dokploy pulls. `pull_policy: always` on `:latest` tags forces re-pull.
+- **App deploy trigger:** app repo CI builds images with `utils/pipelines/scripts/publish-images.sh` (via the `.github/workflows-utils` submodule), `linux/amd64`, pushes to `igurusama/imapps`, then `curl`s the Dokploy app webhooks through a Cloudflare Access service token: `DEPLOY_WEB_URL` + `DEPLOY_API_URL` (shoppingo, jewellery-catalogue, sentinel), `DEPLOY_API_URL` only (kivo). mixtape is a single compose service hit via `DEPLOY_URL` with `X-GitHub-Event: push` (without it Dokploy ignores `ref` → "Branch Not Match"; `mixtape/.github/workflows/ci-cd.yml`).
 
 ## 4. MCP control planes (how an agent operates this homelab)
 
@@ -159,46 +167,50 @@ If the token is missing or expired the call doesn't error — it **hangs** on
 
 ## 5. Projects & services (Dokploy inventory)
 
-Org `QhuDFk1KJXDHR2xy0nwcK`. 4 projects, all in `production` environment.
+Org `QhuDFk1KJXDHR2xy0nwcK`. 5 projects (`apps`, `nas`, `infra`, `gtnh`, `sentinel`), all in `production` environment.
+
+Diagram: [`diagrams/service-inventory.excalidraw`](./diagrams/service-inventory.excalidraw).
+
+Each infra/gtnh stack with a README links it in the Notes column. Dokploy also attaches containers that have a Dokploy domain to `dokploy-network` even when the compose file does not declare it (observed live via `docker inspect` 2026-10-17: immich, jellyfin, navidrome, audiobookshelf, homeassistant, vaultwarden, mixtape-web) — that is how Traefik and Gatus reach them by container name.
 
 ### `apps`
 | Service | Type | Host | Notes |
 |---|---|---|---|
-| shoppingo-web / shoppingo-api | app | shoppingo.imapps.uk | api uses OpenAI + mongo + minio |
+| shoppingo-web / shoppingo-api | app | shoppingo.imapps.uk | api uses fal.ai (`FAL_KEY`) + mongo + minio, optional opensearch |
 | jewellery-catalogue-web / -api | app | jewellery-catalogue.imapps.uk | mongo + minio |
 | kivo | app | kivo.imapps.uk | mongo; own JWT auth |
+| jott | compose (`server/compose.yaml` in `igor-siergiej/jott`, built from source) | tailnet only: `100.79.92.93:8787` (host-published on the tailnet IP) | sync server; named volume `jott-data` on host disk; **no Gatus check**, not backed up |
 
 ### `nas` (compose stacks, media)
 | Stack | Image | Container port | Ingress |
 |---|---|---|---|
-| immich | `immich-server:v3.2.0` (+ ml, redis, pg16) | 2283 | immich.imapps.uk — **Access bypass**, own login |
-| jellyfin | `jellyfin:10.9.11` | 8096 | jellyfin.imapps.uk — bypass |
-| navidrome | `navidrome:latest` | 4533 | navidrome.imapps.uk — bypass |
-| audiobookshelf | `audiobookshelf:latest` | 13378 | audiobookshelf.imapps.uk — bypass |
-| mixtape | `igurusama/imapps:mixtape-{api,web}-latest` | web 3000, api 3001 | mixtape.imapps.uk — bypass; YouTube→mp3 into Navidrome NFS share |
+| immich | `immich-server:v3.2.0` (+ ml, redis, pg16) | 2283 | immich.imapps.uk — **Access bypass**, own login. See [`../immich/README.md`](../immich/README.md) |
+| jellyfin | `jellyfin:10.11.11` | 8096 | jellyfin.imapps.uk — bypass. See [`../jellyfin/README.md`](../jellyfin/README.md) |
+| navidrome | `navidrome:latest` | 4533 | navidrome.imapps.uk — bypass. See [`../navidrome/README.md`](../navidrome/README.md) |
+| audiobookshelf | `audiobookshelf:latest` | 80 (Dokploy domain port; Gatus checks `:80`) | audiobookshelf.imapps.uk — bypass. See [`../audiobookshelf/README.md`](../audiobookshelf/README.md) |
+| mixtape | `igurusama/imapps:mixtape-{api,web}-latest` | web 3000, api 3001 | mixtape.imapps.uk — bypass; YouTube→mp3 into the Navidrome music dir and mp4 into the Jellyfin media dir (both ZFS binds, read-write). See [`../mixtape/README.md`](../mixtape/README.md) |
+| resilio-sync | `resilio/sync:latest` (runs as uid 1000) | 8888 (GUI), 55555 tcp+udp — published on the **tailnet IP only** | syncs the notes dir `/mnt/tank/shared/notes` across devices. See [`../resilio-sync/README.md`](../resilio-sync/README.md) |
 
-None of these publish a host port (`ports:` block) — confirmed against the live compose files. "Container port" is what Traefik routes to internally via `dokploy-network`; nothing here is reachable by hitting the host IP directly on that port. (This was tightened in the 2026-07-04 hardening pass — see git log on this repo for `harden: remove 0.0.0.0 host ports` if you need the before/after.)
+None of these publish a host port (`ports:` block) — confirmed against the live compose files — except resilio-sync, which publishes on the tailnet IP only. "Container port" is what Traefik routes to internally via `dokploy-network`; the `nas` compose files do not declare that network — Dokploy attaches it at deploy for services with a domain (observed live). Nothing here is reachable by hitting the host LAN IP directly on that port. (This was tightened in the 2026-07-04 hardening pass — see git log on this repo for `harden: remove 0.0.0.0 host ports` if you need the before/after.)
 
 ### `infra`
 | Stack | Image | Ports | Notes |
 |---|---|---|---|
 | cloudflared | (app) | — | the tunnel |
-| tailscale | `tailscale:latest` | host net | `network_mode: host`, advertises route `192.168.68.0/24` |
-| blocky | `spx01/blocky:latest` | 53 (host-published, LAN DNS) | split-horizon DNS; web UI/metrics now internal-only via `dokploy-network` (`:4000` host publish dropped in the 2026-07-04 hardening pass) |
+| tailscale | `tailscale:latest` | host net | `network_mode: host`, hostname `foundry`, advertises route `192.168.68.0/24`. See [`../tailscale/README.md`](../tailscale/README.md) |
+| blocky | `spx01/blocky:latest` | 53 (host-published, LAN DNS) | split-horizon DNS; web UI/metrics now internal-only via `dokploy-network` (`:4000` host publish dropped in the 2026-07-04 hardening pass). See [`../blocky/README.md`](../blocky/README.md) |
 | mongodb | `mongo:7.0` | 27017, **no host publish, no Traefik route** (internal-only on `dokploy-network`) | shared DB (kivo, shoppingo, jewellery, mixtape). ZFS bind mount. Admin: `docker exec -it mongodb mongosh`, or the socat tunnel in [`../mongodb/README.md`](../mongodb/README.md#remote-access) |
-| minio | `minio:latest` | 9000/9001, **no host publish** — Traefik only: `minio.imapps.uk` → 9000 (S3), `minio-console.imapps.uk` → 9001 (console) | S3 for apps (they use `minio:9000` internally). `minio-data` external volume. Host publishes (LAN, then tailnet) dropped 2026-10-10 |
-| monitoring | loki/promtail/prometheus/cadvisor/node-exporter/grafana/gatus | grafana(Traefik), gatus 8080 | grafana.imapps.uk, gatus.imapps.uk |
-| home-assistant | `home-assistant:2024.12.3` | 8123 | unprivileged bridge container (no host devices; `privileged` + NET_ADMIN/NET_RAW dropped 2026-10-10) |
-| vaultwarden | `vaultwarden/server:1.37.2` | vault.imapps.uk | self-hosted secrets/password vault, replaces plaintext `~/notes/secrets/tokens.md`; NFS-backed (`/mnt/tank/shared/vaultwarden`); see [`README.md`](./README.md#secrets) |
-
+| minio | `minio:latest` | 9000/9001, **no host publish** — Traefik only: `minio.imapps.uk` → 9000 (S3), `minio-console.imapps.uk` → 9001 (console) | S3 for apps (they use `minio:9000` internally). `minio-data` external volume (bind to `/mnt/tank/shared/minio`). Host publishes (LAN, then tailnet) dropped 2026-10-10. See [`../minio/README.md`](../minio/README.md) |
+| monitoring | loki/promtail/prometheus/cadvisor/node-exporter/grafana/gatus + docker-socket-proxy | none host-published; Traefik: grafana → 3000, gatus → 8080 | grafana.imapps.uk, gatus.imapps.uk. docker-socket-proxy (`CONTAINERS=1`, `NETWORKS=1`) fronts promtail's Docker API access (`../SECURITY-AUDIT.md` #10, closed). See [`../monitoring/README.md`](../monitoring/README.md) |
+| home-assistant | `home-assistant:2024.12.3` | 8123; Traefik `home-assistant.imapps.uk` | unprivileged container (no host devices; `privileged` + NET_ADMIN/NET_RAW dropped 2026-10-10) on its own bridge + Dokploy-attached `dokploy-network` (no host network, so no LAN discovery). See [`../homeassistant/README.md`](../homeassistant/README.md) |
+| vaultwarden | `vaultwarden/server:1.37.2` | vault.imapps.uk | self-hosted secrets/password vault, replaces plaintext `~/notes/secrets/tokens.md`; ZFS bind mount (`/mnt/tank/shared/vaultwarden`); see [`README.md`](./README.md#secrets) and [`../vaultwarden/README.md`](../vaultwarden/README.md) |
 | opensearch | `opensearch:2.19.1` | 9200, internal-only on `dokploy-network`, no Traefik route | shoppingo recipe-discovery index; derived from mongo, not backed up; security plugin off. See [`../opensearch/README.md`](../opensearch/README.md) |
-| resilio-sync | `resilio/sync:latest` (runs as uid 1000) | 8888 (GUI), 55555 tcp+udp — published on the **tailnet IP only** | syncs the notes dir `/mnt/tank/shared/notes` across devices |
-| minio-gallery | `machines/filestash:latest` | 8334; Traefik `minio-gallery.imapps.uk` on the **`web` (HTTP) entrypoint only** | Filestash browser over MinIO; own admin login. HTTP-only router, see `../SECURITY-AUDIT.md` #11 |
+| minio-gallery | `machines/filestash:latest` | 8334; Traefik `minio-gallery.imapps.uk` on the **`web` (HTTP) entrypoint only** | Filestash browser over MinIO; own admin login. HTTP-only router, see `../SECURITY-AUDIT.md` #11. See [`../minio-gallery/README.md`](../minio-gallery/README.md) |
 
 ### `gtnh` (game server)
 | Service | Image | Ingress | Notes |
 |---|---|---|---|
-| gtnh | `itzg/minecraft-server:java21` (`TYPE: GTNH`) | tailnet only: `gtnh.tail2d4575.ts.net:25565` | GregTech New Horizons. `network_mode: service:gtnh-tailscale` — no `dokploy-network`, no Traefik. Whitelisted. Only `gtnh/docker-compose.yml` is tracked; the other files in `gtnh/` are local server leftovers (gitignored) |
+| gtnh | `itzg/minecraft-server:java21` (`TYPE: GTNH`) | tailnet only: `gtnh.tail2d4575.ts.net:25565` | GregTech New Horizons. `network_mode: service:gtnh-tailscale` — no `dokploy-network`, no Traefik. Whitelisted. Only `gtnh/docker-compose.yml` is tracked; the other files in `gtnh/` are local server leftovers (gitignored). See [`../gtnh/README.md`](../gtnh/README.md) |
 | gtnh-tailscale | `tailscale/tailscale:latest` | own tailnet node `gtnh` | `TS_AUTHKEY_GTNH`; see `../SECURITY-AUDIT.md` #1 (tailnet ACL) |
 
 ### Not Dokploy-managed (local dev)
@@ -207,7 +219,7 @@ None of these publish a host port (`ports:` block) — confirmed against the liv
 ### `sentinel`
 | Service | Host | Notes |
 |---|---|---|
-| web / api | sentinel.imapps.uk | own require-email Access app; api holds HA long-lived token; embeds gatus iframe |
+| web / api | sentinel.imapps.uk | own require-email Access app; api holds HA long-lived token; fetches Gatus status JSON via `/api/gatus/statuses` (since sentinel PR #8) — the only iframes are Grafana public dashboards. The `gatus-iframe` frame-ancestors middleware in `../monitoring/docker-compose.yml` is likely vestigial |
 
 ## 6. Cloudflare Access model (set 2026, default-deny)
 
@@ -220,9 +232,11 @@ None of these publish a host port (`ports:` block) — confirmed against the liv
 
 ## 7. Storage
 
-- Most volumes are **local ZFS** (`zpool tank`, mirrored, bind-mounted from `/mnt/tank/shared/*`): immich uploads, mongodb data, loki/prometheus/grafana/gatus, navidrome music (shared read-write by mixtape, read-only by navidrome). All compose `driver_opts` are `type: none` (bind), not `nfs` — confirmed against every live compose file.
+Diagram: [`diagrams/data-storage.excalidraw`](./diagrams/data-storage.excalidraw).
+
+- Most volumes are **local ZFS** (`zpool tank`, mirrored, bind-mounted from `/mnt/tank/shared/*`): immich uploads, mongodb data, minio data, vaultwarden, home-assistant config, loki/prometheus/grafana/gatus, navidrome music (shared read-write by mixtape, read-only by navidrome), jellyfin media (shared read-write by mixtape at `/videos`). All compose `driver_opts` are `type: none` (bind), not `nfs` — confirmed against every live compose file.
 - `192.168.68.13` is **not** the storage backend — that claim was stale, left over from before the 2026-08-20 bare-metal migration. The device still answers ICMP intermittently but has no open ports and nothing in this repo mounts from it. Gatus's "NFS Server" check against it was removed 2026-09-28 for exactly this reason.
-- **Local (host-disk) volumes with no NFS + no backup:** `immich-pgdata`, `minio-data` (external). Host disk loss = data loss. See `../SECURITY-AUDIT.md` #5.
+- **Host-disk (Docker root on the LVM root FS, not `tank`) named volumes:** `immich-pgdata` (covered by the nightly `pg_dumpall`, §9), `gtnh-data` (covered by the nightly world tar, §9); not backed up: `jott-data`, `jellyfin-config`/`jellyfin-cache`, `audiobookshelf-config`, `filestash-state`, `resilio-config2`, the two tailscale state volumes and `promtail-positions`. audiobookshelf's `/metadata` has no mount at all (container writable layer — lost on recreate). Host disk loss loses the live data; see `../SECURITY-AUDIT.md` #5. `minio-data` was listed here until 2026-10-10 but is a bind to `/mnt/tank/shared/minio` (`docker volume inspect minio-data`).
 
 ## 8. Nightly prod smoke routine
 
@@ -233,7 +247,9 @@ jewellery-catalogue, kivo and mixtape — which by default runs only that
 repo's `@smoke`-tagged Playwright tests against production. Gatus is the
 fast "is it up at all" layer; this is the nightly "does the actual flow
 still work" layer (the failures Gatus can't see: images 404/401, the
-shoppingo fal key stale, a redirect misconfigured, etc.).
+shoppingo fal key stale, a redirect misconfigured, etc.). mixtape currently
+has no `@smoke`-tagged tests, so its run executes nothing. Diagram:
+[`diagrams/ops-automation.excalidraw`](./diagrams/ops-automation.excalidraw).
 
 - One **Discord alert per run** (not per app) summarises every failing
   app with: failing test names, a 40-line container log tail from the
@@ -252,7 +268,9 @@ shoppingo fal key stale, a redirect misconfigured, etc.).
 
 The `backups/` directory ships a nightly backup suite + a weekly restore
 drill. Both run as systemd timers on the foundry host and post to the
-same Discord webhook as Gatus / smoke routine.
+same Discord webhook as Gatus / smoke routine. Diagrams:
+[`diagrams/data-storage.excalidraw`](./diagrams/data-storage.excalidraw),
+[`diagrams/ops-automation.excalidraw`](./diagrams/ops-automation.excalidraw).
 
 **Backup** (`backups/bin/backup.sh`, daily at **02:00**) — iterates
 `backups/config/<service>.sh`, dumps each to

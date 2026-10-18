@@ -1,6 +1,6 @@
 # MongoDB Compose Setup
 
-Docker Compose setup for MongoDB 7.0, serving shoppingo and jewellery-catalogue (staging + production).
+Docker Compose setup for MongoDB 7.0, the shared database for shoppingo and jewellery-catalogue (staging + production), kivo and mixtape (see [`../docs/homelab.md` §5](../docs/homelab.md#infra)). The user/database examples below cover shoppingo and jewellery-catalogue only.
 
 ## Quick Start
 
