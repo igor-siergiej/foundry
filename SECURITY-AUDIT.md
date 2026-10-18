@@ -18,14 +18,6 @@ there reaches foundry on every port (SSH, Paperclip `:8443/:8444`, Resilio UI, N
 **Fix:** grant `autogroup:member → *`, `autogroup:shared → tag:mc-server:tcp:25565`, nothing from
 tagged nodes. Prepared policy needs applying via `tailscale:manage_acl` or the admin console.
 
-### 3. Dokploy UI published on `0.0.0.0:3000` over plain HTTP — HIGH
-The `dokploy` swarm service publishes `3000` in host mode. Any LAN device reaches the admin panel
-(root-equivalent on this host via Docker) without TLS, so the login is sniffable on WiFi. Traefik
-already serves it at `dokploy.imapps.uk` via `http://dokploy:3000` over `dokploy-network`, and the
-dokploy MCP uses the domain, so nothing depends on the raw port.
-**Fix:** `docker service update --publish-rm published=3000,target=3000,mode=host dokploy`.
-Dokploy upgrades may re-add it — recheck after each upgrade.
-
 ### 5. Host-disk volumes with no backup — MEDIUM
 Only `immich-pgdata` (557 MB) lives on the host disk; the audit previously also listed `minio-data`
 but on re-check 2026-10-10 it is already a bind mount to `/mnt/tank/shared/minio` (Dokploy switched
@@ -92,6 +84,15 @@ Before the change `sshd -T` showed `passwordauthentication no` (set by `50-cloud
 wins), `sshd -t` clean, `systemctl reload ssh`. `sshd -T` now shows `permitrootlogin no` and
 `passwordauthentication no`; a password-only login from `framework` is refused with
 `Permission denied (publickey)`.
+
+### 3. Dokploy UI published on `0.0.0.0:3000` over plain HTTP — was HIGH
+`docker service update --publish-rm published=3000,target=3000,mode=host dokploy`; service converged
+(`Endpoint.Spec.Ports: null`). On re-check the host listener was an orphaned `bunx vite --port 3000
+--host` dev process (PID 1800419, ~2 days old, `--host` ⇒ `0.0.0.0`), not the swarm publish — killed
+the process. `ss -tln` no longer shows `:3000`; `https://dokploy.imapps.uk` returns 200 on the
+login page and 401 on the tRPC bootstrap (auth required); the dokploy MCP answered the read-tools
+used to scope and verify this change. Recheck after every Dokploy upgrade (audit finding reopened
+on 2026-10-18 because of the v0.30.8 upgrade).
 
 ## Closed 2026-10-14
 
