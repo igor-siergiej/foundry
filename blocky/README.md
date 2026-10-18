@@ -38,7 +38,8 @@ bind-mounted, so a redeploy is what picks up changes.
 Verify afterwards (from the root README):
 
 ```sh
-dig @192.168.68.17 +short shoppingo.imapps.uk   # 192.168.68.17
+dig @192.168.68.17 +short kivo.imapps.uk        # 192.168.68.17
+dig @192.168.68.17 +short shoppingo.imapps.uk   # d3o01nt4oiwfr9.cloudfront.net. + CloudFront IPs (landing site exception)
 dig @192.168.68.17 +short doubleclick.net       # 0.0.0.0
 getent hosts home.tail2d4575.ts.net             # 100.79.92.93 (on foundry)
 ```
