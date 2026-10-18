@@ -1,8 +1,9 @@
 name: minio-gallery
 
 # Filestash: web S3 browser with image thumbnails + gallery viewer.
-# Talks to MinIO internally over dokploy-network at http://minio:9000
-# (same-origin https via Traefik/cloudflared -> no mixed-content issues).
+# Talks to RustFS internally over dokploy-network at http://rustfs:9000
+# (endpoint + keys entered on the S3 login form, see README).
+# Same-origin https via Traefik/cloudflared -> no mixed-content issues.
 services:
   filestash:
     # Pinned 2026-10-18 (SECURITY-AUDIT #8); Dependabot bumps via :latest's new digest

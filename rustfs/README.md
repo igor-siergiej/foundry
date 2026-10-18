@@ -25,13 +25,23 @@ Each consumer has its own IAM user with a scoped policy; nothing uses root.
 
 `jewellery-catalogue` stays on MinIO until it moves to its in-memory image store; it is not migrated.
 
-Admin from the host, with the `minio/mc` image (`mc` speaks the RustFS admin API for users and policies)
-or the RustFS console:
+Admin: the console at `https://rustfs-console.imapps.uk/rustfs/console/` (the bare `/` returns 403), logging in
+with `creds.rustfs-root`. Or `mc`, which speaks the RustFS admin API for users and policies. `minio/mc` is
+no longer published, but the pinned MinIO image ships `mc`:
 
 ```sh
-docker run --rm --network dokploy-network --entrypoint sh minio/mc -c \
-  'mc alias set r http://rustfs:9000 "$U" "$P" && mc ls r'
+docker run --rm --network dokploy-network -e U -e P --entrypoint sh \
+  minio/minio@sha256:14cea493d9a34af32f524e538b8346cf79f3321eff8e708c1e2960462bd8936e -c \
+  'mc alias set r http://rustfs:9000 "$U" "$P" >/dev/null && mc admin user list r'
 ```
+
+## Migration from MinIO (2026-10-18)
+
+`mc mirror` from `minio/shoppingo` (read-only user `rustfs-migration`) into `rustfs/shoppingo` (user
+`shoppingo`): 1,230 objects, 140,914,837 bytes. `mc stat --recursive` on both sides matched per key on
+size, ETag, content type and user metadata. shoppingo-api's Dokploy env was switched to
+`BUCKET_ENDPOINT=rustfs:9000` with the `shoppingo` key, then a second mirror pass found no new objects.
+Rollback: [`../minio/README.md`](../minio/README.md#rollback-shoppingo--minio).
 
 ## Deploy / change
 
@@ -44,6 +54,8 @@ A fresh host needs the dataset first:
 - Container healthcheck: `curl http://127.0.0.1:9000/health/ready`.
 - Gatus: `RustFS (Storage)` → `http://rustfs:9000/health/ready` (group Storage).
 - `/minio/health/live` and `/minio/health/ready` also exist as MinIO-compatible aliases.
+- Logs: the image writes `/logs/rustfs.log` inside the container (lost on recreate);
+  `RUSTFS_OBS_LOG_STDOUT_ENABLED=true` mirrors them to stdout, so `docker logs rustfs` and Loki have them.
 
 ## Backups
 

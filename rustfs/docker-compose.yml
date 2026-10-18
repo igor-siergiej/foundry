@@ -19,6 +19,9 @@ services:
       RUSTFS_CONSOLE_ADDRESS: ":9001"
       RUSTFS_CONSOLE_ENABLE: "true"
       RUSTFS_CONSOLE_CORS_ALLOWED_ORIGINS: https://rustfs-console.imapps.uk
+      # The image logs to /logs inside the container; also mirror to stdout so
+      # promtail/Loki pick them up via the Docker log driver.
+      RUSTFS_OBS_LOG_STDOUT_ENABLED: "true"
     volumes:
       - rustfs-data:/data
     networks:

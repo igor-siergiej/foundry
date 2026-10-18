@@ -21,9 +21,9 @@ that no `du`/`stat` can see.
 
 ### Not yet backed up (follow-up cards)
 
-- **minio** — `mc mirror` to `/mnt/tank/shared/backups/minio/`. Buckets are
-  large (jewellery-catalogue/shoppingo images, several GB); restore drill
-  is `mc diff` against prod, slow.
+- **rustfs** (shoppingo, ~141 MB) and **minio** (jewellery-catalogue only, ~10 MB
+  until it leaves) — `mc mirror` to `/mnt/tank/shared/backups/<store>/` with a
+  read-only IAM user; restore drill is `mc diff` against prod.
 - **opensearch** — derived from mongo (shoppingo recipe index), can rebuild
   from mongo via `scripts/reindex.sh`; consider a periodic rebuild rather
   than a binary backup.
