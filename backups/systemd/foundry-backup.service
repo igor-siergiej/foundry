@@ -1,6 +1,6 @@
 [Unit]
 Description=Foundry nightly backups
-# After network-online so docker can find mongo/minio container IPs.
+# After network-online so docker can find the mongo container IP.
 After=network-online.target docker.service
 Wants=network-online.target
 

@@ -2,7 +2,7 @@
 
 Web S3 browser with image thumbnails and a gallery viewer over the app image buckets. Runs
 [Filestash](https://www.filestash.app/) and talks to [`../rustfs`](../rustfs) container-to-container at
-`http://rustfs:9000` (MinIO at `http://minio:9000` only for the `jewellery-catalogue` bucket, until that moves).
+`http://rustfs:9000`. (The stack keeps its historical name `minio-gallery`: Dokploy compose, container and domain.)
 
 - **Dokploy:** project `infra`, compose `minio-gallery` (appName `compose-bypass-back-end-application-glcejz`),
   source `foundry` repo `minio-gallery/docker-compose.yml`, branch `main`.
@@ -21,7 +21,7 @@ Web S3 browser with image thumbnails and a gallery viewer over the app image buc
 
 ## Networks
 
-`dokploy-network` (external) only — needed to reach `rustfs:9000` (and `minio:9000`) and for Traefik.
+`dokploy-network` (external) only — needed to reach `rustfs:9000` and for Traefik.
 
 ## Storage
 
@@ -54,7 +54,7 @@ Commit + push, then explicit `compose-deploy`
 
 ## Health and backups
 
-- Gatus: `MinIO Gallery` → `http://minio-gallery:8334/healthz`, expects 200.
+- Gatus: `Filestash (S3 Gallery)` → `http://minio-gallery:8334/healthz`, expects 200.
 - Backup: **none** for `filestash-state`. The RustFS data itself is not backed up yet either
   ([homelab.md §9](../docs/homelab.md#9-backups--restore-drill)).
 

@@ -81,16 +81,6 @@ endpoints:
     alerts:
       - type: discord
 
-  - name: MinIO (Storage)
-    group: Storage
-    url: http://minio:9000/minio/health/live
-    interval: 60s
-    timeout: 10s
-    conditions:
-      - "[STATUS] == 200"
-    alerts:
-      - type: discord
-
   - name: RustFS (Storage)
     group: Storage
     url: http://rustfs:9000/health/ready
@@ -353,7 +343,7 @@ endpoints:
     alerts:
       - type: discord
 
-  - name: MinIO Gallery
+  - name: Filestash (S3 Gallery)
     group: Storage
     url: http://minio-gallery:8334/healthz
     interval: 60s

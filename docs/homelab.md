@@ -22,7 +22,7 @@ Single Docker host, swarm mode active with one node. Dokploy runs its `apps`/`se
 
 **Live health:** run `homelab-status` (dotfiles `bin/`) before trusting anything here; `--coverage` lists running services with no Gatus check or no row in §5.
 
-> Host was reinstalled bare-metal on 2026-08-20 (previously Proxmox), which changed LAN/tailnet IPs from `.18`/`100.85.189.60` to the values above — confirmed against the live `mongodb`/`minio`/`blocky` compose files and the `blocky` fix-hardcoded-IPs deployment, not from a prior copy of this doc. If you find another IP reference anywhere (scripts, other notes), it's stale — this file and the live compose files are the source of truth.
+> Host was reinstalled bare-metal on 2026-08-20 (previously Proxmox), which changed LAN/tailnet IPs from `.18`/`100.85.189.60` to the values above — confirmed against the live `mongodb`/`blocky` compose files and the `blocky` fix-hardcoded-IPs deployment, not from a prior copy of this doc. If you find another IP reference anywhere (scripts, other notes), it's stale — this file and the live compose files are the source of truth.
 
 ## 2. Ingress & DNS (how a request reaches a service)
 
@@ -62,8 +62,7 @@ flowchart TB
 - Traefik entrypoints: `web` (80, redirect→https), `websecure` (443, letsencrypt certresolver). Services attach via `dokploy-network` + traefik labels.
 - **Tailnet path** (not in the diagram): the `tailscale` stack advertises `192.168.68.0/24` as a subnet route, so tailnet devices reach the LAN (and blocky/Traefik on `192.168.68.17`) from anywhere. `gtnh` and `jott` are tailnet-only and never touch Traefik or Cloudflare (§5).
 - Internal service-to-service DB access goes container-to-container over
-  `dokploy-network`: `mongodb:27017`, `rustfs:9000` (`minio:9000` for jewellery-catalogue until it
-  leaves MinIO). It deliberately does not
+  `dokploy-network`: `mongodb:27017`, `rustfs:9000`. It deliberately does not
   use `*.imapps.uk` names — those resolve via blocky to the host LAN IP, so a
   DHCP lease change would break every app (it did, 2026-09-19). Any service
   needing mongo or S3 must join `dokploy-network`.
@@ -214,7 +213,7 @@ Each infra/gtnh stack with a README links it in the Notes column. Dokploy also a
 | Service | Type | Host | Notes |
 |---|---|---|---|
 | shoppingo-web / shoppingo-api | app | shoppingo.imapps.uk | api uses fal.ai (`FAL_KEY`) + mongo + rustfs (`rustfs:9000`, own IAM user), optional opensearch |
-| jewellery-catalogue-web / -api | app | jewellery-catalogue.imapps.uk | mongo + minio |
+| jewellery-catalogue-web / -api | app | jewellery-catalogue.imapps.uk | mongo + rustfs (`rustfs:9000`, own IAM user) |
 | kivo | app | kivo.imapps.uk | mongo; own JWT auth |
 | jott | compose (`server/compose.yaml` in `igor-siergiej/jott`, built from source) | tailnet only: `100.79.92.93:8787` (host-published on the tailnet IP) | sync server; named volume `jott-data` on host disk; **no Gatus check**, not backed up |
 
@@ -237,8 +236,7 @@ None of these publish a host port (`ports:` block) — confirmed against the liv
 | tailscale | `tailscale:latest` | host net | `network_mode: host`, hostname `foundry`, advertises route `192.168.68.0/24`. See [`../tailscale/README.md`](../tailscale/README.md) |
 | blocky | `spx01/blocky:latest` | 53 (host-published, LAN DNS) | split-horizon DNS; web UI/metrics now internal-only via `dokploy-network` (`:4000` host publish dropped in the 2026-07-04 hardening pass). See [`../blocky/README.md`](../blocky/README.md) |
 | mongodb | `mongo:7.0` | 27017, **no host publish, no Traefik route** (internal-only on `dokploy-network`) | shared DB (kivo, shoppingo, jewellery, mixtape). ZFS bind mount. Admin: `docker exec -it mongodb mongosh`, or the socat tunnel in [`../mongodb/README.md`](../mongodb/README.md#remote-access) |
-| minio | `minio/minio@sha256:14cea4…` (frozen `RELEASE.2025-09-07T16-13-09Z`) | 9000/9001, **no host publish** — Traefik only: `minio.imapps.uk` → 9000 (S3), `minio-console.imapps.uk` → 9001 (console) | Being replaced by rustfs (jott #99): now serves only jewellery-catalogue (`minio:9000`), until that app moves its images to its in-memory store. `minio-data` external volume (bind to `/mnt/tank/shared/minio`). See [`../minio/README.md`](../minio/README.md) |
-| rustfs | `rustfs/rustfs:1.0.3@sha256:9ca955…` | 9000 S3 / 9001 console, **no host publish**; Traefik `rustfs-console.imapps.uk` → 9001 (LAN/tailnet, no public DNS) | S3 for shoppingo and minio-gallery (`rustfs:9000`), one IAM user per consumer. ZFS dataset `tank/shared/rustfs`. See [`../rustfs/README.md`](../rustfs/README.md) |
+| rustfs | `rustfs/rustfs:1.0.3@sha256:9ca955…` | 9000 S3 / 9001 console, **no host publish**; Traefik `rustfs-console.imapps.uk` → 9001 (LAN/tailnet, no public DNS) | S3 for shoppingo, jewellery-catalogue and minio-gallery (`rustfs:9000`), one IAM user per consumer. ZFS dataset `tank/shared/rustfs`. See [`../rustfs/README.md`](../rustfs/README.md) |
 | monitoring | loki/promtail/prometheus/cadvisor/node-exporter/grafana/gatus + docker-socket-proxy | none host-published; Traefik: grafana → 3000, gatus → 8080 | grafana.imapps.uk, gatus.imapps.uk. docker-socket-proxy (`CONTAINERS=1`, `NETWORKS=1`) fronts promtail's Docker API access (`../SECURITY-AUDIT.md` #10, closed). See [`../monitoring/README.md`](../monitoring/README.md) |
 | home-assistant | `home-assistant:2024.12.3` | 8123; Traefik `home-assistant.imapps.uk` | unprivileged container (no host devices; `privileged` + NET_ADMIN/NET_RAW dropped 2026-10-10) on its own bridge + Dokploy-attached `dokploy-network` (no host network, so no LAN discovery). See [`../homeassistant/README.md`](../homeassistant/README.md) |
 | vaultwarden | `vaultwarden/server:1.37.2` | vault.imapps.uk | self-hosted secrets/password vault, replaces plaintext `~/notes/secrets/tokens.md`; ZFS bind mount (`/mnt/tank/shared/vaultwarden`); see [`README.md`](./README.md#secrets) and [`../vaultwarden/README.md`](../vaultwarden/README.md) |
@@ -253,7 +251,7 @@ None of these publish a host port (`ports:` block) — confirmed against the liv
 | gtnh-tailscale | `tailscale/tailscale:latest` | own tailnet node `gtnh` | `TS_AUTHKEY_GTNH`; see `../SECURITY-AUDIT.md` #1 (tailnet ACL) |
 
 ### Not Dokploy-managed (local dev)
-`dev-mongodb`, `dev-minio`, `dev-navidrome` are local development containers bound to `127.0.0.1` only (`dev-navidrome` from `~/imapps/utils/docker`). Not production, not monitored; safe to ignore in health checks.
+`dev-mongodb`, `dev-rustfs`, `dev-navidrome` are local development containers bound to `127.0.0.1` only (from `~/imapps/utils/docker`). Not production, not monitored; safe to ignore in health checks.
 
 ### `sentinel`
 | Service | Host | Notes |
@@ -268,15 +266,15 @@ None of these publish a host port (`ports:` block) — confirmed against the liv
 - **dokploy** + **sentinel** keep their own require-email apps.
 - immich has a rate-limit rule on `/auth/login` (15 req / 10s / IP → block).
 - Reminder: Access is a **remote-only** gate (see §2). On LAN and tailnet, own-auth is the only protection.
-- **Widened 2026-09-22:** the Deco now points all DHCP clients at blocky, so *every device on the WiFi* — including guests and IoT — takes the LAN path and bypasses Access. Previously this was limited to tailnet devices. Anything whose only gate is the wildcard Access app (grafana, home-assistant, minio + minio-console) is now protected on-LAN solely by its own login.
+- **Widened 2026-09-22:** the Deco now points all DHCP clients at blocky, so *every device on the WiFi* — including guests and IoT — takes the LAN path and bypasses Access. Previously this was limited to tailnet devices. Anything whose only gate is the wildcard Access app (grafana, home-assistant) is now protected on-LAN solely by its own login.
 
 ## 7. Storage
 
 Diagram: [`diagrams/data-storage.excalidraw`](./diagrams/data-storage.excalidraw).
 
-- Most volumes are **local ZFS** (`zpool tank`, mirrored, bind-mounted from `/mnt/tank/shared/*`): immich uploads, mongodb data, minio data, vaultwarden, home-assistant config, loki/prometheus/grafana/gatus, navidrome music (shared read-write by mixtape, read-only by navidrome), jellyfin media (shared read-write by mixtape at `/videos`). All compose `driver_opts` are `type: none` (bind), not `nfs` — confirmed against every live compose file.
+- Most volumes are **local ZFS** (`zpool tank`, mirrored, bind-mounted from `/mnt/tank/shared/*`): immich uploads, mongodb data, rustfs data, vaultwarden, home-assistant config, loki/prometheus/grafana/gatus, navidrome music (shared read-write by mixtape, read-only by navidrome), jellyfin media (shared read-write by mixtape at `/videos`). All compose `driver_opts` are `type: none` (bind), not `nfs` — confirmed against every live compose file.
 - `192.168.68.13` is **not** the storage backend — that claim was stale, left over from before the 2026-08-20 bare-metal migration. The device still answers ICMP intermittently but has no open ports and nothing in this repo mounts from it. Gatus's "NFS Server" check against it was removed 2026-09-28 for exactly this reason.
-- **Host-disk (Docker root on the LVM root FS, not `tank`) named volumes:** `immich-pgdata` (covered by the nightly `pg_dumpall`, §9), `gtnh-data` (covered by the nightly world tar, §9); not backed up: `jott-data`, `jellyfin-config`/`jellyfin-cache`, `audiobookshelf-config`, `filestash-state`, `resilio-config2`, the two tailscale state volumes and `promtail-positions`. audiobookshelf's `/metadata` has no mount at all (container writable layer — lost on recreate). Host disk loss loses the live data; see `../SECURITY-AUDIT.md` #5. `minio-data` was listed here until 2026-10-10 but is a bind to `/mnt/tank/shared/minio` (`docker volume inspect minio-data`).
+- **Host-disk (Docker root on the LVM root FS, not `tank`) named volumes:** `immich-pgdata` (covered by the nightly `pg_dumpall`, §9), `gtnh-data` (covered by the nightly world tar, §9); not backed up: `jott-data`, `jellyfin-config`/`jellyfin-cache`, `audiobookshelf-config`, `filestash-state`, `resilio-config2`, the two tailscale state volumes and `promtail-positions`. audiobookshelf's `/metadata` has no mount at all (container writable layer — lost on recreate). Host disk loss loses the live data; see `../SECURITY-AUDIT.md` #5.
 
 ## 8. Nightly prod smoke routine
 
@@ -326,7 +324,7 @@ prunes by `RETENTION_DAYS`, and exits non-zero on any failure.
 | homeassistant | `backups/config/homeassistant.sh` | tar of `/mnt/tank/shared/homeassistant/config` (excludes deps, recorder DB) |
 | gtnh | `backups/config/gtnh.sh` | `rcon-cli save-all` then alpine sidecar tar |
 
-Not yet backed up: rustfs and minio (S3 `mc mirror`, ~150 MB), opensearch (rebuild from
+Not yet backed up: rustfs (S3 mirror with a read-only IAM user, ~150 MB), opensearch (rebuild from
 mongo), jellyfin / audiobookshelf / monitoring / mixtape / resilio-sync
 (metadata-only SQLite, rebuild-from-scratch cheap). Tracked as a single
 follow-up card.
@@ -367,7 +365,7 @@ Backblaze B2 or a friend's box) is a separate follow-up.
 - [ ] Dokploy **rebuild/redeploy does not regenerate** `/etc/dokploy/traefik/dynamic/<appName>.yml`. `sentinel-api`'s file was missing, so `Host(sentinel.imapps.uk) && PathPrefix(/api)` had no router and every `/api` call fell through to the web SPA (HTML instead of JSON). Fix: `domain.update` on the app's domain rewrites the file immediately — no rebuild needed.
 - [ ] Home Assistant's `.storage` registries were reset on 2026-08-20 (`core.config_entries`/`core.entity_registry`/`core.device_registry` all rewritten that evening): only `sun` + `go2rtc` remain, the TP-Link integration is gone, and the recorder DB has no history of the old entities. HA also runs on a **bridge** network, so Kasa/Tapo UDP broadcast discovery can never work — plugs must be added by IP (live KLAP devices: `192.168.68.9`, `.11`, `.14`), and they are cloud-bound so the TP-Link account credentials are required.
 - [ ] **This doc drifted from reality once already** (stale `.18`/`100.85.189.60` host IPs from before the 2026-08-20 bare-metal migration, a stale "host port" claim for services hardened on 2026-07-04) — found and fixed 2026-08-23 by cross-checking the live compose files instead of trusting the doc. If something here looks surprising, check the actual compose file / `dokploy-mcp` state before trusting this doc over it.
-- [ ] **Drifted again, found 2026-09-28:** doc claimed "most volumes are NFS on the NAS `192.168.68.13`" — false, every compose `driver_opts` is a local bind mount to `zpool tank`, and `.13` has no open ports. Also found: Gatus's bare-apex `https://imapps.uk` cert check always failed (Traefik has no router for the apex host, only `*.imapps.uk`, so it serves Traefik's default self-signed cert) and its MinIO check hit `host.docker.internal:9000`, which MinIO doesn't publish on (bound to `192.168.68.17`/`100.79.92.93` only). Fixed in the Gatus config (now `monitoring/config/gatus/config.yaml`): dropped the NFS + apex checks, repointed MinIO at `minio:9000` over `dokploy-network`.
+- [ ] **Drifted again, found 2026-09-28:** doc claimed "most volumes are NFS on the NAS `192.168.68.13`" — false, every compose `driver_opts` is a local bind mount to `zpool tank`, and `.13` has no open ports. Also found: Gatus's bare-apex `https://imapps.uk` cert check always failed (Traefik has no router for the apex host, only `*.imapps.uk`, so it serves Traefik's default self-signed cert) and its object-storage check hit `host.docker.internal:9000`, a port the store didn't publish on. Fixed in the Gatus config (now `monitoring/config/gatus/config.yaml`): dropped the NFS + apex checks and moved storage checks to service names over `dokploy-network`.
 - [ ] **Gatus config lives at `monitoring/config/gatus/config.yaml`, mounted as a directory** so Gatus hot-reloads it after a deploy. It used to be a single-file bind mount of `gatus-config.yml`, which never saw the file git replaced, so new checks silently didn't load until a manual restart (2026-10-14). `homelab-status` now flags a mismatch between deployed and live check counts. Dokploy apps are checked via their public hostname (`https://<app>.imapps.uk/...`), not the suffixed swarm service name; the exception is sentinel-api, whose `/health` isn't reachable through Traefik.
 - [ ] **Monitoring deploys force a full container recreate.** Every `compose-deploy` of `monitoring` re-clones `/etc/dokploy/compose/infra-monitoring-xbyv0n/code` and runs `docker compose ... up -d --force-recreate` (the `--force-recreate` is in the Dokploy compose's `command` field, set via `dokploy-mcp compose.update`). Without that flag, a service whose spec didn't change keeps its bind mount to the deleted directory inode and runs on stale config — the original "dashboard JSON edited, but grafana doesn't see it until a manual `docker restart grafana`" report (2026-10-16). `--force-recreate` recreates every container on every deploy; the bind mount source is the freshly-cloned path, so the new container sees the new content. Gatus still hot-reloads its config in place once the recreated container comes up.
 - [ ] **This homelab and `taisei-karate` (AWS) share no infrastructure** — different clouds, different auth models, different deploy pipelines. See [`taisei-karate.md`](./taisei-karate.md).

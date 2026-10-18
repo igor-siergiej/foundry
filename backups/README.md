@@ -21,9 +21,9 @@ that no `du`/`stat` can see.
 
 ### Not yet backed up (follow-up cards)
 
-- **rustfs** (shoppingo, ~141 MB) and **minio** (jewellery-catalogue only, ~10 MB
-  until it leaves) — `mc mirror` to `/mnt/tank/shared/backups/<store>/` with a
-  read-only IAM user; restore drill is `mc diff` against prod.
+- **rustfs** (shoppingo + jewellery-catalogue images, ~150 MB) — S3 mirror
+  (`rc`) to `/mnt/tank/shared/backups/rustfs/` with a read-only IAM user;
+  restore drill is a diff against prod.
 - **opensearch** — derived from mongo (shoppingo recipe index), can rebuild
   from mongo via `scripts/reindex.sh`; consider a periodic rebuild rather
   than a binary backup.

@@ -950,7 +950,7 @@
       "lineHeight": 1.25
     },
     {
-      "id": "minio",
+      "id": "rustfs",
       "type": "rectangle",
       "x": 851.25,
       "y": 1056.3333333333335,
@@ -976,7 +976,7 @@
       "boundElements": [
         {
           "type": "text",
-          "id": "minio__text"
+          "id": "rustfs__text"
         },
         {
           "type": "arrow",
@@ -1000,7 +1000,7 @@
       "locked": false
     },
     {
-      "id": "minio__text",
+      "id": "rustfs__text",
       "type": "text",
       "x": 888.25,
       "y": 1071.3333333333335,
@@ -1025,13 +1025,13 @@
       "updated": 1760000000000,
       "link": null,
       "locked": false,
-      "text": "minio\nS3 :9000",
-      "originalText": "minio\nS3 :9000",
+      "text": "rustfs\nS3 :9000",
+      "originalText": "rustfs\nS3 :9000",
       "fontSize": 16,
       "fontFamily": 5,
       "textAlign": "center",
       "verticalAlign": "middle",
-      "containerId": "minio",
+      "containerId": "rustfs",
       "autoResize": true,
       "lineHeight": 1.25
     },
@@ -1644,7 +1644,7 @@
       "lineHeight": 1.25
     },
     {
-      "id": "t_minio",
+      "id": "t_rustfs",
       "type": "rectangle",
       "x": 2012,
       "y": 959.0000000000001,
@@ -1670,7 +1670,7 @@
       "boundElements": [
         {
           "type": "text",
-          "id": "t_minio__text"
+          "id": "t_rustfs__text"
         },
         {
           "type": "arrow",
@@ -1682,7 +1682,7 @@
       "locked": false
     },
     {
-      "id": "t_minio__text",
+      "id": "t_rustfs__text",
       "type": "text",
       "x": 2032,
       "y": 974.0000000000001,
@@ -1707,13 +1707,13 @@
       "updated": 1760000000000,
       "link": null,
       "locked": false,
-      "text": "minio/ (per audit;\ncompose: external vol)",
-      "originalText": "minio/ (per audit;\ncompose: external vol)",
+      "text": "rustfs/ (ZFS dataset\ntank/shared/rustfs)",
+      "originalText": "rustfs/ (ZFS dataset\ntank/shared/rustfs)",
       "fontSize": 16,
       "fontFamily": 5,
       "textAlign": "center",
       "verticalAlign": "middle",
-      "containerId": "t_minio",
+      "containerId": "t_rustfs",
       "autoResize": true,
       "lineHeight": 1.25
     },
@@ -2787,8 +2787,8 @@
       "updated": 1760000000000,
       "link": null,
       "locked": false,
-      "text": "Not backed up: minio, opensearch,\njellyfin, audiobookshelf, monitoring,\nmixtape, resilio-sync",
-      "originalText": "Not backed up: minio, opensearch,\njellyfin, audiobookshelf, monitoring,\nmixtape, resilio-sync",
+      "text": "Not backed up: rustfs, opensearch,\njellyfin, audiobookshelf, monitoring,\nmixtape, resilio-sync",
+      "originalText": "Not backed up: rustfs, opensearch,\njellyfin, audiobookshelf, monitoring,\nmixtape, resilio-sync",
       "fontSize": 16,
       "fontFamily": 5,
       "textAlign": "center",
@@ -3064,7 +3064,7 @@
         "gap": 2
       },
       "endBinding": {
-        "elementId": "minio",
+        "elementId": "rustfs",
         "focus": 0,
         "gap": 2
       }
@@ -3303,7 +3303,7 @@
         "gap": 2
       },
       "endBinding": {
-        "elementId": "minio",
+        "elementId": "rustfs",
         "focus": 0,
         "gap": 2
       }
@@ -3547,7 +3547,7 @@
         "gap": 2
       },
       "endBinding": {
-        "elementId": "minio",
+        "elementId": "rustfs",
         "focus": 0,
         "gap": 2
       }
@@ -3578,8 +3578,8 @@
       "updated": 1760000000000,
       "link": null,
       "locked": false,
-      "text": "minio:9000",
-      "originalText": "minio:9000",
+      "text": "rustfs:9000",
+      "originalText": "rustfs:9000",
       "fontSize": 14,
       "fontFamily": 5,
       "textAlign": "center",
@@ -3856,12 +3856,12 @@
       "startArrowhead": null,
       "endArrowhead": "arrow",
       "startBinding": {
-        "elementId": "minio",
+        "elementId": "rustfs",
         "focus": 0,
         "gap": 2
       },
       "endBinding": {
-        "elementId": "t_minio",
+        "elementId": "t_rustfs",
         "focus": 0,
         "gap": 2
       }
@@ -3892,8 +3892,8 @@
       "updated": 1760000000000,
       "link": null,
       "locked": false,
-      "text": "minio-data",
-      "originalText": "minio-data",
+      "text": "rustfs-data",
+      "originalText": "rustfs-data",
       "fontSize": 14,
       "fontFamily": 5,
       "textAlign": "center",

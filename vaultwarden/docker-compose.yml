@@ -38,8 +38,8 @@ services:
 
 volumes:
   # NFS-backed, not a bare local volume — SECURITY-AUDIT.md #5 already flagged
-  # host-disk-only volumes (immich-pgdata, minio-data) as a data-loss risk;
-  # this data matters more than either of those.
+  # host-disk-only volumes (immich-pgdata) as a data-loss risk;
+  # this data matters more than that.
   vaultwarden-data:
     driver: local
     driver_opts:
