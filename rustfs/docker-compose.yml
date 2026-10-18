@@ -1,6 +1,6 @@
 name: rustfs
 
-# S3-compatible object storage replacing ../minio (SECURITY-AUDIT #6, jott #99).
+# S3-compatible object storage for the apps (SECURITY-AUDIT #6, jott #99).
 services:
   rustfs:
     # 1.0.3, pinned by digest; Dependabot bumps it.
