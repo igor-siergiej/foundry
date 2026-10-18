@@ -42,12 +42,6 @@ blocky, minio, navidrome, audiobookshelf, filestash, gatus, resilio-sync, tailsc
 cloudflared. Every redeploy pulls whatever upstream published, with no review. Pin to versions and
 let Renovate/Dependabot bump them.
 
-### 9. Traefik API in insecure mode — LOW
-`/etc/dokploy/traefik/traefik.yml` has `api.insecure: true`. Not host-published, but every container
-on `dokploy-network` (including internet-facing app containers) can read the full routing config on
-`dokploy-traefik:8080`. Dokploy owns this file; set it to `false` if the Dokploy UI does not need the
-dashboard.
-
 ### 10. Docker socket mounted into promtail — LOW
 `:ro` on a socket bind does not restrict the API — promtail can create privileged containers. Put a
 read-only socket proxy (e.g. `tecnativa/docker-socket-proxy` with only `CONTAINERS=1`) in front.
@@ -93,6 +87,15 @@ the process. `ss -tln` no longer shows `:3000`; `https://dokploy.imapps.uk` retu
 login page and 401 on the tRPC bootstrap (auth required); the dokploy MCP answered the read-tools
 used to scope and verify this change. Recheck after every Dokploy upgrade (audit finding reopened
 on 2026-10-18 because of the v0.30.8 upgrade).
+
+### 9. Traefik API in insecure mode — was LOW
+`settings.updateTraefikConfig` (dokploy-mcp) wrote the live config with `api.insecure: false`,
+followed by `settings.reloadTraefik`. `settings.readTraefikConfig` confirms the live file now has
+`api: { insecure: false }`. From `shoppingo-api-zlusv1.1.9k8qob2jkm4t8z2f5r3cen6z5` (a container
+on `dokploy-network`) a raw TCP `GET /api/rawdata` to `dokploy-traefik:8080` now reports
+`Connection refused`; an HTTP 301 from `:80 → :443` for `gatus.imapps.uk` still resolves correctly
+(routing intact). Dokploy UI does not enable the Traefik dashboard, so the change is safe. Recheck
+after every Dokploy upgrade (same gotcha as #3; both flipped by the v0.30.8 re-deploy).
 
 ## Closed 2026-10-14
 
