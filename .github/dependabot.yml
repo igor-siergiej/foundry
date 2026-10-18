@@ -39,9 +39,9 @@ updates:
         update-types:
           - minor
           - patch
-      # SECURITY-AUDIT #6: minio is the only `:latest` image that's also
-      # stuck on a frozen upstream. Keep its updates visible at PR level,
-      # not auto-merged, until the image situation is decided.
+      # SECURITY-AUDIT #6: minio is digest-pinned to a frozen upstream image
+      # (no new tags will ever appear); its replacement, rustfs, is a normal
+      # digest-pinned semver tag and gets regular bumps.
 
   # GitHub Actions versions in .github/workflows/*.yml.
   - package-ecosystem: github-actions

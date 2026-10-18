@@ -1,7 +1,8 @@
 # minio-gallery (Filestash)
 
-Web S3 browser with image thumbnails and a gallery viewer over the shared MinIO (app image buckets). Runs
-[Filestash](https://www.filestash.app/) and talks to MinIO container-to-container at `http://minio:9000`.
+Web S3 browser with image thumbnails and a gallery viewer over the app image buckets. Runs
+[Filestash](https://www.filestash.app/) and talks to [`../rustfs`](../rustfs) container-to-container at
+`http://rustfs:9000` (MinIO at `http://minio:9000` only for the `jewellery-catalogue` bucket, until that moves).
 
 - **Dokploy:** project `infra`, compose `minio-gallery` (appName `compose-bypass-back-end-application-glcejz`),
   source `foundry` repo `minio-gallery/docker-compose.yml`, branch `main`.
@@ -20,7 +21,7 @@ Web S3 browser with image thumbnails and a gallery viewer over the shared MinIO 
 
 ## Networks
 
-`dokploy-network` (external) only — needed to reach `minio:9000` and for Traefik.
+`dokploy-network` (external) only — needed to reach `rustfs:9000` (and `minio:9000`) and for Traefik.
 
 ## Storage
 
@@ -33,8 +34,18 @@ Holds Filestash's `config/config.json` (admin password, connection settings), pl
 
 ## Environment
 
-No Dokploy env vars. `APPLICATION_URL` and `CANARY=false` are fixed in the compose. MinIO credentials are not
-in the compose; how they are supplied (admin config vs. per-login) was not determined from the repo.
+No Dokploy env vars. `APPLICATION_URL` and `CANARY=false` are fixed in the compose. No S3 connection is
+stored: `config.json` only lists the backend types, so the S3 endpoint and keys are typed into the S3 login
+form on each sign-in:
+
+| Field | Value |
+|---|---|
+| Endpoint | `http://rustfs:9000` |
+| Region | `us-east-1` |
+| Access key / secret | `creds.rustfs-filestash` (RustFS user `filestash`, built-in `readwrite` policy) |
+
+The API rejects requests whose host isn't `APPLICATION_URL` ("Not Allowed"), so test it through
+`http://minio-gallery.imapps.uk`, not `minio-gallery:8334`.
 
 ## Deploy / change
 
@@ -44,7 +55,7 @@ Commit + push, then explicit `compose-deploy`
 ## Health and backups
 
 - Gatus: `MinIO Gallery` → `http://minio-gallery:8334/healthz`, expects 200.
-- Backup: **none** for `filestash-state`. MinIO data itself is also not backed up yet
+- Backup: **none** for `filestash-state`. The RustFS data itself is not backed up yet either
   ([homelab.md §9](../docs/homelab.md#9-backups--restore-drill)).
 
 ## Gotchas

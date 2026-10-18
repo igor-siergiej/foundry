@@ -62,10 +62,11 @@ flowchart TB
 - Traefik entrypoints: `web` (80, redirect→https), `websecure` (443, letsencrypt certresolver). Services attach via `dokploy-network` + traefik labels.
 - **Tailnet path** (not in the diagram): the `tailscale` stack advertises `192.168.68.0/24` as a subnet route, so tailnet devices reach the LAN (and blocky/Traefik on `192.168.68.17`) from anywhere. `gtnh` and `jott` are tailnet-only and never touch Traefik or Cloudflare (§5).
 - Internal service-to-service DB access goes container-to-container over
-  `dokploy-network`: `mongodb:27017`, `minio:9000`. It deliberately does not
+  `dokploy-network`: `mongodb:27017`, `rustfs:9000` (`minio:9000` for jewellery-catalogue until it
+  leaves MinIO). It deliberately does not
   use `*.imapps.uk` names — those resolve via blocky to the host LAN IP, so a
   DHCP lease change would break every app (it did, 2026-09-19). Any service
-  needing mongo or minio must join `dokploy-network`.
+  needing mongo or S3 must join `dokploy-network`.
 
 ## 3. Deploy flow (CRITICAL — read before any change)
 
@@ -212,7 +213,7 @@ Each infra/gtnh stack with a README links it in the Notes column. Dokploy also a
 ### `apps`
 | Service | Type | Host | Notes |
 |---|---|---|---|
-| shoppingo-web / shoppingo-api | app | shoppingo.imapps.uk | api uses fal.ai (`FAL_KEY`) + mongo + minio, optional opensearch |
+| shoppingo-web / shoppingo-api | app | shoppingo.imapps.uk | api uses fal.ai (`FAL_KEY`) + mongo + rustfs (`rustfs:9000`, own IAM user), optional opensearch |
 | jewellery-catalogue-web / -api | app | jewellery-catalogue.imapps.uk | mongo + minio |
 | kivo | app | kivo.imapps.uk | mongo; own JWT auth |
 | jott | compose (`server/compose.yaml` in `igor-siergiej/jott`, built from source) | tailnet only: `100.79.92.93:8787` (host-published on the tailnet IP) | sync server; named volume `jott-data` on host disk; **no Gatus check**, not backed up |
@@ -242,7 +243,7 @@ None of these publish a host port (`ports:` block) — confirmed against the liv
 | home-assistant | `home-assistant:2024.12.3` | 8123; Traefik `home-assistant.imapps.uk` | unprivileged container (no host devices; `privileged` + NET_ADMIN/NET_RAW dropped 2026-10-10) on its own bridge + Dokploy-attached `dokploy-network` (no host network, so no LAN discovery). See [`../homeassistant/README.md`](../homeassistant/README.md) |
 | vaultwarden | `vaultwarden/server:1.37.2` | vault.imapps.uk | self-hosted secrets/password vault, replaces plaintext `~/notes/secrets/tokens.md`; ZFS bind mount (`/mnt/tank/shared/vaultwarden`); see [`README.md`](./README.md#secrets) and [`../vaultwarden/README.md`](../vaultwarden/README.md) |
 | opensearch | `opensearch:2.19.1` | 9200, internal-only on `dokploy-network`, no Traefik route | shoppingo recipe-discovery index; derived from mongo, not backed up; security plugin off. See [`../opensearch/README.md`](../opensearch/README.md) |
-| minio-gallery | `machines/filestash:latest` | 8334; Traefik `minio-gallery.imapps.uk` on the **`web` (HTTP) entrypoint only** | Filestash browser over MinIO; own admin login. HTTP-only router, see `../SECURITY-AUDIT.md` #11. See [`../minio-gallery/README.md`](../minio-gallery/README.md) |
+| minio-gallery | `machines/filestash@sha256:edb76c…` | 8334; Traefik `minio-gallery.imapps.uk` on the **`web` (HTTP) entrypoint only** | Filestash S3 browser; sign in to the S3 backend with endpoint `http://rustfs:9000` and `creds.rustfs-filestash`; own admin login. HTTP-only router, see `../SECURITY-AUDIT.md` #11. See [`../minio-gallery/README.md`](../minio-gallery/README.md) |
 | umami | `umami-software/umami@sha256:6cd9d…` + `postgres:16-alpine@sha256:1a66d7…` | Tailscale/LAN-only: no public DNS record, so the Cloudflare edge never routes it into the tunnel (§3.5); tailnet split-DNS routes `*.imapps.uk` → blocky on 192.168.68.17, which the foundry subnet route carries over Tailscale | shoppingo self-hosted analytics (tracker config in `packages/web/analytics.ts`); one Umami instance backs all consumers (jewellery-catalogue next). See [`../umami/README.md`](../umami/README.md) (added by #72). Keep it out of Cloudflare DNS. |
 
 ### `gtnh` (game server)
@@ -325,7 +326,7 @@ prunes by `RETENTION_DAYS`, and exits non-zero on any failure.
 | homeassistant | `backups/config/homeassistant.sh` | tar of `/mnt/tank/shared/homeassistant/config` (excludes deps, recorder DB) |
 | gtnh | `backups/config/gtnh.sh` | `rcon-cli save-all` then alpine sidecar tar |
 
-Not yet backed up: minio (large `mc mirror`), opensearch (rebuild from
+Not yet backed up: rustfs and minio (S3 `mc mirror`, ~150 MB), opensearch (rebuild from
 mongo), jellyfin / audiobookshelf / monitoring / mixtape / resilio-sync
 (metadata-only SQLite, rebuild-from-scratch cheap). Tracked as a single
 follow-up card.
