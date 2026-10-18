@@ -332,3 +332,37 @@ Backblaze B2 or a friend's box) is a separate follow-up.
 - [ ] **Monitoring deploys force a full container recreate.** Every `compose-deploy` of `monitoring` re-clones `/etc/dokploy/compose/infra-monitoring-xbyv0n/code` and runs `docker compose ... up -d --force-recreate` (the `--force-recreate` is in the Dokploy compose's `command` field, set via `dokploy-mcp compose.update`). Without that flag, a service whose spec didn't change keeps its bind mount to the deleted directory inode and runs on stale config — the original "dashboard JSON edited, but grafana doesn't see it until a manual `docker restart grafana`" report (2026-10-16). `--force-recreate` recreates every container on every deploy; the bind mount source is the freshly-cloned path, so the new container sees the new content. Gatus still hot-reloads its config in place once the recreated container comes up.
 - [ ] **This homelab and `taisei-karate` (AWS) share no infrastructure** — different clouds, different auth models, different deploy pipelines. See [`taisei-karate.md`](./taisei-karate.md).
 - [ ] **Nightly smoke tests reuse `kanban-cli e2e live`** — same scoped `@smoke` filter each repo declares in `.kanban-cli.json` `e2e.smokeGrep`. An app with no `.kanban-cli.json` is logged-and-skipped, not failed. Don't add `@smoke` tags speculatively; the smoke tier runs against production.
+
+## 11. Kanban tools — work-board, jott, and the Collie buttons
+
+Every project's work — shoppingo, kivo, foundry, etc — is tracked as a jott task (`jott task list --json` etc). Three skills drive the loop:
+
+- **kanban-worker** — pulls a Backlog task per project, implements it, runs Playwright e2e as a merge gate, opens a PR, waits for CI, merges, waits for deploy, runs a live smoke check, and reverts+blocks if it fails. The work itself is autonomous; the gate decisions aren't.
+- **refining-kanban-captures** — turns Inbox captures (raw phone-typed thoughts) into real Backlog items by reading the repo first. Never runs automatically; a human kicks it off.
+- **triaging-blocked-cards** — walks every Blocked card, asks one decision per card with a recommendation, applies answers in jott.
+
+All three are shipped with the dotfiles under `claude/.claude/skills/{kanban-worker,refining-kanban-captures,triaging-blocked-cards}/SKILL.md` and depend on `kanban-cli` (the deterministic repo-side plumbing — resolve-repo, pr, ci wait, deploy wait, ship, e2e). `kanban-cli` is the `@imapps/kanban-cli` npm package, installed at `home/.bun/install/global/node_modules/@imapps/kanban-cli`. Pinned version on this host: **3.0.0** (`jq -r .version /home/home/.bun/install/global/node_modules/@imapps/kanban-cli/package.json`); the dep entry at `home/.bun/install/global/package.json` is `"@imapps/kanban-cli": "^3"`, so a `bun install -g` upgrades within major v3 but does not jump majors. To refresh after a Dotploy-LAN node-rotation: re-run that bun install on each machine that drives a board.
+
+The previous "type the prompt into a fresh pane" workflow has been replaced by one-tap phone buttons.
+
+- **`foundry/bin/work-board.sh`** — the launcher target. Subcommands:
+  - `work-board <project>` — resolves the project's checkout (`kanban-cli resolve-repo`) and runs `kanban-worker` against its Backlog.
+  - `work-board all` — same, but iterates every project.
+  - `work-board refine` — `refining-kanban-captures` over the global inbox.
+  - `work-board triage` — `triaging-blocked-cards` across every project.
+  - `work-board refresh` — re-runs `foundry/bin/regen-launchers.sh` (no Claude session; pure config regen).
+
+  Permission mode is read from `KANBAN_WORKER_PERMISSION` at launch time:
+  - `acceptEdits` (default) — file writes auto-approved, Bash prompts. Safe-by-default.
+  - `bypass` — `--dangerously-skip-permissions`. Set explicitly on the machine; do NOT default to this.
+  - `manual` / `plan` / `auto` / `dontAsk` — pass through to `claude --permission-mode`.
+
+  Prompts are built with `printf '%s\n'` and passed via `claude -- "…"` so a `blocked_reason` with backticks, dollar signs or backslashes round-trips verbatim. Every project row resolves its own cwd (the project's checkout, not foundry); the meta-board rows (`all`/`refine`/`triage`/`refresh`) run from the foundry repo.
+
+- **`foundry/bin/regen-launchers.sh`** — fully derives the Collie `launchers.toml` from `jott task projects --json` plus four fixed always-on rows (`All projects`, `Refine inbox`, `Triage blocked`, `Refresh boards`). Re-running is idempotent (`diff` is empty when the project list hasn't changed). On every regen it writes **two** copies: the canonical herdr.collie plugin config at `~/.config/herdr/plugins/config/herdr.collie/launchers.toml` (what herdr reads on reload), and a mirrored copy in the dotfiles repo at `~/dotfiles/herdr/.config/herdr/plugins/config/herdr.collie/launchers.toml` (so `make linux` → stow survives a re-install). The regen ends with `herdr server reload-config` so the buttons surface immediately.
+
+- **Generated `launchers.toml`** — the file herdr ships to the phone. Now active at `~/.config/herdr/plugins/config/herdr.collie/launchers.toml`; the dotfiles mirror at `~/dotfiles/herdr/.config/herdr/plugins/config/herdr.collie/launchers.toml` keeps it across re-stows. Schema: each row is `command` (a shell line — we use `<foundry>/bin/work-board.sh <sub>`), `label` (the tap text), `cwd` (where the new Space opens). On a launch tap from the dashboard a NEW Space opens; from a pane's switcher a new TAB opens in that pane's own Space.
+
+- **`commands.toml`** at `~/.config/herdr/plugins/config/herdr.collie/commands.toml` (also mirrored under the dotfiles path) registers `/work-board ` (with a trailing space — a tap puts `/work-board ` into the composer for the operator to finish) under `scope = "claude"`. The keyboard-step-away complement to the launchers; inside a Claude pane, type the sub after the space. Trade-off: per ADR 0018, scoping even one row to `claude` REPLACES the Claude Code shipped palette on claude panes rather than merging; the ~50 shipped shortcuts (`/compact`, `/model`, `/clear`, …) stay reachable through Claude's own `/` completion, but the keyboard-step-away surface loses them. To get them back on the tap surface, restate the wanted rows in your own `commands.toml`. omp / codex / pi / etc. panes keep their shipped catalogs untouched.
+
+The "Collie New app Run button" (PWA action that opens a new app via the herdr socket API) is **out of scope** for the kanban-loop wiring here — jott's project list is the source of truth for buttons today, and a "Run new app" button is its own card.
