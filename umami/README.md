@@ -17,7 +17,7 @@ shoppingo first, jewellery-catalogue next, sentinel uses Loki only.
 
 | Service | Image | Port | Notes |
 |---|---|---|---|
-| `umami` | `umami-software/umami@sha256:6cd9d24a…` | 3000 (internal) | Dashboard; routed through Traefik at `analytics.imapps.uk`, Cloudflare Access require-email. |
+| `umami` | `umami-software/umami@sha256:6cd9d24a…` | 3000 (internal) | Tailscale-only. Reachable only when the request comes from a Tailscale node on this tailnet (admin dashboard + the few times I want to see the analytics from the road). No public exposure. |
 | `umami-db` | `postgres:16-alpine@sha256:1a66d744…` | 5432 (internal-only on `umami` network) | Bind-mounted `/mnt/tank/shared/umami`; `TZ=UTC`. |
 
 Both containers are joined to the `dokploy-network` so Traefik can
@@ -34,54 +34,78 @@ Umami's defaults are renamed to dodge common adblock / privacy lists:
 | `COLLECT_API_ENDPOINT` | `/api/send` | `/p` | Same. |
 | `BASE_PATH` | `/` | `/` | — |
 
-The shoppingo web app proxies `/p` to `analytics.imapps.uk/p` via nginx
-so the script is same-origin, and the CSP allows it without listing
-`analytics.imapps.uk`. A self-host on a single box can use the
-analytics env var in [`packages/web/analytics.ts`](../../shoppingo/packages/web/src/analytics.ts)
-to skip the tracker entirely (turning it off → no host either).
+The shoppingo web app's CSP `connect-src 'self' https://analytics.imapps.uk`
+lets the browser reach the tracker. CSP allowlists the hostname; **it
+does not bypass Tailscale** — non-tailnet visitors will see a network
+error on the beacon, the tracker remains a no-op for them.
 
-## Cloudflare Access
+## Why Tailscale, not Cloudflare
 
-- `analytics.imapps.uk` ← **require-email** for the dashboard only
-  (`/login`, `/settings`, `/api/...` admin). gatus + admin UI flow
-  goes via the same Access app.
-- The **tracker, replay, and `/api/send`** endpoints are *bypassed* so
-  anonymous visitors can still beacon. Without the bypass, every page
-  view on a tablet visitor would hit an Access login page and fail.
+The public hostname `analytics.imapps.uk` resolves (via Cloudflare
+DNS) to `100.79.92.93`, the foundry Tailscale IP. That range
+(`100.64.0.0/10`) is CGNAT and not routable on the public internet,
+so non-tailnet clients drop at L3 before any HTTP work. The Traefik
+listener on this host binds `0.0.0.0:443`, which covers both the LAN
+IP (`192.168.68.17`) and the Tailscale IP, so the same compose file
+serves tailnet and LAN clients without rebinding. The blocky
+`*.imapps.uk → 192.168.68.17` rule still works for tailnet members
+who join the LAN through their split-horizon resolver.
+
+Cloudflare Access is intentionally NOT used here:
+- Access would need a bypass for `/p`, `/p.js`, `/api/send`,
+  `/api/replay` so anonymous beacons (now: tailnet beacons) work.
+  Tailscale gives the same outcome by construction.
+- The OAuth dance with `mcp-cli cloudflare-api` only needs to happen
+  for things that *truly* are public; this isn't.
+- The privacy notice for shoppingo is honest: non-tailnet visitors
+  generate no data, period.
 
 ## DNS / split-horizon
 
-blocky returns `192.168.68.17` for every `*.imapps.uk` host (LAN +
-tailnet bypass Cloudflare). For `analytics.imapps.uk` we want the LAN
-answer to STILL go to Traefik (no `<host>.imapps.uk` LAN proxy), so no
-blocky change needed.
+- Cloudflare DNS for `analytics.imapps.uk`: **A 100.79.92.93, grey
+  cloud (DNS-only)**. The grey cloud is critical — an orange-cloud
+  record would route through Cloudflare's proxy, which would either
+  bypass Tailscale's gate (bad: opens the dashboard to the world) or
+  fail outright (bad: nothing works). Grey-cloud + the CGNAT IP is
+  the whole trick.
+- blocky keeps its existing `*.imapps.uk → 192.168.68.17` rule, which
+  is what the LAN sees for the analytics host — same as every other
+  imapps.uk name. Tailnet clients use Tailscale's `100.79.92.93`
+  answer instead, which wins on the source-IP-aware resolver order.
+- Cloudflare Tunnel (`infra-cloudflared-tuky7u`) does not need a route
+  for `analytics.imapps.uk`. The Cloudflare dashboard only routes the
+  hosts you explicitly add, so absence is the default.
 
 ## First-boot
 
-1. Provision the DB password:
-
+1. The DNS record (above) is in Cloudflare.
+2. Provision the DB password:
    ```sh
-   dokploy secret umami db_password /dev/stdin    # vaultwarden item `umami.db.password`
-   dokploy secret umami db_url /dev/stdin         # postgresql://umami:<pw>@umami-db:5432/umami
+   dokploy compose.update <umami-composeId> --env "UMAMI_DB_PASSWORD=..."
    ```
-
-2. Bootstrap the dashboard — login is `admin/umami`, change it
-   immediately, store the new password in vaultwarden under
-   `umami.admin.password`.
-
-3. Create a "Website" for each consumer:
-
-   - shoppingo: hostname `shoppingo.imapps.uk`, "Enable session
-     recording" off until #73 lands, sample rate 0.0
+   (the Dokploy env file is mode 600, decrypted only at deploy
+   time). Vaultwarden item `umami.db.password` is the source of
+   truth.
+3. From any tailnet device, open `https://analytics.imapps.uk/` —
+   login is `admin/umami`. Rotate the password immediately and
+   store the new one in vaultwarden under `umami.admin.password`.
+4. Create a "Website" for each consumer:
+   - shoppingo: hostname `shoppingo.imapps.uk`. **Enable session
+     recording** OFF. Sample rate stays at 1.0 (server-side). The
+     replay-related envs and the `umami.startSessionReplay()` call
+     are wired up in `packages/web/src/utils/analytics.ts` but
+     never invoked until the consent UX in jott #73 lands.
    - jewellery-catalogue: same shape, hostname
      `jewellery-catalogue.imapps.uk`, do not enable until the
      catalogue consent UI exists.
+5. Copy each `websiteId` into the consumer's runtime config:
+   shoppingo's live `config.json` is in the Dokploy file mount
+   `mountId TI3xnSOEHbIQDSy_d_fMe` (search/replace `websiteId: ""`).
 
 ## Upgrade story
 
 `docker.umami.is/umami-software/umami` is pinned by digest; Dependabot
 opens a PR whenever upstream publishes a new digest for the same tag.
 The companion postgres stays on `postgres:16-alpine`; jump to 17 only
-after Umami adds a known-good Postgres 17 image (open question, see
-[e86f073](https://github.com/umami-software/umami/pull/EXTERNAL) on
+after Umami adds a known-good Postgres 17 image (open question on
 their tracker).
