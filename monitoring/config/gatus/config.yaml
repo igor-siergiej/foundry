@@ -366,10 +366,9 @@ endpoints:
 
   - name: Umami
     group: Analytics
-    # Served through Traefik at analytics.imapps.uk (Cloudflare Access —
-    # bypass on the tracker/collect endpoints so anonymous visitors can
-    # still beacon). The dashboard is require-email-gated.
-    url: https://analytics.imapps.uk/api/health
+    # Tailnet/LAN-only at analytics.imapps.uk (no public DNS, no Access).
+    # Umami has no /api/health; /api/heartbeat is its liveness endpoint.
+    url: https://analytics.imapps.uk/api/heartbeat
     interval: 60s
     timeout: 10s
     conditions:
@@ -377,12 +376,6 @@ endpoints:
     alerts:
       - type: discord
 
-  - name: Umami Postgres
-    group: Analytics
-    url: http://umami-db:5432
-    interval: 60s
-    timeout: 5s
-    conditions:
-      - "[CONNECTED] == true"
-    alerts:
-      - type: discord
+  # No Umami Postgres check: umami-db sits only on the private `umami`
+  # network (kept off dokploy-network on purpose), so Gatus can't reach it.
+  # Its container healthcheck (pg_isready) is what homelab-status reports.
