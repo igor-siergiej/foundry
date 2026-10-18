@@ -5,7 +5,8 @@ name: minio-gallery
 # (same-origin https via Traefik/cloudflared -> no mixed-content issues).
 services:
   filestash:
-    image: machines/filestash:latest
+    # Pinned 2026-10-18 (SECURITY-AUDIT #8); Dependabot bumps via :latest's new digest
+    image: machines/filestash@sha256:edb76ccdfeec1e512b40045f531bb3ceb2c0808960609c7f17ab356dd71b0626
     container_name: minio-gallery
     restart: unless-stopped
     environment:

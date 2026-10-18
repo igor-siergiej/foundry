@@ -7,8 +7,11 @@ name: mixtape
 
 services:
   api:
-    image: docker.io/igurusama/imapps:mixtape-api-latest
-    # Always re-pull :latest — otherwise Dokploy reuses the stale local image and never deploys new code.
+    # Pinned to digest (SECURITY-AUDIT #8); mixtape-app CI must bump `mixtape-api` in this file.
+    # The repo previously used :latest because Dokploy reused stale local images without
+    # --pull. Pinning the digest captures the exact image and CI must push a new tag + bump
+    # the digest here.
+    image: docker.io/igurusama/imapps@sha256:33fcacdc1243689ca9d107a2dabb80a83748c0e5403a92e55be43ee757ff9095
     pull_policy: always
     container_name: mixtape-api
     restart: unless-stopped
@@ -32,7 +35,8 @@ services:
       - dokploy-network
 
   web:
-    image: docker.io/igurusama/imapps:mixtape-web-latest
+    # Pinned to digest (SECURITY-AUDIT #8); mixtape-app CI must bump `mixtape-web` here.
+    image: docker.io/igurusama/imapps@sha256:69a2a45b90d1b1d9c9da85c0a77d8ae5863448edd9cafec803831e81951cd369
     pull_policy: always
     container_name: mixtape-web
     restart: unless-stopped

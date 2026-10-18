@@ -39,7 +39,8 @@ services:
       - gtnh-data:/data
 
   gtnh-tailscale:
-    image: tailscale/tailscale:latest
+    # Pinned 2026-10-18 (SECURITY-AUDIT #8); Dependabot bumps via :latest's new digest
+    image: tailscale/tailscale@sha256:c507f3a2a6ab1cabd8d809b98edeb41edbd5c3fb6ad9632ffd098b4c7d0b4065
     container_name: gtnh-tailscale
     hostname: gtnh
     restart: unless-stopped
