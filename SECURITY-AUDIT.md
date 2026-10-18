@@ -51,15 +51,6 @@ The Traefik router for `minio-gallery.imapps.uk` uses the `web` entrypoint only,
 Filestash admin login goes over plaintext HTTP. Remote traffic is TLS via Cloudflare. Fix: move the
 router to `websecure` with the letsencrypt certresolver.
 
-### 12. `sentinel-api` runs with outbound TLS verification disabled — LOW
-`sentinel/packages/api/src/index.ts` sets `NODE_TLS_REJECT_UNAUTHORIZED=0` whenever
-`NODE_ENV !== "production"`, and neither the root `Dockerfile.api` nor the Dokploy env sets
-`NODE_ENV` (live `printenv NODE_ENV` in `sentinel-api-vnfxap` is empty, checked 2026-10-17). Every
-outbound HTTPS call from the API — including Home Assistant calls carrying the long-lived
-`HA_TOKEN` — accepts any certificate. Severity rises to MEDIUM if `HA_URL` is an `https://` LAN
-hostname rather than the internal container address (value redacted in Dokploy, not determined).
-**Fix:** `ENV NODE_ENV=production` in `sentinel/Dockerfile.api`, or set it in the Dokploy env.
-
 ## Closed 2026-10-18
 
 ### 2. NFS export was read-write to the entire tailnet CGNAT range — was HIGH
@@ -96,6 +87,17 @@ on `dokploy-network`) a raw TCP `GET /api/rawdata` to `dokploy-traefik:8080` now
 `Connection refused`; an HTTP 301 from `:80 → :443` for `gatus.imapps.uk` still resolves correctly
 (routing intact). Dokploy UI does not enable the Traefik dashboard, so the change is safe. Recheck
 after every Dokploy upgrade (same gotcha as #3; both flipped by the v0.30.8 re-deploy).
+
+### 12. `sentinel-api` runs with outbound TLS verification disabled — was LOW; MEDIUM here
+`HA_URL=https://home-assistant.imapps.uk` (HTTPS hostname), so this is the MEDIUM branch. The
+container read `NODE_TLS_REJECT_UNAUTHORIZED=0` because the live `NODE_ENV` was empty
+(`packages/api/src/index.ts:12-14` disables verification unless `NODE_ENV === "production"`).
+Set `NODE_ENV=production` via `docker service update --env-add NODE_ENV=production
+sentinel-api-vnfxap` for the immediate fix and `application.saveEnvironment` (dokploy-mcp) so
+the env survives a Dokploy-triggered redeploy. Swarm task restarted; `printenv NODE_ENV` in the
+new `sentinel-api-vnfxap.1.y7up9qv0lllo…` is `production`; a `bun` fetch to `$HA_URL/api/`
+returns `200` (TLS verification now active). Traefik route `sentinel.imapps.uk/api/gatus/statuses`
+still answers 200.
 
 ## Closed 2026-10-14
 
