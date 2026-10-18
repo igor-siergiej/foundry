@@ -17,7 +17,7 @@ alerting:
 endpoints:
   - name: Shoppingo Cert Expiration
     group: Infrastructure
-    url: https://shoppingo.imapps.uk
+    url: https://app.shoppingo.imapps.uk
     interval: 3600s
     timeout: 10s
     conditions:
@@ -211,7 +211,7 @@ endpoints:
   # missing Traefik dynamic file.
   - name: Shoppingo (API)
     group: Apps
-    url: https://shoppingo.imapps.uk/api/health
+    url: https://app.shoppingo.imapps.uk/api/health
     interval: 60s
     timeout: 10s
     conditions:
@@ -222,11 +222,24 @@ endpoints:
 
   - name: Shoppingo (Web)
     group: Apps
-    url: https://shoppingo.imapps.uk/
+    url: https://app.shoppingo.imapps.uk/
     interval: 60s
     timeout: 10s
     conditions:
       - "[STATUS] == 200"
+    alerts:
+      - type: discord
+
+  # Static site on AWS CloudFront (shoppingo-site repo). blocky CNAMEs the apex
+  # to the distribution, so this takes the same path as public visitors.
+  - name: Shoppingo (Landing)
+    group: Apps
+    url: https://shoppingo.imapps.uk/?home
+    interval: 300s
+    timeout: 10s
+    conditions:
+      - "[STATUS] == 200"
+      - "[CERTIFICATE_EXPIRATION] > 14d"
     alerts:
       - type: discord
 
@@ -320,8 +333,8 @@ endpoints:
     group: Core
     # Resolve via 1.1.1.1 instead of blocky so the request takes the real
     # remote path: CF edge -> tunnel -> Traefik. Must target a host that has a
-    # public DNS record (shoppingo, kivo, dokploy) and an Access bypass app.
-    url: https://shoppingo.imapps.uk/api/health
+    # public DNS record (app.shoppingo, kivo, dokploy) and an Access bypass app.
+    url: https://app.shoppingo.imapps.uk/api/health
     client:
       dns-resolver: tcp://1.1.1.1:53
     interval: 120s

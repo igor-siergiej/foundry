@@ -43,7 +43,7 @@ Devices pick this up on their next DHCP lease renewal; a WiFi reconnect forces i
 #### Verifying
 
 ```bash
-dig @192.168.68.17 +short shoppingo.imapps.uk   # -> 192.168.68.17 (split horizon)
+dig @192.168.68.17 +short kivo.imapps.uk        # -> 192.168.68.17 (split horizon)
 dig @192.168.68.17 +short doubleclick.net       # -> 0.0.0.0       (blocked)
 dig @192.168.68.17 +short github.com            # -> real address  (not over-blocking)
 ```
