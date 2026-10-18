@@ -26,13 +26,6 @@ it during the 2026-10 host-port hardening — `docker volume inspect minio-data`
 on the tank. Host disk loss is still data loss for the postgres data. Move to a bind mount under
 `/mnt/tank/shared/immich-pgdata` or add a backup job.
 
-### 6. MinIO is on an unpatched, frozen image — MEDIUM
-Running `RELEASE.2025-09-07T16-13-09Z`. MinIO stopped publishing community Docker images in late
-2025, so `minio/minio:latest` will never pick up later fixes (e.g. the October 2025 service-account
-privilege-escalation fix). The console is on `minio-console.imapps.uk`, reachable on-LAN.
-**Fix:** build from source / switch to a maintained community image, or migrate to an S3-compatible
-alternative; at minimum drop the `minio-console` Traefik route when not in use.
-
 ### 7. Home Assistant is ~2 years old — MEDIUM
 Pinned `2024.12.3`. Upgrade in steps and check breaking changes; only the `sun` and `go2rtc`
 integrations remain, so risk is low.
@@ -47,6 +40,14 @@ Filestash admin login goes over plaintext HTTP. Remote traffic is TLS via Cloudf
 router to `websecure` with the letsencrypt certresolver.
 
 ## Closed 2026-10-18
+
+### 6. MinIO was on an unpatched, frozen image — was MEDIUM
+Ran `RELEASE.2025-09-07T16-13-09Z`; MinIO stopped publishing community images in late 2025, so no
+later fixes (e.g. the October 2025 service-account privilege escalation). Migrated to RustFS 1.0.3
+(jott #99): shoppingo, minio-gallery (Filestash) and jewellery-catalogue each use their own IAM user
+on `rustfs:9000`, objects mirrored and verified per key (ddc5fd7, 64bd87e). The `minio` compose,
+image and the `minio`/`minio-console` domains are removed (112a6c1); both hostnames now return 404
+from Traefik. `tank/shared/minio` is kept as a rollback copy until 2026-10-25.
 
 ### 2. NFS export was read-write to the entire tailnet CGNAT range — was HIGH
 `/etc/exports` exported `/mnt/tank/shared 100.64.0.0/10(rw,sync,no_subtree_check,crossmnt)`, so
