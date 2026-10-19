@@ -7,7 +7,7 @@
 #   Secondary DNS 1.1.1.1        (fallback if blocky is down)
 #
 # Consequence of the secondary: while blocky is restarting, a client that falls
-# through to 1.1.1.1 only resolves the public names (shoppingo + www, app.shoppingo,
+# through to 1.1.1.1 only resolves the public names (shoppingo + www, shoppingo-app,
 # kivo, dokploy); every other *.imapps.uk name has no public record and fails until
 # blocky is back.
 
@@ -31,13 +31,12 @@ upstreams:
 #
 # Exception: shoppingo.imapps.uk and www. are the landing site on AWS CloudFront
 # (shoppingo-site repo), so the zone below CNAMEs them to the distribution like
-# public DNS does. app.shoppingo.imapps.uk is mapped explicitly, or it would
-# inherit that CNAME. If the distribution is ever recreated, update the target
+# public DNS does. The app itself is shoppingo-app.imapps.uk, covered by the
+# imapps.uk mapping. If the distribution is ever recreated, update the target
 # (`terraform output cloudfront_url` in shoppingo-site/infra).
 customDNS:
   mapping:
     imapps.uk: 192.168.68.17
-    app.shoppingo.imapps.uk: 192.168.68.17
   zone: |
     $ORIGIN imapps.uk.
     shoppingo 300 CNAME d3o01nt4oiwfr9.cloudfront.net.

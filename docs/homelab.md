@@ -34,7 +34,7 @@ flowchart TB
     lanUser([LAN / tailnet client]):::ext
 
     subgraph remote["REMOTE path"]
-        cfdns["app.shoppingo / kivo / dokploy .imapps.uk<br/>(Cloudflare proxied CNAMEs, no wildcard)"]
+        cfdns["shoppingo-app / kivo / dokploy .imapps.uk<br/>(Cloudflare proxied CNAMEs, no wildcard)"]
         access["Cloudflare Access<br/>(auth check)"]
         tunnel["Cloudflare Tunnel<br/>(cloudflared, outbound-only)"]
     end
@@ -54,12 +54,12 @@ flowchart TB
 ```
 
 - **One Cloudflare tunnel** `0da10189-66a3-49f1-b138-f1f617592567` → `dokploy-traefik:443` → Traefik hostname routing.
-- **Public DNS is per-app, no wildcard (since 2026-10-18).** The zone has exactly three proxied CNAMEs to `0da10189-66a3-49f1-b138-f1f617592567.cfargotunnel.com`: `app.shoppingo`, `kivo`, `dokploy` (kept for the CI deploy webhooks). The `*.imapps.uk` CNAME was deleted; every other hostname has no public record and is reachable only on LAN/tailnet via blocky. To publish another app, add a proxied CNAME for it (and an Access bypass app if it should be anonymous). Certs are unaffected: Traefik's ACME records (`_acme-challenge.*` TXT) don't need a public A/CNAME.
-- **`shoppingo.imapps.uk` and `www.` are not on foundry.** They are the Shoppingo landing site on AWS S3 + CloudFront, DNS-only CNAMEs to the distribution managed by Terraform in the `shoppingo-site` repo. The app moved to `app.shoppingo.imapps.uk`; the site's CloudFront function redirects the old app paths and returning users (`shoppingo_app` cookie) there.
+- **Public DNS is per-app, no wildcard (since 2026-10-18).** The zone has exactly three proxied CNAMEs to `0da10189-66a3-49f1-b138-f1f617592567.cfargotunnel.com`: `shoppingo-app`, `kivo`, `dokploy` (kept for the CI deploy webhooks). The `*.imapps.uk` CNAME was deleted; every other hostname has no public record and is reachable only on LAN/tailnet via blocky. To publish another app, add a proxied CNAME for it (and an Access bypass app if it should be anonymous). Certs are unaffected: Traefik's ACME records (`_acme-challenge.*` TXT) don't need a public A/CNAME. **Proxied names must be one level deep** (`x.imapps.uk`): the free Universal SSL cert covers only `imapps.uk` + `*.imapps.uk`, so `a.b.imapps.uk` fails the TLS handshake at the Cloudflare edge (why the app is `shoppingo-app`, not `app.shoppingo`).
+- **`shoppingo.imapps.uk` and `www.` are not on foundry.** They are the Shoppingo landing site on AWS S3 + CloudFront, DNS-only CNAMEs to the distribution managed by Terraform in the `shoppingo-site` repo. The app moved to `shoppingo-app.imapps.uk`; the site's CloudFront function redirects the old app paths and returning users (`shoppingo_app` cookie, set on `imapps.uk`) there.
 - **blocky** (`infra/blocky`) does split-horizon DNS: `imapps.uk → 192.168.68.17` (the host's reserved LAN IP), except `shoppingo`/`www.shoppingo`, which it CNAMEs to the CloudFront distribution like public DNS. On LAN/tailnet, traffic goes straight to Traefik and **bypasses Cloudflare + Access**. → **CF Access only protects REMOTE traffic. Zero protection on LAN/tailnet.**
 - Since 2026-09-22 the **Deco hands out `192.168.68.17` as DHCP primary DNS** (secondary `1.1.1.1`), so this applies to *every* device on the WiFi, not just tailnet clients. blocky also runs StevenBlack adware+malware blocklists for the whole LAN.
 - **Except it wasn't reaching `foundry`.** On 2026-09-27 the host's own DHCP lease still carried the ISP resolvers `188.31.250.128/129`, not `192.168.68.17` — so the box running blocky was the one device not using it. The host is now pinned in netplan (§4a); the Deco setting was left alone, so **assume other long-lease devices may be in the same state** and spot-check one before trusting LAN-wide adblock numbers.
-- **Secondary-DNS caveat:** during a blocky restart a client can fall through to `1.1.1.1`. For app.shoppingo/kivo/dokploy it gets the Cloudflare-proxied answer (dokploy then shows an Access prompt), and shoppingo/www get CloudFront as always; every other `*.imapps.uk` name returns no answer until blocky is back and the negative cache expires. Accepted trade-off vs. losing all internet when blocky is down.
+- **Secondary-DNS caveat:** during a blocky restart a client can fall through to `1.1.1.1`. For shoppingo-app/kivo/dokploy it gets the Cloudflare-proxied answer (dokploy then shows an Access prompt), and shoppingo/www get CloudFront as always; every other `*.imapps.uk` name returns no answer until blocky is back and the negative cache expires. Accepted trade-off vs. losing all internet when blocky is down.
 - Traefik entrypoints: `web` (80, redirect→https), `websecure` (443, letsencrypt certresolver). Services attach via `dokploy-network` + traefik labels.
 - **Tailnet path** (not in the diagram): the `tailscale` stack advertises `192.168.68.0/24` as a subnet route, so tailnet devices reach the LAN (and blocky/Traefik on `192.168.68.17`) from anywhere. `gtnh` and `jott` are tailnet-only and never touch Traefik or Cloudflare (§5).
 - Internal service-to-service DB access goes container-to-container over
@@ -101,7 +101,7 @@ Public hostnames (the whole list; §2 has the history):
 
 | Hostname | Service | Access |
 |---|---|---|
-| `app.shoppingo.imapps.uk` | `shoppingo-web` / `shoppingo-api` | bypass |
+| `shoppingo-app.imapps.uk` | `shoppingo-web` / `shoppingo-api` | bypass |
 | `shoppingo.imapps.uk`, `www.` | not foundry: landing site on AWS CloudFront (`shoppingo-site`) | none (DNS-only, never enters the tunnel) |
 | `kivo.imapps.uk` | `kivo` | bypass |
 | `dokploy.imapps.uk` | Dokploy (CI deploy webhooks, admin) | own require-email app |
@@ -214,7 +214,7 @@ Each infra/gtnh stack with a README links it in the Notes column. Dokploy also a
 ### `apps`
 | Service | Type | Host | Notes |
 |---|---|---|---|
-| shoppingo-web / shoppingo-api | app | app.shoppingo.imapps.uk | api uses fal.ai (`FAL_KEY`) + mongo + rustfs (`rustfs:9000`, own IAM user), optional opensearch. The apex `shoppingo.imapps.uk` is the landing site on AWS (`shoppingo-site`) |
+| shoppingo-web / shoppingo-api | app | shoppingo-app.imapps.uk | api uses fal.ai (`FAL_KEY`) + mongo + rustfs (`rustfs:9000`, own IAM user), optional opensearch. The apex `shoppingo.imapps.uk` is the landing site on AWS (`shoppingo-site`) |
 | jewellery-catalogue-web / -api | app | jewellery-catalogue.imapps.uk | mongo + rustfs (`rustfs:9000`, own IAM user) |
 | kivo | app | kivo.imapps.uk | mongo; own JWT auth |
 | jott | compose (`server/compose.yaml` in `igor-siergiej/jott`, built from source) | tailnet only: `100.79.92.93:8787` (host-published on the tailnet IP) | sync server; named volume `jott-data` on host disk; **no Gatus check**, not backed up |
