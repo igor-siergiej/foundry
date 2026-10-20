@@ -66,7 +66,7 @@ hot-reloads `config.yaml` because the directory, not the file, is mounted. After
 
 Gatus checks Prometheus (`/-/healthy`), Grafana (`/api/health`) and Loki (`/ready`). Nothing watches
 Gatus itself except sentinel, which reads Gatus JSON via `/api/gatus/statuses`. The
-`Cloudflared Tunnel (remote path)` check hits `https://shoppingo-app.imapps.uk/api/health` through the tunnel
+`Cloudflared Tunnel (remote path)` check hits `https://tandra.uk/api/health` through the tunnel
 (resolved via 1.1.1.1), since `gatus.imapps.uk` has no public DNS record. No container healthchecks in the
 compose file.
 
