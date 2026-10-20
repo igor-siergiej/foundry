@@ -34,7 +34,7 @@ flowchart TB
     lanUser([LAN / tailnet client]):::ext
 
     subgraph remote["REMOTE path"]
-        cfdns["shoppingo-app / kivo / dokploy .imapps.uk<br/>(Cloudflare proxied CNAMEs, no wildcard)"]
+        cfdns["shoppingo-app / kivo / dokploy .imapps.uk<br/>tandra.uk, kivo.tandra.uk<br/>(Cloudflare proxied CNAMEs, no wildcard)"]
         access["Cloudflare Access<br/>(auth check)"]
         tunnel["Cloudflare Tunnel<br/>(cloudflared, outbound-only)"]
     end
@@ -55,7 +55,8 @@ flowchart TB
 
 - **One Cloudflare tunnel** `0da10189-66a3-49f1-b138-f1f617592567` → `dokploy-traefik:443` → Traefik hostname routing.
 - **Public DNS is per-app, no wildcard (since 2026-10-18).** The zone has exactly three proxied CNAMEs to `0da10189-66a3-49f1-b138-f1f617592567.cfargotunnel.com`: `shoppingo-app`, `kivo`, `dokploy` (kept for the CI deploy webhooks). The `*.imapps.uk` CNAME was deleted; every other hostname has no public record and is reachable only on LAN/tailnet via blocky. To publish another app, add a proxied CNAME for it (and an Access bypass app if it should be anonymous). Certs are unaffected: Traefik's ACME records (`_acme-challenge.*` TXT) don't need a public A/CNAME. **Proxied names must be one level deep** (`x.imapps.uk`): the free Universal SSL cert covers only `imapps.uk` + `*.imapps.uk`, so `a.b.imapps.uk` fails the TLS handshake at the Cloudflare edge (why the app is `shoppingo-app`, not `app.shoppingo`).
-- **`shoppingo.imapps.uk` and `www.` are not on foundry.** They are the Shoppingo landing site on AWS S3 + CloudFront, DNS-only CNAMEs to the distribution managed by Terraform in the `shoppingo-site` repo. The app moved to `shoppingo-app.imapps.uk`; the site's CloudFront function redirects the old app paths and returning users (`shoppingo_app` cookie, set on `imapps.uk`) there.
+- **`shoppingo.imapps.uk` and `www.` are not on foundry.** They are the Shoppingo landing site on AWS S3 + CloudFront, DNS-only CNAMEs to the distribution managed by Terraform in the `shoppingo-site` repo. The app moved to `shoppingo-app.imapps.uk` and then (2026-10-20) to `tandra.uk`; the site's CloudFront function redirects the old app paths and returning users (`shoppingo_app` cookie, set on `imapps.uk` before the second move) there.
+- **`tandra.uk` zone (2026-10-20):** second Cloudflare zone, same account, zone id `8390d3abeee6eb8017bffba2aee34a71`. Two proxied CNAMEs to the same tunnel: `tandra.uk` (apex, flattened: the Shoppingo app, `shoppingo-web` / `shoppingo-api`) and `kivo.tandra.uk` (a second Dokploy domain on `kivo`). kivo needs a host on the app's site because its refresh cookie is `SameSite=Strict`; from `tandra.uk` to `kivo.imapps.uk` the cookie would never be sent. The tunnel ingress names both hosts explicitly (the wildcard only covers `*.imapps.uk`). The zone has **no Access apps** (no default-deny), and blocky does **not** map it: LAN clients resolve it publicly and go through the tunnel, because Traefik has no Let's Encrypt cert for these names (the `CF_DNS_API_TOKEN` in Traefik's env never created the `_acme-challenge` TXT on this zone, so a LAN client would get `TRAEFIK DEFAULT CERT`). Give that token DNS:Edit on `tandra.uk` before adding `tandra.uk` to blocky. `shoppingo-app.imapps.uk` stays published only so old links and installs reach `shoppingo-web`'s nginx, which 301s them to `tandra.uk` and serves a service worker that retires the old install.
 - **blocky** (`infra/blocky`) does split-horizon DNS: `imapps.uk → 192.168.68.17` (the host's reserved LAN IP), except `shoppingo`/`www.shoppingo`, which it CNAMEs to the CloudFront distribution like public DNS. On LAN/tailnet, traffic goes straight to Traefik and **bypasses Cloudflare + Access**. → **CF Access only protects REMOTE traffic. Zero protection on LAN/tailnet.**
 - Since 2026-09-22 the **Deco hands out `192.168.68.17` as DHCP primary DNS** (secondary `1.1.1.1`), so this applies to *every* device on the WiFi, not just tailnet clients. blocky also runs StevenBlack adware+malware blocklists for the whole LAN.
 - **Except it wasn't reaching `foundry`.** On 2026-09-27 the host's own DHCP lease still carried the ISP resolvers `188.31.250.128/129`, not `192.168.68.17` — so the box running blocky was the one device not using it. The host is now pinned in netplan (§4a); the Deco setting was left alone, so **assume other long-lease devices may be in the same state** and spot-check one before trusting LAN-wide adblock numbers.
@@ -101,7 +102,9 @@ Public hostnames (the whole list; §2 has the history):
 
 | Hostname | Service | Access |
 |---|---|---|
-| `shoppingo-app.imapps.uk` | `shoppingo-web` / `shoppingo-api` | bypass |
+| `tandra.uk` | `shoppingo-web` / `shoppingo-api` (the Shoppingo app) | none (zone has no Access apps) |
+| `kivo.tandra.uk` | `kivo` (auth host for the app on `tandra.uk`) | none |
+| `shoppingo-app.imapps.uk` | `shoppingo-web` (301 to `tandra.uk` only) | bypass |
 | `shoppingo.imapps.uk`, `www.` | not foundry: landing site on AWS CloudFront (`shoppingo-site`) | none (DNS-only, never enters the tunnel) |
 | `kivo.imapps.uk` | `kivo` | bypass |
 | `dokploy.imapps.uk` | Dokploy (CI deploy webhooks, admin) | own require-email app |
@@ -113,7 +116,9 @@ at all (`100.79.92.93:8787`).
 **Publishing a new service:** add one proxied CNAME `<app>.imapps.uk` →
 `0da10189-66a3-49f1-b138-f1f617592567.cfargotunnel.com` (cloudflare-api MCP, zone
 `e8069a9a6e586db3add05a408bd1e2d0`), plus an Access bypass app if it should be anonymous. No tunnel
-change needed while the ingress is a wildcard. **Tailnet/LAN-only service:** add nothing in
+change needed while the ingress is a wildcard. On `tandra.uk` the tunnel ingress also needs an explicit
+hostname rule (before the `http_status:404` fallback), and there is no default-deny Access app, so the
+host is public as soon as the CNAME exists. **Tailnet/LAN-only service:** add nothing in
 Cloudflare.
 
 ## 4. MCP control planes (how an agent operates this homelab)
@@ -214,9 +219,9 @@ Each infra/gtnh stack with a README links it in the Notes column. Dokploy also a
 ### `apps`
 | Service | Type | Host | Notes |
 |---|---|---|---|
-| shoppingo-web / shoppingo-api | app | shoppingo-app.imapps.uk | api uses fal.ai (`FAL_KEY`) + mongo + rustfs (`rustfs:9000`, own IAM user), optional opensearch. The apex `shoppingo.imapps.uk` is the landing site on AWS (`shoppingo-site`) |
+| shoppingo-web / shoppingo-api | app | tandra.uk (`shoppingo-app.imapps.uk` 301s there from the web nginx) | api uses fal.ai (`FAL_KEY`) + mongo + rustfs (`rustfs:9000`, own IAM user), optional opensearch. The apex `shoppingo.imapps.uk` is the landing site on AWS (`shoppingo-site`) |
 | jewellery-catalogue-web / -api | app | jewellery-catalogue.imapps.uk | mongo + rustfs (`rustfs:9000`, own IAM user) |
-| kivo | app | kivo.imapps.uk | mongo; own JWT auth |
+| kivo | app | kivo.imapps.uk, kivo.tandra.uk | mongo; own JWT auth. `kivo.tandra.uk` exists so Shoppingo on `tandra.uk` gets its `SameSite=Strict` refresh cookie (same site) |
 | jott | compose (`server/compose.yaml` in `igor-siergiej/jott`, built from source) | tailnet only: `100.79.92.93:8787` (host-published on the tailnet IP) | sync server; named volume `jott-data` on host disk; **no Gatus check**, not backed up |
 
 ### `nas` (compose stacks, media)
@@ -262,7 +267,7 @@ None of these publish a host port (`ports:` block) — confirmed against the liv
 
 ## 6. Cloudflare Access model (set 2026, default-deny)
 
-- Only `shoppingo`, `kivo` and `dokploy` have public DNS (§2), so the Access apps below only matter for those three; the rest are dormant config for hosts that no longer resolve remotely.
+- Only `shoppingo-app`, `kivo` and `dokploy` have public DNS in `imapps.uk` (§2), so the Access apps below only matter for those three; the rest are dormant config for hosts that no longer resolve remotely. The `tandra.uk` zone (`tandra.uk`, `kivo.tandra.uk`) has no Access apps at all.
 - **Wildcard `*.imapps.uk`** app = require owner email (`igorsiergiej@gmail.com` + `gregormai@mail.de`). Catches everything not explicitly bypassed.
 - **Explicit Bypass** apps (public / own-auth): immich, shoppingo, jewellery-catalogue, kivo, mixtape, audiobookshelf, jellyfin, navidrome, gatus.
 - **dokploy** + **sentinel** keep their own require-email apps.
