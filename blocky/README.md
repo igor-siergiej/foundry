@@ -39,7 +39,7 @@ Verify afterwards (from the root README):
 
 ```sh
 dig @192.168.68.17 +short kivo.imapps.uk        # 192.168.68.17
-dig @192.168.68.17 +short shoppingo.imapps.uk   # d3o01nt4oiwfr9.cloudfront.net. + CloudFront IPs (landing site exception)
+dig @192.168.68.17 +short tandra.uk             # d3o01nt4oiwfr9.cloudfront.net. + CloudFront IPs (public answer, not mapped)
 dig @192.168.68.17 +short doubleclick.net       # 0.0.0.0
 getent hosts home.tail2d4575.ts.net             # 100.79.92.93 (on foundry)
 ```
@@ -64,7 +64,7 @@ None needed: the only state is `config.yml`, which is in git.
   `resolvectl domain` split DNS has no effect. Route domains through `config.yml` instead.
 - A false-positive block breaks that site for every device in the house. Add an `allowlists` entry
   rather than disabling blocking ([`homelab.md` §10](../docs/homelab.md#10-gotchas-checklist-for-future-agents)).
-- During a restart, clients can fall through to `1.1.1.1`. Only shoppingo, kivo and dokploy have
+- During a restart, clients can fall through to `1.1.1.1`. Only shoppingo-app, kivo and dokploy have
   public records; every other `*.imapps.uk` name gets no answer until blocky is back.
 - Long-lease DHCP devices may still be on the old resolvers; check `docker logs blocky` for
   `192.168.68.x` clients before trusting LAN-wide numbers.

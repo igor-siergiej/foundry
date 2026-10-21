@@ -7,7 +7,7 @@
 #   Secondary DNS 1.1.1.1        (fallback if blocky is down)
 #
 # Consequence of the secondary: while blocky is restarting, a client that falls
-# through to 1.1.1.1 only resolves the public names (shoppingo + www, shoppingo-app,
+# through to 1.1.1.1 only resolves the public names (shoppingo-app,
 # kivo, dokploy); every other *.imapps.uk name has no public record and fails until
 # blocky is back.
 
@@ -28,19 +28,11 @@ upstreams:
 # Split horizon: on-LAN clients go straight to dokploy-traefik on this host,
 # bypassing the Cloudflare tunnel (and therefore Cloudflare Access).
 # The most specific entry wins, and subdomains of a mapped name inherit it.
-#
-# Exception: shoppingo.imapps.uk and www. are the landing site on AWS CloudFront
-# (shoppingo-site repo), so the zone below CNAMEs them to the distribution like
-# public DNS does. The app itself is shoppingo-app.imapps.uk, covered by the
-# imapps.uk mapping. If the distribution is ever recreated, update the target
-# (`terraform output cloudfront_url` in shoppingo-site/infra).
+# tandra.uk (the Tandra landing site on CloudFront, and app.tandra.uk / kivo.tandra.uk
+# through the tunnel) is not mapped: LAN clients resolve it publicly.
 customDNS:
   mapping:
     imapps.uk: 192.168.68.17
-  zone: |
-    $ORIGIN imapps.uk.
-    shoppingo 300 CNAME d3o01nt4oiwfr9.cloudfront.net.
-    www.shoppingo 300 CNAME d3o01nt4oiwfr9.cloudfront.net.
 
 # MagicDNS. `foundry` runs tailscaled as a host-network container, so its
 # DNS stub listens on 100.100.100.100 in the host netns but tailscaled can
