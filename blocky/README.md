@@ -64,7 +64,7 @@ None needed: the only state is `config.yml`, which is in git.
   `resolvectl domain` split DNS has no effect. Route domains through `config.yml` instead.
 - A false-positive block breaks that site for every device in the house. Add an `allowlists` entry
   rather than disabling blocking ([`homelab.md` §10](../docs/homelab.md#10-gotchas-checklist-for-future-agents)).
-- During a restart, clients can fall through to `1.1.1.1`. Only shoppingo-app, kivo and dokploy have
-  public records; every other `*.imapps.uk` name gets no answer until blocky is back.
+- During a restart, clients can fall through to `1.1.1.1`. Only kivo and dokploy have public records
+  in `imapps.uk`; every other `*.imapps.uk` name gets no answer until blocky is back.
 - Long-lease DHCP devices may still be on the old resolvers; check `docker logs blocky` for
   `192.168.68.x` clients before trusting LAN-wide numbers.

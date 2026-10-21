@@ -7,7 +7,7 @@ plus a process for failures and majors.
 
 | Repo | Current setup | Action |
 |---|---|---|
-| `shoppingo` | hand-managed | add `.github/dependabot.yml` from the template below |
+| `tandra` | hand-managed | add `.github/dependabot.yml` from the template below |
 | `jewellery-catalogue` | hand-managed | add `.github/dependabot.yml` from the template below |
 | `kivo` | `.github/dependabot.yml` exists (bun + github-actions) | enable auto-merge workflow (see below) |
 | `mixtape` | hand-managed | add `.github/dependabot.yml` from the template below |

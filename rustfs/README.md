@@ -21,7 +21,7 @@ Each consumer has its own IAM user with a scoped policy; nothing uses root. App 
 
 | Bucket | User | Policy | Vault item |
 |---|---|---|---|
-| `shoppingo` | `shoppingo` | `shoppingo-rw`: `s3:*` on `shoppingo`, `shoppingo/*` | `creds.rustfs-shoppingo` |
+| `tandra` | `tandra` | `tandra-rw`: `s3:*` on `tandra`, `tandra/*` | `creds.rustfs-tandra` |
 | `jewellery-catalogue` | `jewellery-catalogue` | `jewellery-catalogue-rw`: `s3:*` on `jewellery-catalogue`, `jewellery-catalogue/*` | `creds.rustfs-jewellery-catalogue` |
 | all | `filestash` | built-in `readwrite` | `creds.rustfs-filestash` |
 
@@ -42,9 +42,9 @@ docker run --rm --network dokploy-network -e U -e P --entrypoint sh \
 
 ## History
 
-Data imported 2026-10-18 from the previous object store (jott #99, `../SECURITY-AUDIT.md` #6): shoppingo
-1,230 objects / 140,914,837 B and jewellery-catalogue 18 objects / 10,449,871 B, each matched per key
-on size, ETag, content type and user metadata before the apps' env was switched.
+Data imported 2026-10-18 from the previous object store (jott #99, `../SECURITY-AUDIT.md` #6): the app
+now called tandra 1,230 objects / 140,914,837 B and jewellery-catalogue 18 objects / 10,449,871 B, each
+matched per key on size, ETag, content type and user metadata before the apps' env was switched.
 
 ## Deploy / change
 

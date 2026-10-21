@@ -30,7 +30,7 @@ services:
       start_period: 40s
 
 volumes:
-  # Derived data: shoppingo can rebuild it from MongoDB with `bun run reindex:discovery`.
+  # Derived data: tandra can rebuild it from MongoDB with `bun run reindex:discovery`.
   opensearch-data:
 
 networks:

@@ -1,6 +1,6 @@
 # MongoDB Compose Setup
 
-Docker Compose setup for MongoDB 7.0, the shared database for shoppingo and jewellery-catalogue (staging + production), kivo and mixtape (see [`../docs/homelab.md` §5](../docs/homelab.md#infra)). The user/database examples below cover shoppingo and jewellery-catalogue only.
+Docker Compose setup for MongoDB 7.0, the shared database for tandra (production), jewellery-catalogue (staging + production), kivo and mixtape (see [`../docs/homelab.md` §5](../docs/homelab.md#infra)). The user/database examples below cover tandra and jewellery-catalogue only.
 
 ## Quick Start
 
@@ -27,11 +27,8 @@ Create users after MongoDB starts:
 
 ```bash
 docker exec mongodb mongosh -u admin -p <MONGO_ROOT_PASSWORD> --authenticationDatabase admin <<'EOF'
-db = db.getSiblingDB('shoppingo_production');
-db.createUser({ user: 'shoppingo_production_user', pwd: '<APP_PASSWORD>', roles: ['readWrite'] });
-
-db = db.getSiblingDB('shoppingo_staging');
-db.createUser({ user: 'shoppingo_staging_user', pwd: '<APP_PASSWORD>', roles: ['readWrite'] });
+db = db.getSiblingDB('tandra_production');
+db.createUser({ user: 'tandra_production_user', pwd: '<APP_PASSWORD>', roles: ['readWrite'] });
 
 db = db.getSiblingDB('jewellery_production');
 db.createUser({ user: 'jewellery_production_user', pwd: '<APP_PASSWORD>', roles: ['readWrite'] });
@@ -44,7 +41,7 @@ EOF
 ## Testing Application Connection
 
 ```bash
-docker exec mongodb mongosh "mongodb://shoppingo_production_user:<APP_PASSWORD>@localhost:27017/shoppingo_production?authSource=shoppingo_production"
+docker exec mongodb mongosh "mongodb://tandra_production_user:<APP_PASSWORD>@localhost:27017/tandra_production?authSource=tandra_production"
 ```
 
 ## Remote Access
@@ -84,7 +81,7 @@ Data is currently stored locally. To switch to NFS persistence:
 ## Database Schema
 
 Applications use separate databases:
-- `shoppingo_production` / `shoppingo_staging`
+- `tandra_production`
 - `jewellery_production` / `jewellery_staging`
 
 Each has a corresponding user with readWrite role on that database.

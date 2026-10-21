@@ -21,10 +21,10 @@ that no `du`/`stat` can see.
 
 ### Not yet backed up (follow-up cards)
 
-- **rustfs** (shoppingo + jewellery-catalogue images, ~150 MB) — S3 mirror
+- **rustfs** (tandra + jewellery-catalogue images, ~150 MB) — S3 mirror
   (`rc`) to `/mnt/tank/shared/backups/rustfs/` with a read-only IAM user;
   restore drill is a diff against prod.
-- **opensearch** — derived from mongo (shoppingo recipe index), can rebuild
+- **opensearch** — derived from mongo (tandra recipe index), can rebuild
   from mongo via `scripts/reindex.sh`; consider a periodic rebuild rather
   than a binary backup.
 - **jellyfin / audiobookshelf / monitoring / mixtape / immich ML model

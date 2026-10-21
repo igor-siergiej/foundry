@@ -15,11 +15,12 @@ alerting:
       success-threshold: 2
       send-on-resolved: true
 endpoints:
-  # Traefik's Let's Encrypt cert for the old app host, which LAN clients still
-  # reach through blocky for the 301 to tandra.uk.
-  - name: Shoppingo Cert Expiration
+  # The cert visitors see on the app host. app.tandra.uk isn't in blocky and
+  # Traefik has no cert for it, so this is Cloudflare's edge cert for the
+  # tandra.uk zone (docs/homelab.md §2).
+  - name: Tandra Cert Expiration
     group: Infrastructure
-    url: https://shoppingo-app.imapps.uk
+    url: https://app.tandra.uk
     interval: 3600s
     timeout: 10s
     conditions:
@@ -234,7 +235,7 @@ endpoints:
     alerts:
       - type: discord
 
-  # Static site on AWS CloudFront (shoppingo-site repo): the tandra.uk apex and
+  # Static site on AWS CloudFront (tandra-site repo): the tandra.uk apex and
   # www are DNS-only CNAMEs to the distribution, the same path public visitors take.
   - name: Tandra (Landing)
     group: Apps
@@ -337,8 +338,9 @@ endpoints:
     group: Core
     # Resolve via 1.1.1.1 instead of blocky so the request takes the real
     # remote path: CF edge -> tunnel -> Traefik. Must target a host that has a
-    # public DNS record (tandra.uk, kivo, dokploy) and no Access login.
-    url: https://tandra.uk/api/health
+    # public DNS record (app.tandra.uk, kivo, dokploy) and no Access login.
+    # Not the tandra.uk apex: that is the CloudFront landing site, not the tunnel.
+    url: https://app.tandra.uk/api/health
     client:
       dns-resolver: tcp://1.1.1.1:53
     interval: 120s

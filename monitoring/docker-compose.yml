@@ -72,7 +72,7 @@ services:
     # ("failed to identify the read-write layer ID" spams the logs and there are no
     # per-container series). Bumped to 0.55.1 which supports the containerd
     # snapshotter; per-container `name=` labels come back for the
-    # shoppingo/jewellery/kivo panels. Dependabot bumps further from here.
+    # tandra/jewellery/kivo panels. Dependabot bumps further from here.
     image: gcr.io/cadvisor/cadvisor:v0.55.1
     container_name: cadvisor
     restart: unless-stopped
