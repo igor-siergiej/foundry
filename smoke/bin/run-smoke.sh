@@ -27,7 +27,9 @@ fi
 export KANBAN_CLI_REPO_ROOTS="${KANBAN_CLI_REPO_ROOTS:-/home/home/imapps}"
 
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
-APPS=(shoppingo jewellery-catalogue kivo mixtape)
+# Each entry is a checkout directory next to foundry (../<name>) whose
+# .kanban-cli.json supplies the production baseUrl (tandra: https://app.tandra.uk).
+APPS=(tandra jewellery-catalogue kivo mixtape)
 
 WORKDIR="$(mktemp -d -t foundry-smoke.XXXXXX)"
 trap 'rm -rf "$WORKDIR"' EXIT

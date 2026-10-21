@@ -18,7 +18,7 @@ Agent-oriented map of how the Dokploy homelab fits together: topology, deploy fl
 | `192.168.68.13` | — | Responds to ICMP only, no open service ports; **not** an active dependency — see §7. Stale from before the 2026-08-20 bare-metal migration. |
 | LAN gateway | `192.168.68.1` | |
 
-Single Docker host, swarm mode active with one node. Dokploy runs its `apps`/`sentinel` applications (and itself, `cloudflared`) as swarm services, so their containers are named `<appName>.1.<taskId>` and are addressed on `dokploy-network` by the service name (`shoppingo-api-zlusv1`). Everything else is a plain Docker Compose stack managed by Dokploy.
+Single Docker host, swarm mode active with one node. Dokploy runs its `apps`/`sentinel` applications (and itself, `cloudflared`) as swarm services, so their containers are named `<appName>.1.<taskId>` and are addressed on `dokploy-network` by the service name, which is the Dokploy appName (tandra-api is `app-hack-neural-circuit-s9qq5e`). Everything else is a plain Docker Compose stack managed by Dokploy.
 
 **Live health:** run `homelab-status` (dotfiles `bin/`) before trusting anything here; `--coverage` lists running services with no Gatus check or no row in §5.
 
@@ -34,7 +34,7 @@ flowchart TB
     lanUser([LAN / tailnet client]):::ext
 
     subgraph remote["REMOTE path"]
-        cfdns["shoppingo-app / kivo / dokploy .imapps.uk<br/>tandra.uk, kivo.tandra.uk<br/>(Cloudflare proxied CNAMEs, no wildcard)"]
+        cfdns["kivo / dokploy .imapps.uk<br/>app.tandra.uk, kivo.tandra.uk<br/>(Cloudflare proxied CNAMEs, no wildcard)"]
         access["Cloudflare Access<br/>(auth check)"]
         tunnel["Cloudflare Tunnel<br/>(cloudflared, outbound-only)"]
     end
@@ -54,13 +54,13 @@ flowchart TB
 ```
 
 - **One Cloudflare tunnel** `0da10189-66a3-49f1-b138-f1f617592567` → `dokploy-traefik:443` → Traefik hostname routing.
-- **Public DNS is per-app, no wildcard (since 2026-10-18).** The zone has exactly three proxied CNAMEs to `0da10189-66a3-49f1-b138-f1f617592567.cfargotunnel.com`: `shoppingo-app`, `kivo`, `dokploy` (kept for the CI deploy webhooks). The `*.imapps.uk` CNAME was deleted; every other hostname has no public record and is reachable only on LAN/tailnet via blocky. To publish another app, add a proxied CNAME for it (and an Access bypass app if it should be anonymous). Certs are unaffected: Traefik's ACME records (`_acme-challenge.*` TXT) don't need a public A/CNAME. **Proxied names must be one level deep** (`x.imapps.uk`): the free Universal SSL cert covers only `imapps.uk` + `*.imapps.uk`, so `a.b.imapps.uk` fails the TLS handshake at the Cloudflare edge (why the app is `shoppingo-app`, not `app.shoppingo`).
-- **`tandra.uk` and `www.tandra.uk` are not on foundry (since 2026-10-21).** They are the Tandra landing site on AWS S3 + CloudFront, DNS-only CNAMEs to the distribution managed by Terraform in the `shoppingo-site` repo. The app lives at `app.tandra.uk`; the site's CloudFront function redirects the old app paths (the app lived on the `tandra.uk` apex 2026-10-20/21) and returning users (`tandra_app` cookie, set on `tandra.uk` by the app) there. `shoppingo.imapps.uk`, the site's previous host, no longer has a public record.
-- **`tandra.uk` zone (2026-10-20):** second Cloudflare zone, same account, zone id `8390d3abeee6eb8017bffba2aee34a71`. Two proxied CNAMEs to the same tunnel: `app.tandra.uk` (the Tandra app, `shoppingo-web` / `shoppingo-api`; it was on the apex until 2026-10-21) and `kivo.tandra.uk` (a second Dokploy domain on `kivo`). The apex and `www` are the landing site (above). kivo needs a host on the app's site because its refresh cookie is `SameSite=Strict`; from `app.tandra.uk` to `kivo.imapps.uk` the cookie would never be sent. The tunnel ingress names both hosts explicitly (the wildcard only covers `*.imapps.uk`). The zone has **no Access apps** (no default-deny), and blocky does **not** map it: LAN clients resolve it publicly and go through the tunnel, because Traefik has no Let's Encrypt cert for these names yet (a LAN client would get `TRAEFIK DEFAULT CERT`). Traefik's `CF_DNS_API_TOKEN` (set through Dokploy `settings.writeTraefikEnv`) is the account token `traefik-acme-dns` (vault `creds.cloudflare-traefik-dns`, since 2026-10-21): Zone Read + DNS Write on `imapps.uk` and `tandra.uk` only, no expiry, and it can create `_acme-challenge` TXT records on both zones. It is an account-owned `cfat_` token, so check it with `GET /accounts/<acct>/tokens/verify`; `/user/tokens/verify` rejects it. The broad admin token (`creds.cloudflare`) stays in the vault only. `shoppingo-app.imapps.uk` stays published only so old links and installs reach `shoppingo-web`'s nginx, which 301s them to `app.tandra.uk` and serves a service worker that retires the old install.
+- **Public DNS is per-app, no wildcard (since 2026-10-18).** The `imapps.uk` zone has exactly two proxied CNAMEs to `0da10189-66a3-49f1-b138-f1f617592567.cfargotunnel.com`: `kivo` and `dokploy` (kept for the CI deploy webhooks). The `*.imapps.uk` CNAME was deleted; every other hostname has no public record and is reachable only on LAN/tailnet via blocky. To publish another app, add a proxied CNAME for it (and an Access bypass app if it should be anonymous). Certs are unaffected: Traefik's ACME records (`_acme-challenge.*` TXT) don't need a public A/CNAME. **Proxied names must be one level deep** (`x.imapps.uk`): the free Universal SSL cert covers only `imapps.uk` + `*.imapps.uk`, so `a.b.imapps.uk` fails the TLS handshake at the Cloudflare edge. The app's old hosts `shoppingo-app.imapps.uk` (app) and `shoppingo.imapps.uk` (landing site) were deleted in the 2026-10-21 Tandra cutover, with no redirects.
+- **`tandra.uk` and `www.tandra.uk` are not on foundry (since 2026-10-21).** They are the Tandra landing site on AWS S3 + CloudFront, DNS-only CNAMEs to the distribution managed by Terraform in the `tandra-site` repo. The app lives at `app.tandra.uk`; the site's CloudFront function redirects the old app paths (the app lived on the `tandra.uk` apex 2026-10-20/21) and returning users (`tandra_app` cookie, set on `tandra.uk` by the app) there.
+- **`tandra.uk` zone (2026-10-20):** second Cloudflare zone, same account, zone id `8390d3abeee6eb8017bffba2aee34a71`. Two proxied CNAMEs to the same tunnel: `app.tandra.uk` (the Tandra app, Dokploy apps `tandra-web` / `tandra-api`; it was on the apex until 2026-10-21) and `kivo.tandra.uk` (a second Dokploy domain on `kivo`). The apex and `www` are the landing site (above). kivo needs a host on the app's site because its refresh cookie is `SameSite=Strict`; from `app.tandra.uk` to `kivo.imapps.uk` the cookie would never be sent. The tunnel ingress has an explicit hostname rule for each of `app.tandra.uk` and `kivo.tandra.uk` (the `*.imapps.uk` wildcard doesn't cover this zone), so a new `tandra.uk` host needs its own ingress rule as well as the CNAME. The zone has **no Access apps** (no default-deny), and blocky does **not** map it: LAN clients resolve it publicly and go through the tunnel, because Traefik has no Let's Encrypt cert for these names yet (a LAN client would get `TRAEFIK DEFAULT CERT`). Traefik's `CF_DNS_API_TOKEN` (set through Dokploy `settings.writeTraefikEnv`) is the account token `traefik-acme-dns` (vault `creds.cloudflare-traefik-dns`, since 2026-10-21): Zone Read + DNS Write on `imapps.uk` and `tandra.uk` only, no expiry, and it can create `_acme-challenge` TXT records on both zones. It is an account-owned `cfat_` token, so check it with `GET /accounts/<acct>/tokens/verify`; `/user/tokens/verify` rejects it. The broad admin token (`creds.cloudflare`) stays in the vault only.
 - **blocky** (`infra/blocky`) does split-horizon DNS: `imapps.uk → 192.168.68.17` (the host's reserved LAN IP). On LAN/tailnet, traffic goes straight to Traefik and **bypasses Cloudflare + Access**. → **CF Access only protects REMOTE traffic. Zero protection on LAN/tailnet.**
 - Since 2026-09-22 the **Deco hands out `192.168.68.17` as DHCP primary DNS** (secondary `1.1.1.1`), so this applies to *every* device on the WiFi, not just tailnet clients. blocky also runs StevenBlack adware+malware blocklists for the whole LAN.
 - **Except it wasn't reaching `foundry`.** On 2026-09-27 the host's own DHCP lease still carried the ISP resolvers `188.31.250.128/129`, not `192.168.68.17` — so the box running blocky was the one device not using it. The host is now pinned in netplan (§4a); the Deco setting was left alone, so **assume other long-lease devices may be in the same state** and spot-check one before trusting LAN-wide adblock numbers.
-- **Secondary-DNS caveat:** during a blocky restart a client can fall through to `1.1.1.1`. For shoppingo-app/kivo/dokploy it gets the Cloudflare-proxied answer (dokploy then shows an Access prompt); every other `*.imapps.uk` name returns no answer until blocky is back and the negative cache expires. Accepted trade-off vs. losing all internet when blocky is down.
+- **Secondary-DNS caveat:** during a blocky restart a client can fall through to `1.1.1.1`. For kivo/dokploy it gets the Cloudflare-proxied answer (dokploy then shows an Access prompt); every other `*.imapps.uk` name returns no answer until blocky is back and the negative cache expires. Accepted trade-off vs. losing all internet when blocky is down. (`app.tandra.uk` always resolves publicly, blocky or not.)
 - Traefik entrypoints: `web` (80, redirect→https), `websecure` (443, letsencrypt certresolver). Services attach via `dokploy-network` + traefik labels.
 - **Tailnet path** (not in the diagram): the `tailscale` stack advertises `192.168.68.0/24` as a subnet route, so tailnet devices reach the LAN (and blocky/Traefik on `192.168.68.17`) from anywhere. `gtnh` and `jott` are tailnet-only and never touch Traefik or Cloudflare (§5).
 - Internal service-to-service DB access goes container-to-container over
@@ -78,8 +78,8 @@ IaC repo: `/home/home/imapps/foundry` on this host (path may differ on other mac
 - **Dokploy deploys from GitHub HEAD, not local files.** Compose changes must be **commit + push** first.
 - `autoDeploy=true` but the **webhook is unreliable — do NOT trust it to fire.** After push, deploy explicitly via `compose-deploy` (dokploy-mcp).
 - **`git push` needs `dangerouslyDisableSandbox: true`** (sandbox has no network egress; DNS to github.com is flaky — retry fetch).
-- App code images (shoppingo, jewellery-catalogue, kivo, sentinel, mixtape) are built + pushed by each app's own repo CI to Docker Hub `igurusama/imapps:<tag>`, then Dokploy pulls. `pull_policy: always` on `:latest` tags forces re-pull.
-- **App deploy trigger:** app repo CI builds images with `utils/pipelines/scripts/publish-images.sh` (via the `.github/workflows-utils` submodule), `linux/amd64`, pushes to `igurusama/imapps`, then `curl`s the Dokploy app webhooks through a Cloudflare Access service token: `DEPLOY_WEB_URL` + `DEPLOY_API_URL` (shoppingo, jewellery-catalogue, sentinel), `DEPLOY_API_URL` only (kivo). mixtape is a single compose service hit via `DEPLOY_URL` with `X-GitHub-Event: push` (without it Dokploy ignores `ref` → "Branch Not Match"; `mixtape/.github/workflows/ci-cd.yml`).
+- App code images (tandra, jewellery-catalogue, kivo, sentinel, mixtape) are built + pushed by each app's own repo CI to Docker Hub `igurusama/imapps:<tag>`, then Dokploy pulls. `pull_policy: always` on `:latest` tags forces re-pull.
+- **App deploy trigger:** app repo CI builds images with `utils/pipelines/scripts/publish-images.sh` (via the `.github/workflows-utils` submodule), `linux/amd64`, pushes to `igurusama/imapps`, then `curl`s the Dokploy app webhooks through a Cloudflare Access service token: `DEPLOY_WEB_URL` + `DEPLOY_API_URL` (tandra, jewellery-catalogue, sentinel), `DEPLOY_API_URL` only (kivo). mixtape is a single compose service hit via `DEPLOY_URL` with `X-GitHub-Event: push` (without it Dokploy ignores `ref` → "Branch Not Match"; `mixtape/.github/workflows/ci-cd.yml`).
 
 ### 3.5. Public surface — what is reachable from the internet
 
@@ -102,10 +102,9 @@ Public hostnames (the whole list; §2 has the history):
 
 | Hostname | Service | Access |
 |---|---|---|
-| `app.tandra.uk` | `shoppingo-web` / `shoppingo-api` (the Tandra app) | none (zone has no Access apps) |
-| `tandra.uk`, `www.` | not foundry: Tandra landing site on AWS CloudFront (`shoppingo-site`) | none (DNS-only, never enters the tunnel) |
-| `kivo.tandra.uk` | `kivo` (auth host for the app on `tandra.uk`) | none |
-| `shoppingo-app.imapps.uk` | `shoppingo-web` (301 to `app.tandra.uk` only) | bypass |
+| `app.tandra.uk` | `tandra-web` / `tandra-api` (the Tandra app; explicit tunnel ingress rule) | none (zone has no Access apps) |
+| `tandra.uk`, `www.` | not foundry: Tandra landing site on AWS CloudFront (`tandra-site`) | none (DNS-only, never enters the tunnel) |
+| `kivo.tandra.uk` | `kivo` (auth host for the app on `app.tandra.uk`; explicit tunnel ingress rule) | none |
 | `kivo.imapps.uk` | `kivo` | bypass |
 | `dokploy.imapps.uk` | Dokploy (CI deploy webhooks, admin) | own require-email app |
 
@@ -219,9 +218,9 @@ Each infra/gtnh stack with a README links it in the Notes column. Dokploy also a
 ### `apps`
 | Service | Type | Host | Notes |
 |---|---|---|---|
-| shoppingo-web / shoppingo-api | app | app.tandra.uk (`shoppingo-app.imapps.uk` 301s there from the web nginx) | api uses fal.ai (`FAL_KEY`) + mongo + rustfs (`rustfs:9000`, own IAM user), optional opensearch. The `tandra.uk` apex is the landing site on AWS (`shoppingo-site`) |
+| tandra-web / tandra-api | app | app.tandra.uk | Dokploy appNames (= swarm service names): web `app-navigate-cross-platform-bandwidth-5xama3`, api `app-hack-neural-circuit-s9qq5e` (Prometheus scrapes `app-hack-neural-circuit-s9qq5e:4001/api/metrics`). api uses fal.ai (`FAL_KEY`) + mongo (`tandra_production`) + rustfs (`rustfs:9000`, bucket `tandra`, own IAM user), optional opensearch. The `tandra.uk` apex is the landing site on AWS (`tandra-site`) |
 | jewellery-catalogue-web / -api | app | jewellery-catalogue.imapps.uk | mongo + rustfs (`rustfs:9000`, own IAM user) |
-| kivo | app | kivo.imapps.uk, kivo.tandra.uk | mongo; own JWT auth. `kivo.tandra.uk` exists so Shoppingo on `tandra.uk` gets its `SameSite=Strict` refresh cookie (same site) |
+| kivo | app | kivo.imapps.uk, kivo.tandra.uk | mongo; own JWT auth. `kivo.tandra.uk` exists so Tandra on `app.tandra.uk` gets its `SameSite=Strict` refresh cookie (same site) |
 | jott | compose (`server/compose.yaml` in `igor-siergiej/jott`, built from source) | tailnet only: `100.79.92.93:8787` (host-published on the tailnet IP) | sync server; named volume `jott-data` on host disk; **no Gatus check**, not backed up |
 
 ### `nas` (compose stacks, media)
@@ -242,14 +241,14 @@ None of these publish a host port (`ports:` block) — confirmed against the liv
 | cloudflared | (app) | — | the tunnel |
 | tailscale | `tailscale:latest` | host net | `network_mode: host`, hostname `foundry`, advertises route `192.168.68.0/24`. See [`../tailscale/README.md`](../tailscale/README.md) |
 | blocky | `spx01/blocky:latest` | 53 (host-published, LAN DNS) | split-horizon DNS; web UI/metrics now internal-only via `dokploy-network` (`:4000` host publish dropped in the 2026-07-04 hardening pass). See [`../blocky/README.md`](../blocky/README.md) |
-| mongodb | `mongo:7.0` | 27017, **no host publish, no Traefik route** (internal-only on `dokploy-network`) | shared DB (kivo, shoppingo, jewellery, mixtape). ZFS bind mount. Admin: `docker exec -it mongodb mongosh`, or the socat tunnel in [`../mongodb/README.md`](../mongodb/README.md#remote-access) |
-| rustfs | `rustfs/rustfs:1.0.3@sha256:9ca955…` | 9000 S3 / 9001 console, **no host publish**; Traefik `rustfs-console.imapps.uk` → 9001 (LAN/tailnet, no public DNS) | S3 for shoppingo, jewellery-catalogue and minio-gallery (`rustfs:9000`), one IAM user per consumer. ZFS dataset `tank/shared/rustfs`. See [`../rustfs/README.md`](../rustfs/README.md) |
+| mongodb | `mongo:7.0` | 27017, **no host publish, no Traefik route** (internal-only on `dokploy-network`) | shared DB (kivo, tandra, jewellery, mixtape). ZFS bind mount. Admin: `docker exec -it mongodb mongosh`, or the socat tunnel in [`../mongodb/README.md`](../mongodb/README.md#remote-access) |
+| rustfs | `rustfs/rustfs:1.0.3@sha256:9ca955…` | 9000 S3 / 9001 console, **no host publish**; Traefik `rustfs-console.imapps.uk` → 9001 (LAN/tailnet, no public DNS) | S3 for tandra, jewellery-catalogue and minio-gallery (`rustfs:9000`), one IAM user per consumer. ZFS dataset `tank/shared/rustfs`. See [`../rustfs/README.md`](../rustfs/README.md) |
 | monitoring | loki/promtail/prometheus/cadvisor/node-exporter/grafana/gatus + docker-socket-proxy | none host-published; Traefik: grafana → 3000, gatus → 8080 | grafana.imapps.uk, gatus.imapps.uk. docker-socket-proxy (`CONTAINERS=1`, `NETWORKS=1`) fronts promtail's Docker API access (`../SECURITY-AUDIT.md` #10, closed). See [`../monitoring/README.md`](../monitoring/README.md) |
 | home-assistant | `home-assistant:2024.12.3` | 8123; Traefik `home-assistant.imapps.uk` | unprivileged container (no host devices; `privileged` + NET_ADMIN/NET_RAW dropped 2026-10-10) on its own bridge + Dokploy-attached `dokploy-network` (no host network, so no LAN discovery). See [`../homeassistant/README.md`](../homeassistant/README.md) |
 | vaultwarden | `vaultwarden/server:1.37.2` | vault.imapps.uk | self-hosted secrets/password vault, replaces plaintext `~/notes/secrets/tokens.md`; ZFS bind mount (`/mnt/tank/shared/vaultwarden`); see [`README.md`](./README.md#secrets) and [`../vaultwarden/README.md`](../vaultwarden/README.md) |
-| opensearch | `opensearch:2.19.1` | 9200, internal-only on `dokploy-network`, no Traefik route | shoppingo recipe-discovery index; derived from mongo, not backed up; security plugin off. See [`../opensearch/README.md`](../opensearch/README.md) |
+| opensearch | `opensearch:2.19.1` | 9200, internal-only on `dokploy-network`, no Traefik route | tandra recipe-discovery index; derived from mongo, not backed up; security plugin off. See [`../opensearch/README.md`](../opensearch/README.md) |
 | minio-gallery | `machines/filestash@sha256:edb76c…` | 8334; Traefik `minio-gallery.imapps.uk` on the **`web` (HTTP) entrypoint only** | Filestash S3 browser; sign in to the S3 backend with endpoint `http://rustfs:9000` and `creds.rustfs-filestash`; own admin login. HTTP-only router, see `../SECURITY-AUDIT.md` #11. See [`../minio-gallery/README.md`](../minio-gallery/README.md) |
-| umami | `umami-software/umami@sha256:6cd9d…` + `postgres:16-alpine@sha256:1a66d7…` | Tailscale/LAN-only: no public DNS record, so the Cloudflare edge never routes it into the tunnel (§3.5); tailnet split-DNS routes `*.imapps.uk` → blocky on 192.168.68.17, which the foundry subnet route carries over Tailscale | shoppingo self-hosted analytics (tracker config in `packages/web/analytics.ts`); one Umami instance backs all consumers (jewellery-catalogue next). See [`../umami/README.md`](../umami/README.md) (added by #72). Keep it out of Cloudflare DNS. |
+| umami | `umami-software/umami@sha256:6cd9d…` + `postgres:16-alpine@sha256:1a66d7…` | Tailscale/LAN-only: no public DNS record, so the Cloudflare edge never routes it into the tunnel (§3.5); tailnet split-DNS routes `*.imapps.uk` → blocky on 192.168.68.17, which the foundry subnet route carries over Tailscale | tandra self-hosted analytics (tracker config in `packages/web/analytics.ts`); one Umami instance backs all consumers (jewellery-catalogue next). See [`../umami/README.md`](../umami/README.md) (added by #72). Keep it out of Cloudflare DNS. |
 
 ### `gtnh` (game server)
 | Service | Image | Ingress | Notes |
@@ -267,9 +266,9 @@ None of these publish a host port (`ports:` block) — confirmed against the liv
 
 ## 6. Cloudflare Access model (set 2026, default-deny)
 
-- Only `shoppingo-app`, `kivo` and `dokploy` have public DNS in `imapps.uk` (§2), so the Access apps below only matter for those three; the rest are dormant config for hosts that no longer resolve remotely. The `tandra.uk` zone (`tandra.uk`, `kivo.tandra.uk`) has no Access apps at all.
+- Only `kivo` and `dokploy` have public DNS in `imapps.uk` (§2), so the Access apps below only matter for those two; the rest are dormant config for hosts that no longer resolve remotely. The `tandra.uk` zone (`app.tandra.uk`, `kivo.tandra.uk`) has no Access apps at all.
 - **Wildcard `*.imapps.uk`** app = require owner email (`igorsiergiej@gmail.com` + `gregormai@mail.de`). Catches everything not explicitly bypassed.
-- **Explicit Bypass** apps (public / own-auth): immich, shoppingo, jewellery-catalogue, kivo, mixtape, audiobookshelf, jellyfin, navidrome, gatus.
+- **Explicit Bypass** apps (public / own-auth): immich, jewellery-catalogue, kivo, mixtape, audiobookshelf, jellyfin, navidrome, gatus. (The old app's bypass app for the deleted `shoppingo-app.imapps.uk` goes with that host in the Tandra cutover.)
 - **dokploy** + **sentinel** keep their own require-email apps.
 - immich has a rate-limit rule on `/auth/login` (15 req / 10s / IP → block).
 - Reminder: Access is a **remote-only** gate (see §2). On LAN and tailnet, own-auth is the only protection.
@@ -287,12 +286,12 @@ Diagram: [`diagrams/data-storage.excalidraw`](./diagrams/data-storage.excalidraw
 
 A `systemd` timer (`smoke/systemd/foundry-smoke.timer`) runs nightly at
 **03:15** and invokes `smoke/bin/run-smoke.sh`. The script shells out to
-`kanban-cli e2e live <repo> --url <prod>` for each of shoppingo,
+`kanban-cli e2e live <repo> --url <prod>` for each of tandra,
 jewellery-catalogue, kivo and mixtape — which by default runs only that
 repo's `@smoke`-tagged Playwright tests against production. Gatus is the
 fast "is it up at all" layer; this is the nightly "does the actual flow
 still work" layer (the failures Gatus can't see: images 404/401, the
-shoppingo fal key stale, a redirect misconfigured, etc.). mixtape currently
+tandra fal key stale, a redirect misconfigured, etc.). mixtape currently
 has no `@smoke`-tagged tests, so its run executes nothing. Diagram:
 [`diagrams/ops-automation.excalidraw`](./diagrams/ops-automation.excalidraw).
 
@@ -381,7 +380,7 @@ Backblaze B2 or a friend's box) is a separate follow-up.
 
 ## 11. Kanban tools — work-board, jott, and the Collie buttons
 
-Every project's work — shoppingo, kivo, foundry, etc — is tracked as a jott task (`jott task list --json` etc). Three skills drive the loop:
+Every project's work — shoppingo (the Tandra app's jott project keeps that id), kivo, foundry, etc — is tracked as a jott task (`jott task list --json` etc). Three skills drive the loop:
 
 - **kanban-worker** — pulls a Backlog task per project, implements it, runs Playwright e2e as a merge gate, opens a PR, waits for CI, merges, waits for deploy, runs a live smoke check, and reverts+blocks if it fails. The work itself is autonomous; the gate decisions aren't.
 - **refining-kanban-captures** — turns Inbox captures (raw phone-typed thoughts) into real Backlog items by reading the repo first. Never runs automatically; a human kicks it off.

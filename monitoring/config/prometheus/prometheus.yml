@@ -28,14 +28,14 @@ scrape_configs:
       - targets: ["blocky:4000"]
     metrics_path: /metrics
 
-  # Shoppingo API — exposes Prometheus metrics at /api/metrics.
-  # Reachable on dokploy-network via the dokploy-managed service DNS alias.
-  # If the deployment hash in the service name changes, update the target.
-  - job_name: shoppingo-api
+  # Tandra API — exposes Prometheus metrics at /api/metrics.
+  # Reachable on dokploy-network via the Dokploy appName (swarm service name) of
+  # the tandra-api app. If the app is recreated and its appName changes, update the target.
+  - job_name: tandra-api
     static_configs:
-      - targets: ["shoppingo-api-zlusv1:4001"]
+      - targets: ["app-hack-neural-circuit-s9qq5e:4001"]
         labels:
-          service: shoppingo-api
+          service: tandra-api
     metrics_path: /api/metrics
 
   # Kivo auth service — exposes Prometheus metrics at /metrics.

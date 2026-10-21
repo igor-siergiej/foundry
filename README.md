@@ -29,7 +29,7 @@ Devices pick this up on their next DHCP lease renewal; a WiFi reconnect forces i
 
 > **Secondary-DNS trade-off:** `1.1.1.1` keeps the internet working if blocky is
 > down, but while blocky restarts a client may fall through to it. Only
-> shoppingo, kivo and dokploy have public Cloudflare records; every other
+> kivo and dokploy have public Cloudflare records in `imapps.uk`; every other
 > `*.imapps.uk` name gets no answer until blocky is back. Accepted deliberately
 > over a no-internet-if-blocky-dies setup.
 

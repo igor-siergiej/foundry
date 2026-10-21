@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # backups/config/mongodb.sh
-# Backup of the shared mongo used by shoppingo, jewellery-catalogue, kivo, mixtape.
+# Backup of the shared mongo used by tandra, jewellery-catalogue, kivo, mixtape.
 # Strategy: mongodump via docker exec, --gzip, atomic per-dump dir.
 #
 # Restore drill: see bin/restore-drill.sh — restores newest dump into a

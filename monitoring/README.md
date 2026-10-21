@@ -34,7 +34,7 @@ on LAN/tailnet, Grafana's own login is the only gate and Gatus is open.
 ## Config
 
 - `config/prometheus/prometheus.yml` — scrape jobs: prometheus, cadvisor, node-exporter, loki, blocky
-  (`blocky:4000`), shoppingo-api (`shoppingo-api-zlusv1:4001/api/metrics`), kivo (`kivo-api-1pae1e:3008`).
+  (`blocky:4000`), tandra-api (`app-hack-neural-circuit-s9qq5e:4001/api/metrics`), kivo (`kivo-api-1pae1e:3008`).
   The app targets use Dokploy's suffixed swarm service names; update them if the suffix changes.
 - `config/prometheus/alerts.yml` — `TargetDown`, `HostDiskSpaceLow`, `HostMemoryHigh`,
   `ContainerOOMKilled`. `prometheus.yml` has no `alerting:`/Alertmanager block, so these only show
@@ -42,8 +42,9 @@ on LAN/tailnet, Grafana's own login is the only gate and Gatus is open.
 - `config/grafana/provisioning/alerting/` — Grafana-managed alerts (swap, memory, CPU/load, root disk,
   ZFS pool `tank` not online, container restart loop, Traefik ACME renewal failing), contact point via
   `DISCORD_WEBHOOK_URL`.
-- `config/grafana/dashboards/` — host metrics, container resources, tank storage, shoppingo
-  web/api, jewellery-catalogue web/api, kivo.
+- `config/grafana/dashboards/` — host metrics, container resources, tank storage, tandra
+  web/api (`tandra-web.json` / `tandra-api.json`, uids `tandra-web` / `tandra-api`), jewellery-catalogue
+  web/api, kivo.
 - `config/gatus/config.yaml` — 32 endpoints. Container-DNS checks where Gatus shares a network with
   the target; public `https://<app>.imapps.uk` for Dokploy apps and vaultwarden; sentinel-api via its
   swarm name. Alerts: Discord, 3 failures to fire, 2 successes to resolve.

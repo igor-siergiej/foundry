@@ -9,10 +9,11 @@ This is the second layer: real end-to-end flows.
 
 ## What runs
 
-- `smoke/bin/run-smoke.sh` — iterates over `shoppingo`, `jewellery-catalogue`,
-  `kivo`, `mixtape`. For each, calls `kanban-cli e2e live <repo> --url
-  <production baseUrl>` (which runs only `@smoke`-tagged specs by default,
-  scoped to that repo's `e2e.smokeGrep` from `.kanban-cli.json`).
+- `smoke/bin/run-smoke.sh` — iterates over `tandra`, `jewellery-catalogue`,
+  `kivo`, `mixtape` (checkout directories next to foundry, e.g. `../tandra`).
+  For each, calls `kanban-cli e2e live <repo> --url <production baseUrl>`
+  (which runs only `@smoke`-tagged specs by default, scoped to that repo's
+  `e2e.smokeGrep` from `.kanban-cli.json`; tandra's is `https://app.tandra.uk`).
 - Apps without a `.kanban-cli.json` or `environments.production.baseUrl` are
   skipped with a log line — they're added when the kanban-worker bootstraps
   them.
@@ -64,7 +65,7 @@ created by hand following the dotfiles `secrets.md` pattern, and each
 app's Playwright config reads them at runtime via `bw-run`. The four
 items to create (one per app) are:
 
-- `smoke.shoppingo.account`
+- `smoke.tandra.account`
 - `smoke.jewellery-catalogue.account`
 - `smoke.kivo.account`
 - `smoke.mixtape.account`

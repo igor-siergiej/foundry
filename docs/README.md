@@ -49,7 +49,7 @@ CLI tooling for it lives in `~/dotfiles` (stow package `bin` → `~/.local/bin`,
 - `bw-run <item-name> -- <command...>` — runs a dev command with the note's `KEY=VALUE` lines exported into that process only, no file ever written. e.g. `bw-run "kivo .env" -- bun run dev`.
 - `bw-run-compose <item-name> -- <compose args...>` — same idea for `docker compose`, which needs an `--env-file` path: writes a private (`0600`) temp file for the call's duration only, then deletes it. e.g. `bw-run-compose "mixtape .env" -- up`.
 
-Known non-empty app `.env`s found on this machine so far: `kivo`, `mixtape`, `shoppingo` (`jewellery-catalogue`'s isn't on this machine — pull it from wherever it's actually used before migrating). Migration into vault items and eventually dropping the on-disk `.env`s entirely in favor of `bw-run` is tracked on the plan/kanban board, not yet done.
+Known non-empty app `.env`s found on this machine so far: `kivo`, `mixtape`, `tandra` (`jewellery-catalogue`'s isn't on this machine — pull it from wherever it's actually used before migrating). Migration into vault items and eventually dropping the on-disk `.env`s entirely in favor of `bw-run` is tracked on the plan/kanban board, not yet done.
 
 `taisei-karate`'s secrets stay as GitHub Actions secrets regardless (OIDC model, see [`taisei-karate.md` §5](./taisei-karate.md#5-secrets--auth-model)) — Vaultwarden is for personal/homelab credentials, not CI secrets. Dokploy's own per-app environment panel (prod runtime secrets) stays as the deploy-time source of truth too — see the note in the plan doc on why that isn't being centralized into Vaultwarden.
 

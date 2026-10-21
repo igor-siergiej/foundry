@@ -7,8 +7,8 @@
 #   Secondary DNS 1.1.1.1        (fallback if blocky is down)
 #
 # Consequence of the secondary: while blocky is restarting, a client that falls
-# through to 1.1.1.1 only resolves the public names (shoppingo-app,
-# kivo, dokploy); every other *.imapps.uk name has no public record and fails until
+# through to 1.1.1.1 only resolves the public names (kivo, dokploy; tandra.uk
+# isn't mapped here at all); every other *.imapps.uk name has no public record and fails until
 # blocky is back.
 
 ports:
