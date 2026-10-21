@@ -211,11 +211,11 @@ endpoints:
   # Traefik), not the swarm service name: the name carries a random suffix
   # that changes if the app is recreated, and this path also catches a
   # missing Traefik dynamic file. tandra.uk isn't in blocky (Traefik has no
-  # cert for it, docs/homelab.md §2), so the Shoppingo checks take the remote
+  # cert for it, docs/homelab.md §2), so the Tandra checks take the remote
   # path: Cloudflare edge -> tunnel -> Traefik.
-  - name: Shoppingo (API)
+  - name: Tandra (API)
     group: Apps
-    url: https://tandra.uk/api/health
+    url: https://app.tandra.uk/api/health
     interval: 60s
     timeout: 10s
     conditions:
@@ -224,9 +224,9 @@ endpoints:
     alerts:
       - type: discord
 
-  - name: Shoppingo (Web)
+  - name: Tandra (Web)
     group: Apps
-    url: https://tandra.uk/
+    url: https://app.tandra.uk/
     interval: 60s
     timeout: 10s
     conditions:
@@ -234,11 +234,11 @@ endpoints:
     alerts:
       - type: discord
 
-  # Static site on AWS CloudFront (shoppingo-site repo). blocky CNAMEs the apex
-  # to the distribution, so this takes the same path as public visitors.
-  - name: Shoppingo (Landing)
+  # Static site on AWS CloudFront (shoppingo-site repo): the tandra.uk apex and
+  # www are DNS-only CNAMEs to the distribution, the same path public visitors take.
+  - name: Tandra (Landing)
     group: Apps
-    url: https://shoppingo.imapps.uk/?home
+    url: https://tandra.uk/?home
     interval: 300s
     timeout: 10s
     conditions:
