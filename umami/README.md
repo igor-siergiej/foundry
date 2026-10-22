@@ -50,7 +50,7 @@ tracker is served **same-origin on the app's host**, not from
 | `https://app.tandra.uk/pulse/p` | `umami:3000/p` | collect endpoint (page views, events) |
 | `https://app.tandra.uk/pulse/recorder.js` | `umami:3000/recorder.js` | heatmap / replay recorder (rrweb, ~57 KB gzipped) |
 | `https://app.tandra.uk/pulse/api/record` | `umami:3000/api/record` | recorder ingest; Umami rejects posts without the tracker's session token (`x-umami-cache`) |
-| `https://app.tandra.uk/pulse/api/websites/<id>/recorder` | same path, prefix stripped | recorder settings, only for the Tandra (`b07e19e2-…`) and Tandra site (`dfe972ee-…`) website ids (read-only; Umami serves it unauthenticated) |
+| `https://app.tandra.uk/pulse/api/websites/<id>/recorder` | same path, prefix stripped | recorder settings, only for the Tandra app (`b07e19e2-…`) and Tandra site (`dfe972ee-…`) website ids (read-only; Umami serves it unauthenticated) |
 
 A `stripprefix` middleware drops `/pulse`. Any other `/pulse/*` path (login,
 `/api/*`) is not matched and falls through to `tandra-web`'s SPA, so the
@@ -75,9 +75,9 @@ The tracker derives the collect URL from its own `src` (`/pulse/p.js` →
 ### Heatmaps and replay
 
 The recorder (added 2026-10-22) fetches its settings from the website's
-`/recorder` endpoint and only records what they turn on. The Tandra website
-has **heatmaps on** (click positions and scroll depth, no page content) and
-**session replay off**; set in the dashboard under the website's settings.
+`/recorder` endpoint and only records what they turn on. Both Tandra websites
+have **heatmaps on** (click positions and scroll depth, no page content) and
+**session replay off**; set in the dashboard under each website's settings.
 It needs the tracker's session token, so it records nothing when the tracker
 is opted out (`localStorage['umami.disabled']`). Turning replay on is gated
 on the consent UI (tandra jott #116), not on routing: the ingest path is
@@ -130,7 +130,7 @@ the public internet. The trick is **Tailscale's split-DNS**:
    login is `admin/umami`. Rotate the password immediately and store
    the new one in vaultwarden under `umami.admin.password`.
 4. Create a "Website" for each consumer:
-   - Tandra (the app): domain `app.tandra.uk` (website id
+   - Tandra app: domain `app.tandra.uk` (website id
      `b07e19e2-6c29-432f-a4f1-fe280b7f3794`). Heatmaps on; session replay
      OFF until the consent UI (tandra jott #116) lands.
    - Tandra site (the `tandra.uk` landing site, `tandra-site` repo): domain
@@ -160,7 +160,7 @@ curl -s -o /dev/null -w '%{http_code} %{content_type}\n' https://app.tandra.uk/p
 # expect: 200 text/html (the SPA shell, not Umami)
 ```
 
-Then load the app off-network and check the Tandra website's Realtime view.
+Then load the app off-network and check the Tandra app website's Realtime view.
 
 ## Upgrade story
 
