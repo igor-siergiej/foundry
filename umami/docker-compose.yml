@@ -6,12 +6,19 @@ name: umami
 # clients resolve it via blocky to 192.168.68.17 (the tailnet reaches that
 # through foundry's subnet route) and hit Traefik on :443.
 #
-# The tracker is public (tandra #138): Traefik also routes exactly two paths
-# on the Tandra app's own host to umami, so every visitor loads the script
-# and sends events same-origin, through the tunnel like the rest of the app:
+# The tracker is public (tandra #138): Traefik also routes a fixed set of
+# paths on the Tandra app's own host to umami, so every visitor loads the
+# scripts and sends data same-origin, through the tunnel like the rest of
+# the app:
 #
-#   https://app.tandra.uk/pulse/p.js  →  umami:3000/p.js  (tracker script)
-#   https://app.tandra.uk/pulse/p     →  umami:3000/p     (collect endpoint)
+#   https://app.tandra.uk/pulse/p.js         →  umami:3000/p.js  (tracker script)
+#   https://app.tandra.uk/pulse/p            →  umami:3000/p     (collect endpoint)
+#   https://app.tandra.uk/pulse/recorder.js  →  heatmap/replay recorder script
+#   https://app.tandra.uk/pulse/api/record   →  recorder ingest (needs the
+#                                               tracker's session token)
+#   https://app.tandra.uk/pulse/api/websites/<tandra id>/recorder
+#                                            →  recorder settings (read-only,
+#                                               unauthenticated in Umami)
 #
 # Nothing else under /pulse reaches umami (it falls through to the SPA), so
 # the login and dashboard API stay off the public internet. The router rule
@@ -91,7 +98,7 @@ services:
       - "traefik.http.routers.umami-web.entrypoints=web"
       - "traefik.http.routers.umami-web.middlewares=redirect-to-https@docker"
       # Public tracker paths on the Tandra app host (see header comment).
-      - "traefik.http.routers.umami-tracker.rule=Host(`app.tandra.uk`) && (Path(`/pulse/p.js`) || Path(`/pulse/p`))"
+      - "traefik.http.routers.umami-tracker.rule=Host(`app.tandra.uk`) && (Path(`/pulse/p.js`) || Path(`/pulse/p`) || Path(`/pulse/recorder.js`) || Path(`/pulse/api/record`) || Path(`/pulse/api/websites/b07e19e2-6c29-432f-a4f1-fe280b7f3794/recorder`))"
       - "traefik.http.routers.umami-tracker.entrypoints=websecure"
       - "traefik.http.routers.umami-tracker.tls=true"
       - "traefik.http.routers.umami-tracker.tls.certresolver=letsencrypt"

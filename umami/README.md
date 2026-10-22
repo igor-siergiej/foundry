@@ -48,6 +48,9 @@ tracker is served **same-origin on the app's host**, not from
 |---|---|---|
 | `https://app.tandra.uk/pulse/p.js` | `umami:3000/p.js` | tracker script |
 | `https://app.tandra.uk/pulse/p` | `umami:3000/p` | collect endpoint (page views, events) |
+| `https://app.tandra.uk/pulse/recorder.js` | `umami:3000/recorder.js` | heatmap / replay recorder (rrweb, ~57 KB gzipped) |
+| `https://app.tandra.uk/pulse/api/record` | `umami:3000/api/record` | recorder ingest; Umami rejects posts without the tracker's session token (`x-umami-cache`) |
+| `https://app.tandra.uk/pulse/api/websites/b07e19e2-…/recorder` | same path, prefix stripped | recorder settings for the Tandra website only (read-only; Umami serves it unauthenticated) |
 
 A `stripprefix` middleware drops `/pulse`. Any other `/pulse/*` path (login,
 `/api/*`) is not matched and falls through to `tandra-web`'s SPA, so the
@@ -69,8 +72,16 @@ The tracker derives the collect URL from its own `src` (`/pulse/p.js` →
 `/pulse/p`), so Tandra's runtime config only sets
 `analytics.host = "https://app.tandra.uk/pulse"`.
 
-Session replay (tandra jott #116) needs Umami's replay script and endpoint
-added to this router when that lands; they are deliberately not exposed yet.
+### Heatmaps and replay
+
+The recorder (added 2026-10-22) fetches its settings from the website's
+`/recorder` endpoint and only records what they turn on. The Tandra website
+has **heatmaps on** (click positions and scroll depth, no page content) and
+**session replay off**; set in the dashboard under the website's settings.
+It needs the tracker's session token, so it records nothing when the tracker
+is opted out (`localStorage['umami.disabled']`). Turning replay on is gated
+on the consent UI (tandra jott #116), not on routing: the ingest path is
+shared.
 
 ## Dashboard access: Tailscale split-DNS, no public DNS
 

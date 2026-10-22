@@ -102,7 +102,7 @@ Public hostnames (the whole list; §2 has the history):
 
 | Hostname | Service | Access |
 |---|---|---|
-| `app.tandra.uk` | `tandra-web` / `tandra-api` (the Tandra app; explicit tunnel ingress rule). Also `/pulse/p.js` + `/pulse/p` → `umami` (tracker script + collect only, Traefik `umami-tracker` router; tandra jott #138) | none (zone has no Access apps) |
+| `app.tandra.uk` | `tandra-web` / `tandra-api` (the Tandra app; explicit tunnel ingress rule). Also a fixed set of `/pulse/*` paths → `umami` (tracker script + collect, heatmap recorder script + ingest + settings; nothing else, Traefik `umami-tracker` router; tandra jott #138) | none (zone has no Access apps) |
 | `tandra.uk`, `www.` | not foundry: Tandra landing site on AWS CloudFront (`tandra-site`) | none (DNS-only, never enters the tunnel) |
 | `kivo.tandra.uk` | `kivo` (auth host for the app on `app.tandra.uk`; explicit tunnel ingress rule) | none |
 | `kivo.imapps.uk` | `kivo` | bypass |
@@ -248,7 +248,7 @@ None of these publish a host port (`ports:` block) — confirmed against the liv
 | vaultwarden | `vaultwarden/server:1.37.2` | vault.imapps.uk | self-hosted secrets/password vault, replaces plaintext `~/notes/secrets/tokens.md`; ZFS bind mount (`/mnt/tank/shared/vaultwarden`); see [`README.md`](./README.md#secrets) and [`../vaultwarden/README.md`](../vaultwarden/README.md) |
 | opensearch | `opensearch:2.19.1` | 9200, internal-only on `dokploy-network`, no Traefik route | tandra recipe-discovery index; derived from mongo, not backed up; security plugin off. See [`../opensearch/README.md`](../opensearch/README.md) |
 | minio-gallery | `machines/filestash@sha256:edb76c…` | 8334; Traefik `minio-gallery.imapps.uk` on the **`web` (HTTP) entrypoint only** | Filestash S3 browser; sign in to the S3 backend with endpoint `http://rustfs:9000` and `creds.rustfs-filestash`; own admin login. HTTP-only router, see `../SECURITY-AUDIT.md` #11. See [`../minio-gallery/README.md`](../minio-gallery/README.md) |
-| umami | `umami-software/umami@sha256:6cd9d…` + `postgres:16-alpine@sha256:1a66d7…` | Dashboard `analytics.imapps.uk`: Tailscale/LAN-only, no public DNS record (§3.5); tailnet split-DNS routes `*.imapps.uk` → blocky on 192.168.68.17, which the foundry subnet route carries over Tailscale. Tracker: public, same-origin on `app.tandra.uk/pulse/p.js` + `/pulse/p` only (Traefik `umami-tracker` router, `stripprefix /pulse`) | tandra self-hosted analytics (wrapper `packages/web/src/utils/analytics.ts`, host in the `tandra-web` `config.json` file mount); one Umami instance backs all consumers (jewellery-catalogue next). See [`../umami/README.md`](../umami/README.md) (added by #72). Keep `analytics.imapps.uk` out of Cloudflare DNS. |
+| umami | `umami-software/umami@sha256:6cd9d…` + `postgres:16-alpine@sha256:1a66d7…` | Dashboard `analytics.imapps.uk`: Tailscale/LAN-only, no public DNS record (§3.5); tailnet split-DNS routes `*.imapps.uk` → blocky on 192.168.68.17, which the foundry subnet route carries over Tailscale. Tracker + heatmap recorder: public, same-origin on exact `app.tandra.uk/pulse/*` paths only (Traefik `umami-tracker` router, `stripprefix /pulse`; list in the umami README) | tandra self-hosted analytics (wrapper `packages/web/src/utils/analytics.ts`, host in the `tandra-web` `config.json` file mount); one Umami instance backs all consumers (jewellery-catalogue next). See [`../umami/README.md`](../umami/README.md) (added by #72). Keep `analytics.imapps.uk` out of Cloudflare DNS. |
 
 ### `gtnh` (game server)
 | Service | Image | Ingress | Notes |
