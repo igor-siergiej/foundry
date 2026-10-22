@@ -398,3 +398,20 @@ endpoints:
   # No Umami Postgres check: umami-db sits only on the private `umami`
   # network (kept off dokploy-network on purpose), so Gatus can't reach it.
   # Its container healthcheck (pg_isready) is what homelab-status reports.
+
+  - name: Umami tracker (public)
+    group: Analytics
+    # The public tracker script on the Tandra app host (tandra jott #138),
+    # via 1.1.1.1 so it takes the real remote path like an off-network
+    # visitor. The body check catches a routing break: a miss falls through
+    # to the SPA, which also answers 200.
+    url: https://app.tandra.uk/pulse/p.js
+    client:
+      dns-resolver: tcp://1.1.1.1:53
+    interval: 300s
+    timeout: 15s
+    conditions:
+      - "[STATUS] == 200"
+      - "[BODY] == pat(*website-id*)"
+    alerts:
+      - type: discord
