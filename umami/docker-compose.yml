@@ -16,9 +16,11 @@ name: umami
 #   https://app.tandra.uk/pulse/recorder.js  →  heatmap/replay recorder script
 #   https://app.tandra.uk/pulse/api/record   →  recorder ingest (needs the
 #                                               tracker's session token)
-#   https://app.tandra.uk/pulse/api/websites/<tandra id>/recorder
+#   https://app.tandra.uk/pulse/api/websites/<website id>/recorder
 #                                            →  recorder settings (read-only,
-#                                               unauthenticated in Umami)
+#                                               unauthenticated in Umami), only
+#                                               for the Tandra app and Tandra
+#                                               site websites
 #
 # Nothing else under /pulse reaches umami (it falls through to the SPA), so
 # the login and dashboard API stay off the public internet. The router rule
@@ -98,7 +100,7 @@ services:
       - "traefik.http.routers.umami-web.entrypoints=web"
       - "traefik.http.routers.umami-web.middlewares=redirect-to-https@docker"
       # Public tracker paths on the Tandra app host (see header comment).
-      - "traefik.http.routers.umami-tracker.rule=Host(`app.tandra.uk`) && (Path(`/pulse/p.js`) || Path(`/pulse/p`) || Path(`/pulse/recorder.js`) || Path(`/pulse/api/record`) || Path(`/pulse/api/websites/b07e19e2-6c29-432f-a4f1-fe280b7f3794/recorder`))"
+      - "traefik.http.routers.umami-tracker.rule=Host(`app.tandra.uk`) && (Path(`/pulse/p.js`) || Path(`/pulse/p`) || Path(`/pulse/recorder.js`) || Path(`/pulse/api/record`) || Path(`/pulse/api/websites/b07e19e2-6c29-432f-a4f1-fe280b7f3794/recorder`) || Path(`/pulse/api/websites/dfe972ee-98e3-4732-b9b0-2427252f1435/recorder`))"
       - "traefik.http.routers.umami-tracker.entrypoints=websecure"
       - "traefik.http.routers.umami-tracker.tls=true"
       - "traefik.http.routers.umami-tracker.tls.certresolver=letsencrypt"

@@ -50,7 +50,7 @@ tracker is served **same-origin on the app's host**, not from
 | `https://app.tandra.uk/pulse/p` | `umami:3000/p` | collect endpoint (page views, events) |
 | `https://app.tandra.uk/pulse/recorder.js` | `umami:3000/recorder.js` | heatmap / replay recorder (rrweb, ~57 KB gzipped) |
 | `https://app.tandra.uk/pulse/api/record` | `umami:3000/api/record` | recorder ingest; Umami rejects posts without the tracker's session token (`x-umami-cache`) |
-| `https://app.tandra.uk/pulse/api/websites/b07e19e2-…/recorder` | same path, prefix stripped | recorder settings for the Tandra website only (read-only; Umami serves it unauthenticated) |
+| `https://app.tandra.uk/pulse/api/websites/<id>/recorder` | same path, prefix stripped | recorder settings, only for the Tandra (`b07e19e2-…`) and Tandra site (`dfe972ee-…`) website ids (read-only; Umami serves it unauthenticated) |
 
 A `stripprefix` middleware drops `/pulse`. Any other `/pulse/*` path (login,
 `/api/*`) is not matched and falls through to `tandra-web`'s SPA, so the
@@ -130,9 +130,15 @@ the public internet. The trick is **Tailscale's split-DNS**:
    login is `admin/umami`. Rotate the password immediately and store
    the new one in vaultwarden under `umami.admin.password`.
 4. Create a "Website" for each consumer:
-   - Tandra: domain `app.tandra.uk` (website id
-     `b07e19e2-6c29-432f-a4f1-fe280b7f3794`). Session recording OFF until
-     the consent UI (tandra jott #116) lands.
+   - Tandra (the app): domain `app.tandra.uk` (website id
+     `b07e19e2-6c29-432f-a4f1-fe280b7f3794`). Heatmaps on; session replay
+     OFF until the consent UI (tandra jott #116) lands.
+   - Tandra site (the `tandra.uk` landing site, `tandra-site` repo): domain
+     `tandra.uk` (website id `dfe972ee-98e3-4732-b9b0-2427252f1435`), split
+     from the app's website on 2026-10-22. Same settings. It loads the
+     tracker cross-origin from `app.tandra.uk/pulse`; Umami allows any
+     origin on the collect and record endpoints. Visits before the split
+     are in the app's website under hostname `tandra.uk`.
    - jewellery-catalogue: same shape, domain
      `jewellery-catalogue.imapps.uk`, do not enable until the
      catalogue consent UI exists.
