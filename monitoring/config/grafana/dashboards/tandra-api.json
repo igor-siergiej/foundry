@@ -106,7 +106,8 @@
               "service_name": true,
               "stream": true,
               "level": true,
-              "detected_level": true
+              "detected_level": true,
+              "labelTypes": true
             },
             "renameByName": { "Time": "time" },
             "indexByName": { "Time": 0, "username": 1, "method": 2 }
