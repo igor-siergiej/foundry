@@ -66,11 +66,61 @@
       "fieldConfig": { "defaults": { "unit": "reqps", "color": { "mode": "thresholds" }, "thresholds": { "mode": "absolute", "steps": [{ "color": "green" }, { "color": "red", "value": 0.1 }] } } }
     },
     {
+      "id": 17,
+      "type": "stat",
+      "title": "Registrations (7d)",
+      "datasource": { "type": "loki", "uid": "P8E80F9AEF21F6940" },
+      "gridPos": { "h": 8, "w": 6, "x": 0, "y": 4 },
+      "targets": [
+        { "refId": "A", "expr": "sum(count_over_time({container=~\"app-hack-neural-circuit-s9qq5e.*\"} |= \"User registered\" [7d])) or vector(0)", "instant": true, "queryType": "instant" }
+      ],
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "value" },
+      "fieldConfig": { "defaults": { "unit": "short", "decimals": 0, "color": { "mode": "thresholds" }, "thresholds": { "mode": "absolute", "steps": [{ "color": "blue" }] } } }
+    },
+    {
+      "id": 18,
+      "type": "table",
+      "title": "Recent registrations (30d)",
+      "datasource": { "type": "loki", "uid": "P8E80F9AEF21F6940" },
+      "gridPos": { "h": 8, "w": 18, "x": 6, "y": 4 },
+      "timeFrom": "30d",
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "{container=~\"app-hack-neural-circuit-s9qq5e.*\"} |= \"User registered\" | json username=\"meta[0].username\", method=\"meta[0].method\"",
+          "queryType": "range"
+        }
+      ],
+      "transformations": [
+        { "id": "extractFields", "options": { "source": "labels", "keepLabels": true } },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "labels": true,
+              "tsNs": true,
+              "id": true,
+              "Line": true,
+              "container": true,
+              "job": true,
+              "service_name": true,
+              "stream": true,
+              "level": true,
+              "detected_level": true
+            },
+            "renameByName": { "Time": "time" },
+            "indexByName": { "Time": 0, "username": 1, "method": 2 }
+          }
+        }
+      ],
+      "options": { "showHeader": true, "sortBy": [{ "displayName": "time", "desc": true }] }
+    },
+    {
       "id": 5,
       "type": "timeseries",
       "title": "AI images served (fresh vs cache)",
       "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 4 },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 12 },
       "targets": [
         { "refId": "A", "expr": "sum by (source) (rate(tandra_images_served_total[5m]))", "legendFormat": "{{source}}" }
       ],
@@ -82,7 +132,7 @@
       "type": "timeseries",
       "title": "Image generation events",
       "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 4 },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 12 },
       "targets": [
         { "refId": "A", "expr": "sum by (provider) (rate(tandra_images_generated_total[5m]))", "legendFormat": "generated {{provider}}" },
         { "refId": "B", "expr": "sum by (provider) (rate(tandra_image_generation_failures_total[5m]))", "legendFormat": "failed {{provider}}" }
@@ -94,7 +144,7 @@
       "type": "timeseries",
       "title": "Requests by status",
       "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 12 },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 20 },
       "targets": [
         { "refId": "A", "expr": "sum by (status) (rate(tandra_api_http_requests_total[5m]))", "legendFormat": "{{status}}" }
       ],
@@ -105,7 +155,7 @@
       "type": "timeseries",
       "title": "Latency p50 / p95 / p99 (all routes)",
       "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 12 },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 20 },
       "targets": [
         { "refId": "A", "expr": "histogram_quantile(0.50, sum by (le) (rate(tandra_api_http_request_duration_seconds_bucket[5m])))", "legendFormat": "p50" },
         { "refId": "B", "expr": "histogram_quantile(0.95, sum by (le) (rate(tandra_api_http_request_duration_seconds_bucket[5m])))", "legendFormat": "p95" },
@@ -118,7 +168,7 @@
       "type": "table",
       "title": "Top routes by traffic",
       "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 20 },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 28 },
       "targets": [
         { "refId": "A", "expr": "topk(10, sum by (route, method) (rate(tandra_api_http_requests_total[5m])))", "instant": true, "queryType": "instant", "format": "table" }
       ],
@@ -132,7 +182,7 @@
       "type": "table",
       "title": "Top routes by p95 latency",
       "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 20 },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 28 },
       "targets": [
         { "refId": "A", "expr": "topk(10, histogram_quantile(0.95, sum by (le, route) (rate(tandra_api_http_request_duration_seconds_bucket[5m]))))", "instant": true, "queryType": "instant", "format": "table" }
       ],
@@ -147,7 +197,7 @@
       "type": "timeseries",
       "title": "Container CPU",
       "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 28 },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 36 },
       "targets": [
         { "refId": "A", "expr": "sum by (name) (rate(container_cpu_usage_seconds_total{name=~\"app-hack-neural-circuit-s9qq5e.*\"}[5m]))", "legendFormat": "{{name}}" }
       ],
@@ -158,7 +208,7 @@
       "type": "timeseries",
       "title": "Container memory",
       "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 28 },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 36 },
       "targets": [
         { "refId": "A", "expr": "sum by (name) (container_memory_usage_bytes{name=~\"app-hack-neural-circuit-s9qq5e.*\"})", "legendFormat": "{{name}}" }
       ],
@@ -169,7 +219,7 @@
       "type": "timeseries",
       "title": "Unauthorized attempts (from logs)",
       "datasource": { "type": "loki", "uid": "P8E80F9AEF21F6940" },
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 36 },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 44 },
       "targets": [
         { "refId": "A", "expr": "sum(rate({container=~\"app-hack-neural-circuit-s9qq5e.*\"} |~ \"Unauthorized.*attempt\" [5m]))", "legendFormat": "unauthorized" }
       ]
@@ -179,7 +229,7 @@
       "type": "stat",
       "title": "Distinct userIds (24h, from logs)",
       "datasource": { "type": "loki", "uid": "P8E80F9AEF21F6940" },
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 36 },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 44 },
       "targets": [
         { "refId": "A", "expr": "count(count by (userId) (count_over_time({container=~\"app-hack-neural-circuit-s9qq5e.*\"} | json userId=\"meta[0].userId\" | userId != \"\" [24h])))", "instant": true, "queryType": "instant" }
       ],
@@ -190,7 +240,7 @@
       "type": "table",
       "title": "Generated images (24h)",
       "datasource": { "type": "loki", "uid": "P8E80F9AEF21F6940" },
-      "gridPos": { "h": 10, "w": 24, "x": 0, "y": 44 },
+      "gridPos": { "h": 10, "w": 24, "x": 0, "y": 52 },
       "targets": [
         {
           "refId": "A",
@@ -236,7 +286,7 @@
       "type": "logs",
       "title": "Recent errors",
       "datasource": { "type": "loki", "uid": "P8E80F9AEF21F6940" },
-      "gridPos": { "h": 10, "w": 24, "x": 0, "y": 54 },
+      "gridPos": { "h": 10, "w": 24, "x": 0, "y": 62 },
       "targets": [
         { "refId": "A", "expr": "{container=~\"app-hack-neural-circuit-s9qq5e.*\"} | json | level=\"error\"" }
       ],
