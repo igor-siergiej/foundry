@@ -70,7 +70,7 @@ services:
       - umami
 
   umami:
-    image: docker.umami.is/umami-software/umami@sha256:6cd9d24a836fac5c226c3c90cb25141d4560b7270b7827f393ccf09bf3f83b18
+    image: docker.umami.is/umami-software/umami@sha256:e69d1a7932e9dab0fc523edc7be1f3a53f3c261f57856fc2167ae74a8fc022e8
     container_name: umami
     restart: unless-stopped
     depends_on:
