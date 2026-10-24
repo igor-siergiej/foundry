@@ -26,13 +26,12 @@ for cfg in "$HERE"/config/*.sh; do
   # SCHEDULE_DAYS overrides RETENTION_DAYS-derived expectation.
   local_schedule_days="${SCHEDULE_DAYS:-$(( RETENTION_DAYS / 2 ))}"
 
-  local dest="$BACKUPS_ROOT/$svc"
+  dest="$BACKUPS_ROOT/$svc"
   if [ ! -d "$dest" ]; then
     stale+=("$svc (no $dest/)")
     continue
   fi
 
-  local latest
   latest="$(find "$dest" -mindepth 1 \( -type f -o -type d \) \
               | sort -r | head -n 1)"
   if [ -z "$latest" ]; then
@@ -40,8 +39,8 @@ for cfg in "$HERE"/config/*.sh; do
     continue
   fi
 
-  local mtime_epoch; mtime_epoch="$(stat -c %Y "$latest")"
-  local age_days=$(( (now_epoch - mtime_epoch) / 86400 ))
+  mtime_epoch="$(stat -c %Y "$latest")"
+  age_days=$(( (now_epoch - mtime_epoch) / 86400 ))
   if [ "$age_days" -gt "$local_schedule_days" ]; then
     stale+=("$svc (last: $age_days d ago, threshold: $local_schedule_days d)")
   fi

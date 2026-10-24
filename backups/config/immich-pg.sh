@@ -64,9 +64,11 @@ do_restore_drill() {
     return 1
   fi
 
-  # Wait for pg to come up.
-  for _ in {1..30}; do
-    if docker exec "$drill_container" pg_isready -U postgres >/dev/null 2>&1; then
+  # Wait for pg to come up. Probe TCP, not the unix socket: the image's init
+  # runs a temporary socket-only server first and restarts it, so a socket
+  # probe passes early and the restore then hits the restart.
+  for _ in {1..60}; do
+    if docker exec "$drill_container" pg_isready -h 127.0.0.1 -U postgres >/dev/null 2>&1; then
       break
     fi
     sleep 1
