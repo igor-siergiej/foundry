@@ -106,6 +106,13 @@ services:
       - "traefik.http.routers.umami-tracker.service=umami"
       - "traefik.http.routers.umami-tracker.middlewares=umami-tracker-strip"
       - "traefik.http.middlewares.umami-tracker-strip.stripprefix.prefixes=/pulse"
+      # Same tracker surface on the jewellery-catalogue host (jott #168).
+      - "traefik.http.routers.umami-tracker-jc.rule=Host(`jewellery-catalogue.imapps.uk`) && (Path(`/pulse/p.js`) || Path(`/pulse/p`) || Path(`/pulse/recorder.js`) || Path(`/pulse/api/record`) || Path(`/pulse/api/websites/7ce1421b-66bf-4da9-8340-3e418f32e72c/recorder`))"
+      - "traefik.http.routers.umami-tracker-jc.entrypoints=websecure"
+      - "traefik.http.routers.umami-tracker-jc.tls=true"
+      - "traefik.http.routers.umami-tracker-jc.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.umami-tracker-jc.service=umami"
+      - "traefik.http.routers.umami-tracker-jc.middlewares=umami-tracker-strip"
     networks:
       - dokploy-network
       - umami

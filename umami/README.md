@@ -52,6 +52,15 @@ tracker is served **same-origin on the app's host**, not from
 | `https://app.tandra.uk/pulse/recorder.js` | `umami:3000/recorder.js` | heatmap / replay recorder (rrweb, ~57 KB gzipped) |
 | `https://app.tandra.uk/pulse/api/record` | `umami:3000/api/record` | recorder ingest; Umami rejects posts without the tracker's session token (`x-umami-cache`) |
 | `https://app.tandra.uk/pulse/api/websites/<id>/recorder` | same path, prefix stripped | recorder settings, only for the Tandra app (`b07e19e2-…`) and Tandra site (`dfe972ee-…`) website ids (read-only; Umami serves it unauthenticated) |
+| `https://jewellery-catalogue.imapps.uk/pulse/p.js` | `umami:3000/p.js` | tracker script (`umami-tracker-jc` router) |
+| `https://jewellery-catalogue.imapps.uk/pulse/p` | `umami:3000/p` | collect endpoint |
+| `https://jewellery-catalogue.imapps.uk/pulse/recorder.js` | `umami:3000/recorder.js` | heatmap recorder |
+| `https://jewellery-catalogue.imapps.uk/pulse/api/record` | `umami:3000/api/record` | recorder ingest |
+| `https://jewellery-catalogue.imapps.uk/pulse/api/websites/<id>/recorder` | same path, prefix stripped | recorder settings, only for the Jewellery Catalogue website id (`7ce1421b-…`) |
+
+The jewellery-catalogue rows are the same shape on a second router,
+`umami-tracker-jc`, which shares the `umami-tracker-strip` middleware and
+out-ranks `jewellery-catalogue-web`'s `Host` rule the same way.
 
 A `stripprefix` middleware drops `/pulse`. Any other `/pulse/*` path (login,
 `/api/*`) is not matched and falls through to `tandra-web`'s SPA, so the
@@ -140,9 +149,12 @@ the public internet. The trick is **Tailscale's split-DNS**:
      tracker cross-origin from `app.tandra.uk/pulse`; Umami allows any
      origin on the collect and record endpoints. Visits before the split
      are in the app's website under hostname `tandra.uk`.
-   - jewellery-catalogue: same shape, domain
-     `jewellery-catalogue.imapps.uk`, do not enable until the
-     catalogue consent UI exists.
+   - Jewellery Catalogue: domain `jewellery-catalogue.imapps.uk` (website id
+     `7ce1421b-66bf-4da9-8340-3e418f32e72c`, created 2026-10-24, jott #126). Heatmaps on; session
+     replay OFF until the catalogue consent UI exists. Tracker served from
+     `https://jewellery-catalogue.imapps.uk/pulse` (`umami-tracker-jc`
+     router); runtime config is the Dokploy file mount
+     `0kCTqeH-fQ2PdxwyGey_O` on `jewellery-catalogue-web`.
 5. Copy each `websiteId` into the consumer's runtime config. Tandra's live
    `config.json` is the Dokploy file mount `DkkAGZ2b5-KmuKt1qxHwg` on
    `tandra-web` (mounted at `/usr/share/nginx/html/config.json`):
