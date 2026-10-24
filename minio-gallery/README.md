@@ -12,8 +12,8 @@ Web S3 browser with image thumbnails and a gallery viewer over the app image buc
 ## Ingress
 
 - `minio-gallery.imapps.uk` → `minio-gallery:8334`. Domain is configured on the Dokploy compose with
-  **HTTPS off** (no certificate): the Traefik router is on the `web` (HTTP) entrypoint only, with no
-  redirect to HTTPS.
+  **HTTPS on**, certificate `letsencrypt` (since 2026-10-24, SECURITY-AUDIT #11): Dokploy generates the
+  `websecure` router with the letsencrypt certresolver and a `web` router that redirects to HTTPS (308).
 - Cloudflare Access: not in the bypass list in
   [homelab.md §6](../docs/homelab.md#6-cloudflare-access-model-set-2026-default-deny), so remote traffic falls
   under the wildcard require-email app. Not verified live.
@@ -45,7 +45,7 @@ form on each sign-in:
 | Access key / secret | `creds.rustfs-filestash` (RustFS user `filestash`, built-in `readwrite` policy) |
 
 The API rejects requests whose host isn't `APPLICATION_URL` ("Not Allowed"), so test it through
-`http://minio-gallery.imapps.uk`, not `minio-gallery:8334`.
+`https://minio-gallery.imapps.uk`, not `minio-gallery:8334`.
 
 ## Deploy / change
 
