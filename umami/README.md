@@ -12,14 +12,15 @@ fits easily and is what [jott #72 / foundry #101] landed on.
 
 Decided **2026-10-16**; dashboard made tailnet/LAN-only 2026-10-18; tracker
 made public on the app's own host 2026-10-22 (tandra jott #138). One
-instance, one "website" per consumer app — Tandra first,
-jewellery-catalogue next, sentinel uses Loki only.
+instance, one "website" per consumer app: Tandra, and jewellery-catalogue
+(since 2026-10-24, jott #126/#168, host public the same day); sentinel uses
+Loki only.
 
 ## Topology
 
 | Service | Image | Port | Notes |
 |---|---|---|---|
-| `umami` | `umami-software/umami@sha256:6cd9d24a…` | 3000 (internal) | Dashboard: `analytics.imapps.uk`, LAN/tailnet-only (no public DNS record). Tracker: two public paths on `app.tandra.uk` (below). |
+| `umami` | `umami-software/umami@sha256:6cd9d24a…` | 3000 (internal) | Dashboard: `analytics.imapps.uk`, LAN/tailnet-only (no public DNS record). Tracker: fixed public `/pulse/*` paths on `app.tandra.uk` and `jewellery-catalogue.imapps.uk` (below). |
 | `umami-db` | `postgres:16-alpine@sha256:1a66d744…` | 5432 (internal-only on `umami` network) | Bind-mounted `/mnt/tank/shared/umami`; `TZ=UTC`. |
 
 Both containers are joined to the `dokploy-network` so Traefik can
