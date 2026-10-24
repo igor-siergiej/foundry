@@ -35,6 +35,7 @@ Umami's defaults are renamed to dodge common adblock / privacy lists:
 | `TRACKER_SCRIPT_NAME` | `script.js` | `p.js` | Reduces the EasyPrivacy hit rate on the tracker file. |
 | `COLLECT_API_ENDPOINT` | `/api/send` | `/p` | Same. |
 | `BASE_PATH` | `/` | `/` | — |
+| `DISABLE_BOT_CHECK` | unset (check on) | unset | The `websiteId` is public in every browser, so the bot check is what keeps headless scripts and bare `curl` POSTs out of the dashboard. |
 
 ## Public tracker surface
 

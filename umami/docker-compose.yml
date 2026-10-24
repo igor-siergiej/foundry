@@ -85,7 +85,6 @@ services:
       TRACKER_SCRIPT_NAME: p.js
       COLLECT_API_ENDPOINT: /p
       BASE_PATH: /
-      DISABLE_BOT_CHECK: "1"
       # TZ UTC so day boundaries line up with what humans expect.
       TZ: UTC
     labels:
