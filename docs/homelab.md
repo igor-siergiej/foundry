@@ -222,6 +222,7 @@ Each infra/gtnh stack with a README links it in the Notes column. Dokploy also a
 | jewellery-catalogue-web / -api | app | jewellery-catalogue.imapps.uk | mongo + rustfs (`rustfs:9000`, own IAM user) |
 | kivo | app | kivo.imapps.uk, kivo.tandra.uk | mongo; own JWT auth. `kivo.tandra.uk` exists so Tandra on `app.tandra.uk` gets its `SameSite=Strict` refresh cookie (same site) |
 | jott | compose (`server/compose.yaml` in `igor-siergiej/jott`, built from source) | tailnet only: `100.79.92.93:8787` (host-published on the tailnet IP) | sync server; named volume `jott-data` on host disk; **no Gatus check**, not backed up |
+| ntfy | compose (`ntfy/docker-compose.yml`) | tailnet only: `100.79.92.93:8090` (host-published on the tailnet IP) | push notifications for the kanban-cli factory dispatcher, topic `jott-factory`; no auth, named volume `ntfy-cache` (24h message cache); **no Gatus check**, not backed up |
 
 ### `nas` (compose stacks, media)
 | Stack | Image | Container port | Ingress |
