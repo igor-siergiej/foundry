@@ -12,6 +12,7 @@ Docker Compose stacks for the `imapps.uk` Dokploy homelab, running on the host `
 - `blocky` is the whole LAN's DNS. Never leave it down.
 - Never leave `BW_SESSION` exported beyond a single render step. Vaultwarden runs on this host.
 - New service: add a Gatus endpoint in `monitoring/config/gatus/config.yaml` and a row in `docs/homelab.md` §5 in the same change.
+- `SECURITY-AUDIT.md` is local-only and gitignored: this repo is public. Never commit it, never `git add -f` it, and never paste open findings into tracked files.
 
 ## Layout
-One directory per stack (`blocky/`, `monitoring/`, `immich/`, …), each with a `docker-compose.yml`. Security findings: `SECURITY-AUDIT.md`.
+One directory per stack (`blocky/`, `monitoring/`, `immich/`, …), each with a `docker-compose.yml`. Security findings: `SECURITY-AUDIT.md` (local checkout only, not in git).

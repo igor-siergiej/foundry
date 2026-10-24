@@ -12,3 +12,6 @@ Thumbs.db
 gtnh/*
 !gtnh/docker-compose.yml
 !gtnh/README.md
+
+# Security findings stay local: this repo is public
+SECURITY-AUDIT.md
