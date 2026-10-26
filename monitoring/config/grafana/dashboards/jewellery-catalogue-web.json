@@ -1199,17 +1199,17 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "quantile_over_time(0.50, {apps-jewellerycatalogueweb-.*} | json | __error__=\"\" | method!=\"\" | unwrap(rt) [$__interval])",
+          "expr": "quantile_over_time(0.50, {container=~\"apps-jewellerycatalogueweb-.*\"} | json | __error__=\"\" | method!=\"\" | unwrap rt [$__interval]) by ()",
           "legendFormat": "p50"
         },
         {
           "refId": "B",
-          "expr": "quantile_over_time(0.95, {apps-jewellerycatalogueweb-.*} | json | __error__=\"\" | method!=\"\" | unwrap(rt) [$__interval])",
+          "expr": "quantile_over_time(0.95, {container=~\"apps-jewellerycatalogueweb-.*\"} | json | __error__=\"\" | method!=\"\" | unwrap rt [$__interval]) by ()",
           "legendFormat": "p95"
         },
         {
           "refId": "C",
-          "expr": "quantile_over_time(0.99, {apps-jewellerycatalogueweb-.*} | json | __error__=\"\" | method!=\"\" | unwrap(rt) [$__interval])",
+          "expr": "quantile_over_time(0.99, {container=~\"apps-jewellerycatalogueweb-.*\"} | json | __error__=\"\" | method!=\"\" | unwrap rt [$__interval]) by ()",
           "legendFormat": "p99"
         }
       ],
@@ -1241,7 +1241,7 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "topk(15, sum by (cf_ip) (count_over_time({apps-jewellerycatalogueweb-.*} | json | __error__=\"\" | cf_ip!=\"\" | cf_ip!=\"-\" [$__range])))",
+          "expr": "topk(15, sum by (cf_ip) (count_over_time({container=~\"apps-jewellerycatalogueweb-.*\"} | json | __error__=\"\" | cf_ip!=\"\" | cf_ip!=\"-\" [$__range])))",
           "legendFormat": "{{cf_ip}}"
         }
       ],
