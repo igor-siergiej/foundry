@@ -39,8 +39,8 @@ services:
       - gtnh-data:/data
 
   gtnh-tailscale:
-    # Pinned 2026-10-18 (SECURITY-AUDIT #8); Dependabot bumps via :latest's new digest
-    image: tailscale/tailscale@sha256:c507f3a2a6ab1cabd8d809b98edeb41edbd5c3fb6ad9632ffd098b4c7d0b4065
+    # Pinned 2026-10-26 (v1.104.2, go1.27.3: eMudhra intermediates blocked, CVE-2026-111943; SECURITY-AUDIT #8); Dependabot bumps via :latest's new digest
+    image: tailscale/tailscale@sha256:b11583ad2e93e4671128538c88cf11f460444a5d7e449311dd1933a400ab849d
     container_name: gtnh-tailscale
     hostname: gtnh
     restart: unless-stopped
