@@ -7,7 +7,8 @@ Audiobookshelf definitions are in [`../navidrome/`](../navidrome/) and [`../audi
 
 - **Dokploy:** project `nas`, compose `jellyfin` (appName `nas-jellyfin-dfityv`), source `foundry` repo
   `jellyfin/docker-compose.yml`, branch `main`.
-- **Image (pinned):** `jellyfin/jellyfin:10.11.11` (bumped from `10.9.11` in `6a01ca9`).
+- **Image (pinned):** `jellyfin/jellyfin:12.3@sha256:2038fe…` (2026-10-26, from `10.11.11`). Its Debian
+  `ca-certificates 20250419+deb13u1` rejects the compromised eMudhra intermediates; .NET uses the OS bundle.
 
 ## Ingress
 
@@ -42,7 +43,17 @@ No secrets or Dokploy env vars. `JELLYFIN_DATA_DIR` and `JELLYFIN_CACHE_DIR` are
 
 Commit + push, then explicit `compose-deploy`
 ([homelab.md §3](../docs/homelab.md#3-deploy-flow-critical--read-before-any-change)). Read Jellyfin's
-release notes before a version bump; config DB migrations are one-way.
+release notes before a version bump; config DB migrations are one-way, so snapshot the config volume first
+(with `jellyfin` stopped):
+
+```sh
+docker run --rm -v nas-jellyfin-dfityv_jellyfin-config:/c:ro -v /mnt/tank/shared/backups:/b alpine \
+  tar -czf /b/jellyfin-config-pre-<version>-<date>.tar.gz -C /c .
+```
+
+Rollback = restore that tarball into the volume and redeploy the previous tag. 12.x needs a full library scan
+after an upgrade from 10.x to restore auto-resolved alternate versions; the scheduled `Scan Media Library`
+task (every 12h) covers it.
 
 ## Health and backups
 

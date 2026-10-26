@@ -18,10 +18,10 @@ Dokploy: project `infra`, compose `monitoring` (`infra-monitoring-xbyv0n`), path
 | prometheus | `prom/prometheus:v3.2.1` | metrics, 30d TSDB, `--web.enable-lifecycle` | monitoring, dokploy-network | `prometheus-data` → `/mnt/tank/shared/prometheus` |
 | cadvisor | `gcr.io/cadvisor/cadvisor:v0.55.1` | per-container metrics (`privileged`, `/dev/kmsg`) | monitoring | host `/`, `/sys`, `/var/lib/docker` read-only |
 | node-exporter | `prom/node-exporter:v1.9.1` | host metrics (`pid: host`) | monitoring | host `/` → `/host:ro,rslave` |
-| grafana | `grafana/grafana:11.5.2` | dashboards + alerting; provisioned datasources Prometheus (default) and Loki | monitoring, dokploy-network | `grafana-data` → `/mnt/tank/shared/grafana` |
+| grafana | `grafana/grafana:12.4.13@sha256:41bbc1…` (go1.26.9: still trusts the emSign eMudhra chain until a go1.26.10 build; 12.4.14 will be one) | dashboards + alerting; provisioned datasources Prometheus (default) and Loki | monitoring, dokploy-network | `grafana-data` → `/mnt/tank/shared/grafana` |
 | gatus | `twinproduction/gatus` `:latest` of 2026-10-23, digest-pinned (`@sha256:d04f9c…`, go1.27.3, 2026-10-26) | uptime checks + Discord alerts, SQLite history | monitoring, dokploy-network | `./config/gatus` dir mount; `gatus-data` → `/mnt/tank/shared/gatus` |
 
-docker-socket-proxy and gatus are digest-pinned in `docker-compose.yml` (`../SECURITY-AUDIT.md` #8); Dependabot bumps the digests.
+docker-socket-proxy, grafana and gatus are digest-pinned in `docker-compose.yml` (`../SECURITY-AUDIT.md` #8); Dependabot bumps the digests.
 
 ## Ingress
 
