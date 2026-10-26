@@ -6,7 +6,8 @@ Web S3 browser with image thumbnails and a gallery viewer over the app image buc
 
 - **Dokploy:** project `infra`, compose `minio-gallery` (appName `compose-bypass-back-end-application-glcejz`),
   source `foundry` repo `minio-gallery/docker-compose.yml`, branch `main`.
-- **Image:** `machines/filestash:latest` — unpinned ([`../SECURITY-AUDIT.md`](../SECURITY-AUDIT.md) #8).
+- **Image:** `machines/filestash` `:latest` of 2026-10-26, digest-pinned (`@sha256:35e7d1…`, go1.26.10, Debian
+  `ca-certificates` 20250419+deb13u1; both reject the eMudhra intermediates). Dependabot bumps the digest.
   Container name `minio-gallery`.
 
 ## Ingress

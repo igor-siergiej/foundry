@@ -6,8 +6,8 @@ name: minio-gallery
 # Same-origin https via Traefik/cloudflared -> no mixed-content issues.
 services:
   filestash:
-    # Pinned 2026-10-18 (SECURITY-AUDIT #8); Dependabot bumps via :latest's new digest
-    image: machines/filestash@sha256:edb76ccdfeec1e512b40045f531bb3ceb2c0808960609c7f17ab356dd71b0626
+    # Pinned 2026-10-26 (:latest built 2026-10-26, go1.26.10 + Debian bundle that rejects the eMudhra intermediates, CVE-2026-111943; SECURITY-AUDIT #8); Dependabot bumps via :latest's new digest
+    image: machines/filestash@sha256:35e7d17f8cb07e8ac7ca0daf85940b15047d35622761060318395091b48890b5
     container_name: minio-gallery
     restart: unless-stopped
     environment:

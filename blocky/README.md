@@ -9,7 +9,7 @@ are in the repo root [`../README.md`](../README.md#blocky-dns-server); the ingre
 | | |
 |---|---|
 | Dokploy | project `infra`, compose `blocky` (`infra-blocky-ezfowk`), path `blocky/docker-compose.yml` |
-| Image | `spx01/blocky:latest` — unpinned, see `../SECURITY-AUDIT.md` #8 |
+| Image | `spx01/blocky` v0.34.0, digest-pinned (`@sha256:595136…`, go1.26.5); Dependabot bumps the digest. Still trusts the eMudhra intermediates (CVE-2026-111943): v0.35.0 is go1.27.1, and no build with go1.26.10 / go1.27.3 exists as of 2026-10-26. Low exposure: upstreams are plain-DNS `1.1.1.1`/`8.8.8.8`, the only TLS is the StevenBlack list fetch |
 | Ports | `53/tcp` + `53/udp` published on all host interfaces. `4000` (HTTP API + `/metrics`) is **not** published; reachable only on `dokploy-network` |
 | Ingress | none (no Dokploy domain, no Traefik route) |
 | Networks | `infra` (stack-local bridge), `dokploy-network` (external) |

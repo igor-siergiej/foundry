@@ -8,7 +8,7 @@ homelab credentials (smoke-test accounts, `bw-run` items). CLI tooling and the m
 | | |
 |---|---|
 | Dokploy | project `infra`, compose `vaultwarden` (appName `compose-reboot-virtual-monitor-bsqgog` — auto-generated, not descriptive), path `vaultwarden/docker-compose.yml` |
-| Image | `vaultwarden/server:1.37.2` (pinned) |
+| Image | `vaultwarden/server:1.37.4`, digest-pinned (`@sha256:efb3cd…`, 2026-10-26). Its Debian `ca-certificates` 20250419 still trusts the eMudhra intermediates; the fixed `20250419+deb13u1` arrives with the next upstream image build |
 | Ports | `expose: 80` only, no host publish |
 | Ingress | Dokploy domain `vault.imapps.uk` → `vaultwarden:80`, HTTPS/letsencrypt. No dedicated Access app is listed in [`homelab.md` §6](../docs/homelab.md#6-cloudflare-access-model-set-2026-default-deny), so remotely it falls under the wildcard require-email app [INFERENCE — not verified against Cloudflare]; on LAN/tailnet the vault login + 2FA is the only gate |
 | Networks | compose declares only its own `vaultwarden` bridge; Dokploy attaches `dokploy-network` for the domain (observed live) |
@@ -21,7 +21,7 @@ No SMTP is configured.
 
 Commit + push, then `compose-deploy` — [`homelab.md` §3](../docs/homelab.md#3-deploy-flow-critical--read-before-any-change).
 
-- `ADMIN_TOKEN`: generate with `docker run --rm -it vaultwarden/server:1.37.2 /vaultwarden hash` and
+- `ADMIN_TOKEN`: generate with `docker run --rm -it vaultwarden/server:1.37.4 /vaultwarden hash` and
   paste straight into Dokploy's env panel — never into the compose file, a doc, or chat.
 - Bootstrapping a fresh vault: temporarily set `SIGNUPS_ALLOWED: "true"`, register, set it back.
   Leaving it on was a real finding (`../SECURITY-AUDIT.md`, closed 2026-10-10).
