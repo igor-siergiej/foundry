@@ -363,6 +363,7 @@ Backblaze B2 or a friend's box) is a separate follow-up.
 ## 10. Gotchas checklist (for future agents)
 
 - [ ] Compose change → commit + push (`dangerouslyDisableSandbox:true`) → **explicit `compose-deploy`** (webhook unreliable).
+- [ ] **…but it can also fire on merge.** "Unreliable" cuts both ways: merging the jellyfin 12.3 / grafana 12.4.13 PR (#25, 2026-10-26) redeployed both stacks within a minute, before the planned post-merge snapshot. Take any pre-upgrade snapshot (one-way DB migrations) **before merging**, not between merge and `compose-deploy`.
 - [ ] dokploy/cloudflare/grafana/tailscale/trello are `mcp-cli`-only, not deferred tools — see §4.
 - [ ] Cloudflare MCP can't do WAF/rate-limit — use a scoped API token + `curl`, then revoke it.
 - [ ] Check the SessionStart machine-identity context before assuming you're on the laptop or the host — this session may be running directly on `foundry` with direct docker access, or on a laptop needing tailscale to reach it. Don't guess; the hook output says which.

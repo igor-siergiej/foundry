@@ -43,8 +43,11 @@ No secrets or Dokploy env vars. `JELLYFIN_DATA_DIR` and `JELLYFIN_CACHE_DIR` are
 
 Commit + push, then explicit `compose-deploy`
 ([homelab.md §3](../docs/homelab.md#3-deploy-flow-critical--read-before-any-change)). Read Jellyfin's
-release notes before a version bump; config DB migrations are one-way, so snapshot the config volume first
-(with `jellyfin` stopped):
+release notes before a version bump; config DB migrations are one-way, so snapshot the config volume
+**before merging the PR** (with `jellyfin` stopped). The autoDeploy webhook can deploy the merge commit
+within a minute, before any post-merge step runs: that is how the 10.11 → 12.3 upgrade (2026-10-26) went
+live with no pre-upgrade snapshot. Jellyfin's own pre-migration copy of `jellyfin.db` is deleted once the
+migrations succeed.
 
 ```sh
 docker run --rm -v nas-jellyfin-dfityv_jellyfin-config:/c:ro -v /mnt/tank/shared/backups:/b alpine \
