@@ -5,13 +5,15 @@ name: vaultwarden
 #
 # ADMIN_TOKEN is NOT set here: it must be an Argon2id-PHC hash (plaintext admin
 # tokens are rejected/warned-on since v1.28), generated once with
-# `docker run --rm -it vaultwarden/server:1.37.2 /vaultwarden hash` and pasted
+# `docker run --rm -it vaultwarden/server:1.37.4 /vaultwarden hash` and pasted
 # directly into Dokploy's env panel — never into this file or into chat, since
 # that value is the master key to every secret this holds.
 
 services:
   vaultwarden:
-    image: vaultwarden/server:1.37.2
+    # Pinned 2026-10-26 (1.37.4: 7 Vaultwarden advisories incl. GHSA-69q9-v8p6-xvx3). Its Debian
+    # bundle (ca-certificates 20250419) still trusts both eMudhra test chains; no fixed release yet.
+    image: vaultwarden/server:1.37.4@sha256:efb3cde962015fcc036b2ea625242248611943b27212ebf4392841fb30fad055
     container_name: vaultwarden
     restart: unless-stopped
     environment:

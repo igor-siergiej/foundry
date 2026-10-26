@@ -9,8 +9,8 @@ name: ntfy
 
 services:
   ntfy:
-    # Pinned 2026-10-24 (v2.14.0)
-    image: binwiederhier/ntfy@sha256:5a051798d14138c3ecb12c038652558ab6a077e1aceeb867c151cbf5fa8451ef
+    # Pinned 2026-10-26 (v2.34.0, go1.27.3: eMudhra intermediates blocked, CVE-2026-111943)
+    image: binwiederhier/ntfy@sha256:901e14503d3f605f445be0e68f2ac71f0aa73391897ce6ceb599f8c48d8b3792
     container_name: ntfy
     command: serve
     restart: unless-stopped

@@ -5,8 +5,9 @@ the music root, populated mostly by Mixtape.
 
 - **Dokploy:** project `nas`, compose `navidrome` (appName `nas-navidrome-9qcf6b`), source `foundry` repo
   `navidrome/docker-compose.yml`, branch `main`.
-- **Image:** `deluan/navidrome:latest` — unpinned ([`../SECURITY-AUDIT.md`](../SECURITY-AUDIT.md) #8); every
-  redeploy pulls whatever upstream published.
+- **Image:** `deluan/navidrome` 0.63.2, digest-pinned (`@sha256:901293…`, go1.26.5); Dependabot bumps the digest.
+  Still trusts the eMudhra intermediates (CVE-2026-111943): the newest release, 0.64.2, is go1.27.1, so it
+  stays put until a release is built with go1.26.10 / go1.27.3 or later.
 
 ## Ingress
 
@@ -56,6 +57,6 @@ Commit + push, then explicit `compose-deploy`
 ## Gotchas
 
 - The backup script needs `sqlite3` inside the `navidrome` container and the container name `navidrome`; an
-  upstream image change that drops `sqlite3` breaks the nightly backup (unpinned `:latest`).
+  upstream image change that drops `sqlite3` breaks the nightly backup (check before merging a digest bump).
 - A local dev instance (`dev-navidrome`, from `utils/docker`) also exists on this host bound to `127.0.0.1`;
   it is not production ([homelab.md §5](../docs/homelab.md#5-projects--services-dokploy-inventory)).
