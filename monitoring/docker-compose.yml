@@ -105,7 +105,10 @@ services:
       - monitoring
 
   grafana:
-    image: grafana/grafana:11.5.2
+    # Pinned 2026-10-26 (12.4.13; SECURITY-AUDIT #8). Still go1.26.9, so Go does not block the eMudhra
+    # intermediates, and its Alpine bundle trusts the emSign chain (rejects the AAA one). No Grafana
+    # release is on go1.26.10 / go1.27.3 yet; release-12.4.14 is go1.26.10: bump to 12.4.14 when it ships.
+    image: grafana/grafana:12.4.13@sha256:41bbc1b5e04416f81891806076db2a2ff60a5d4da5f78d36a88b033a8c199185
     container_name: grafana
     restart: unless-stopped
     user: "472:472"
