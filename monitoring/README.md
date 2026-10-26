@@ -19,9 +19,9 @@ Dokploy: project `infra`, compose `monitoring` (`infra-monitoring-xbyv0n`), path
 | cadvisor | `gcr.io/cadvisor/cadvisor:v0.55.1` | per-container metrics (`privileged`, `/dev/kmsg`) | monitoring | host `/`, `/sys`, `/var/lib/docker` read-only |
 | node-exporter | `prom/node-exporter:v1.9.1` | host metrics (`pid: host`) | monitoring | host `/` → `/host:ro,rslave` |
 | grafana | `grafana/grafana:11.5.2` | dashboards + alerting; provisioned datasources Prometheus (default) and Loki | monitoring, dokploy-network | `grafana-data` → `/mnt/tank/shared/grafana` |
-| gatus | `twinproduction/gatus:latest` | uptime checks + Discord alerts, SQLite history | monitoring, dokploy-network | `./config/gatus` dir mount; `gatus-data` → `/mnt/tank/shared/gatus` |
+| gatus | `twinproduction/gatus` `:latest` of 2026-10-23, digest-pinned (`@sha256:d04f9c…`, go1.27.3, 2026-10-26) | uptime checks + Discord alerts, SQLite history | monitoring, dokploy-network | `./config/gatus` dir mount; `gatus-data` → `/mnt/tank/shared/gatus` |
 
-Unpinned: docker-socket-proxy, gatus (`../SECURITY-AUDIT.md` #8 lists gatus).
+docker-socket-proxy and gatus are digest-pinned in `docker-compose.yml` (`../SECURITY-AUDIT.md` #8); Dependabot bumps the digests.
 
 ## Ingress
 

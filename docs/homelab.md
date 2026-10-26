@@ -240,8 +240,8 @@ None of these publish a host port (`ports:` block) — confirmed against the liv
 ### `infra`
 | Stack | Image | Ports | Notes |
 |---|---|---|---|
-| cloudflared | (app) | — | the tunnel |
-| tailscale | `tailscale:latest` | host net | `network_mode: host`, hostname `foundry`, advertises route `192.168.68.0/24`. See [`../tailscale/README.md`](../tailscale/README.md) |
+| cloudflared | (app) `cloudflare/cloudflared:2026.10.4@sha256:c6c7ae…` (go1.27.3), image set on Dokploy app `infra-cloudflared-tuky7u` via `dokploy-mcp`, not a compose file | — | the tunnel. Bump by updating the app's `dockerImage` and redeploying it; Dependabot does not see it |
+| tailscale | `tailscale/tailscale:v1.104.2@sha256:b11583…` (go1.27.3, digest-pinned) | host net | `network_mode: host`, hostname `foundry`, advertises route `192.168.68.0/24`. See [`../tailscale/README.md`](../tailscale/README.md) |
 | blocky | `spx01/blocky:latest` | 53 (host-published, LAN DNS) | split-horizon DNS; web UI/metrics now internal-only via `dokploy-network` (`:4000` host publish dropped in the 2026-07-04 hardening pass). See [`../blocky/README.md`](../blocky/README.md) |
 | mongodb | `mongo:7.0` | 27017, **no host publish, no Traefik route** (internal-only on `dokploy-network`) | shared DB (kivo, tandra, jewellery, mixtape). ZFS bind mount. Admin: `docker exec -it mongodb mongosh`, or the socat tunnel in [`../mongodb/README.md`](../mongodb/README.md#remote-access) |
 | rustfs | `rustfs/rustfs:1.0.3@sha256:9ca955…` | 9000 S3 / 9001 console, **no host publish**; Traefik `rustfs-console.imapps.uk` → 9001 (LAN/tailnet, no public DNS) | S3 for tandra, jewellery-catalogue and minio-gallery (`rustfs:9000`), one IAM user per consumer. ZFS dataset `tank/shared/rustfs`. See [`../rustfs/README.md`](../rustfs/README.md) |
@@ -256,7 +256,7 @@ None of these publish a host port (`ports:` block) — confirmed against the liv
 | Service | Image | Ingress | Notes |
 |---|---|---|---|
 | gtnh | `itzg/minecraft-server:java21` (`TYPE: GTNH`) | tailnet only: `gtnh.tail2d4575.ts.net:25565` | GregTech New Horizons. `network_mode: service:gtnh-tailscale` — no `dokploy-network`, no Traefik. Whitelisted. Only `gtnh/docker-compose.yml` is tracked; the other files in `gtnh/` are local server leftovers (gitignored). See [`../gtnh/README.md`](../gtnh/README.md) |
-| gtnh-tailscale | `tailscale/tailscale:latest` | own tailnet node `gtnh` | `TS_AUTHKEY_GTNH`; see `../SECURITY-AUDIT.md` #1 (tailnet ACL) |
+| gtnh-tailscale | `tailscale/tailscale:v1.104.2@sha256:b11583…` (go1.27.3, digest-pinned) | own tailnet node `gtnh` | `TS_AUTHKEY_GTNH`; see `../SECURITY-AUDIT.md` #1 (tailnet ACL) |
 
 ### Not Dokploy-managed (local dev)
 `dev-mongodb`, `dev-rustfs`, `dev-navidrome` are local development containers bound to `127.0.0.1` only (from `~/imapps/utils/docker`). Not production, not monitored; safe to ignore in health checks.

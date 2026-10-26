@@ -11,7 +11,7 @@ Inventory row: [`homelab.md` §5 `gtnh`](../docs/homelab.md#gtnh-game-server).
 | | |
 |---|---|
 | Dokploy | project `gtnh`, compose `gtnh` (`gtnh-7tyaj9`), path `gtnh/docker-compose.yml` |
-| Images | `itzg/minecraft-server:java21` (`TYPE: GTNH`, `GTNH_PACK_VERSION: 2.9.0-RC-1`, `pull_policy: missing`); `tailscale/tailscale:latest` sidecar (unpinned, `../SECURITY-AUDIT.md` #8) |
+| Images | `itzg/minecraft-server:java21` (`TYPE: GTNH`, `GTNH_PACK_VERSION: 2.9.0-RC-1`, `pull_policy: missing`); `tailscale/tailscale:v1.104.2` sidecar, digest-pinned (`@sha256:b11583…`, go1.27.3, 2026-10-26) |
 | Ingress | tailnet only: `gtnh.tail2d4575.ts.net:25565`. No Dokploy domain, no Traefik, no host ports |
 | Networks | `gtnh` uses `network_mode: service:gtnh-tailscale`; the sidecar sits on the stack default network. Not on `dokploy-network` |
 | Volumes | `gtnh-data` → `/data` (world + server config); `gtnh-tailscale-state` → `/var/lib/tailscale`. Both plain named volumes on the host disk (no bind to `/mnt/tank`) |

@@ -142,8 +142,8 @@ services:
       - traefik.http.services.grafana-websecure.loadbalancer.server.port=3000
 
   gatus:
-    # Pinned 2026-10-18 (SECURITY-AUDIT #8); Dependabot bumps via :latest's new digest
-    image: twinproduction/gatus@sha256:0009b90a11c042809f7f988c05c3f398dbf24b7498a0b7083efe3b9e8e126550
+    # Pinned 2026-10-26 (:latest built 2026-10-23 from fae6ede, go1.27.3: eMudhra intermediates blocked, CVE-2026-111943; SECURITY-AUDIT #8); Dependabot bumps via :latest's new digest
+    image: twinproduction/gatus@sha256:d04f9cc90641cb9728fa04c635da5c290258047c91ca0d3b3a50da7be407c5cf
     container_name: gatus
     restart: unless-stopped
     extra_hosts:

@@ -8,7 +8,7 @@ its own separate sidecar node (see [`../gtnh/README.md`](../gtnh/README.md)). In
 | | |
 |---|---|
 | Dokploy | project `infra`, compose `tailscale` (`infra-tailscale-fx7r6q`), path `tailscale/docker-compose.yml` |
-| Image | `tailscale/tailscale:latest` — unpinned (`../SECURITY-AUDIT.md` #8) |
+| Image | `tailscale/tailscale:v1.104.2`, digest-pinned (`@sha256:b11583…`, go1.27.3, 2026-10-26); Dependabot bumps the digest |
 | Networking | `network_mode: host`, `TS_USERSPACE=false` (kernel `tailscale0` in the host netns) |
 | Ingress | none (no Dokploy domain, no Traefik) |
 | Caps / devices | `NET_ADMIN`, `NET_RAW`, `/dev/net/tun` |
