@@ -5,10 +5,10 @@ Self-hosted photo/video library (Google Photos replacement). Four containers: `i
 
 - **Dokploy:** project `nas`, compose `immich` (appName `immich-app-exucge`), source `foundry` repo
   `immich/docker-compose.yml`, branch `main`.
-- **Images (pinned):** `ghcr.io/immich-app/immich-server:v3.2.0`,
-  `ghcr.io/immich-app/immich-machine-learning:v3.2.0`, `ghcr.io/immich-app/postgres:16-vectorchord0.4.3-pgvectors0.2.0`,
-  `docker.io/redis:7-alpine`. Server and ML must stay on the same version; read Immich's release notes for
-  breaking changes before bumping (last bump: `v2.7.3 -> v3.2.0`, commit `1ba211e`).
+- **Images (pinned):** `ghcr.io/immich-app/immich-server:v3.3.5`,
+  `ghcr.io/immich-app/immich-machine-learning:v3.3.5-openvino`, `ghcr.io/immich-app/postgres:16-vectorchord0.4.3-pgvectors0.2.0`,
+  `docker.io/redis:7-alpine`. Server and ML must stay on the same version (keep the ML `-openvino` suffix);
+  read Immich's release notes for breaking changes before bumping (last bump: `v2.7.3 -> v3.2.0`, commit `1ba211e`).
 
 ## Ingress
 
@@ -31,6 +31,17 @@ Postgres are on `immich` only.
 | `immich-upload` | `/usr/src/app/upload` (rw) | bind `/mnt/tank/shared/immich` (ZFS) | no (lives on the ZFS mirror) |
 | `immich-pgdata` | Postgres data | Docker named volume, **host disk** | nightly `pg_dumpall` |
 | `model-cache` | ML `/cache` | Docker named volume, host disk | no (re-downloads) |
+
+## Hardware acceleration (Intel UHD 770)
+
+`/dev/dri` is passed to both `immich-server` and `immich-machine-learning`.
+
+- **Video transcoding:** Quick Sync. The device alone does nothing: the admin setting
+  *Video Transcoding → Hardware Acceleration* must be `Quick Sync` with hardware decoding on. That setting
+  lives in the Immich DB (`system_metadata` key `system-config`, `ffmpeg.accel = qsv`,
+  `ffmpeg.accelDecode = true`), not in this compose, and survives redeploys.
+- **Machine learning:** the `-openvino` image runs the CLIP and face models on the iGPU. The ML container log
+  shows `OpenVINOExecutionProvider` when a model loads.
 
 ## Environment
 

@@ -33,7 +33,20 @@ Compose declares the private `jellyfin` bridge; Dokploy attaches `dokploy-networ
 Library folders under `/media`: `Movies`, `TV Shows`, `GOPRO`, `YouTube`. `YouTube/` is written by
 Mixtape, which binds the same host path as its `/videos` ([`../mixtape/README.md`](../mixtape/README.md)).
 
-`/dev/dri` is passed through for hardware transcoding.
+`/dev/dri` is passed through for hardware transcoding on the host's Intel UHD 770 (i5-13500T).
+
+### Transcoding settings
+
+These live in `/config/config/encoding.xml` on the `jellyfin-config` volume (Dashboard → Playback →
+Transcoding), not in this repo, and survive redeploys. Set 2026-11-14 after the move from the Ryzen/Vega host:
+
+- Hardware acceleration **Intel QuickSync (QSV)**, device `/dev/dri/renderD128`.
+- Low-power H.264 and HEVC encoders **on** (HuC firmware loads and authenticates on this host).
+- Hardware decoding: H.264, HEVC (incl. 10-bit and RExt 10/12-bit), VC1, MPEG2, VP9 (incl. 10-bit), AV1.
+- Tone mapping **on** (VPP first, OpenCL fallback; the image ships the Intel OpenCL runtime).
+
+Measured on a 1080p 10-bit HEVC file → 1080p H.264 (60 s of video): CPU libx264 7.2× realtime using ~14 of
+20 threads; QSV low-power 15.3× using ~0.5 thread; VAAPI 10.8×.
 
 ## Environment
 

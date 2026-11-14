@@ -14,15 +14,22 @@ services:
       DB_PASSWORD: ${DB_PASSWORD}
       DB_DATABASE_NAME: immich
       REDIS_HOSTNAME: redis
+    # Intel Quick Sync (UHD 770) for video transcoding. Takes effect only with the
+    # admin setting Video Transcoding > Hardware Acceleration = Quick Sync.
+    devices:
+      - /dev/dri:/dev/dri
     volumes:
       - immich-upload:/usr/src/app/upload
     networks:
       - immich
 
   immich-machine-learning:
-    image: ghcr.io/immich-app/immich-machine-learning:v3.3.5
+    # -openvino build runs CLIP/face models on the Intel iGPU through /dev/dri.
+    image: ghcr.io/immich-app/immich-machine-learning:v3.3.5-openvino
     container_name: immich-machine-learning
     restart: unless-stopped
+    devices:
+      - /dev/dri:/dev/dri
     volumes:
       - model-cache:/cache
     networks:
