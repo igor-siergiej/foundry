@@ -1,0 +1,33 @@
+name: zennotes
+
+services:
+  zennotes:
+    image: adibhanna/zennotes:2.84.1@sha256:c106169f79adcaf6260522ea6a038c5b1cc043b710c5380dca3588ab57d1f8cc
+    container_name: zennotes
+    restart: unless-stopped
+    user: "1000:1000"
+    read_only: true
+    tmpfs:
+      - /tmp:mode=1777,size=128m
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    environment:
+      ZENNOTES_VAULT_PATH: /workspace
+      ZENNOTES_AUTH_TOKEN_FILE: /run/secrets/zennotes_auth_token
+      ZENNOTES_BEHIND_TLS: "1"
+      ZENNOTES_TRUSTED_PROXIES: 10.0.1.0/24
+      ZENNOTES_PERSIST_SESSIONS: "1"
+    volumes:
+      - /mnt/tank/shared/zennotes/vault:/workspace
+      - /mnt/tank/shared/zennotes/data:/data
+      - /mnt/tank/shared/zennotes/auth-token:/run/secrets/zennotes_auth_token:ro
+    expose:
+      - "7878"
+    networks:
+      - dokploy-network
+
+networks:
+  dokploy-network:
+    external: true

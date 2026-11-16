@@ -415,3 +415,14 @@ endpoints:
       - "[BODY] == pat(*website-id*)"
     alerts:
       - type: discord
+
+  - name: ZenNotes
+    group: Apps
+    url: https://zennotes.imapps.uk/healthz
+    interval: 60s
+    timeout: 10s
+    conditions:
+      - "[STATUS] == 200"
+      - "[BODY].ok == true"
+    alerts:
+      - type: discord
