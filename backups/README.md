@@ -15,6 +15,7 @@ that no `du`/`stat` can see.
 | mongodb            | `config/mongodb.sh`            | `mongodump --gzip` via docker exec          | 7 nightly         |
 | immich Postgres    | `config/immich-pg.sh`          | `pg_dumpall` via docker exec, gzipped       | 7 nightly         |
 | vaultwarden        | `config/vaultwarden.sh`        | SQLite `.backup` + RSA key, tar'd           | 14 nightly        |
+| forgejo            | `config/forgejo.sh`            | SQLite `.backup` of `gitea.db` + bare repos + `app.ini`/`jwt`, tar'd | 14 nightly |
 | navidrome          | `config/navidrome.sh`          | SQLite `.backup` of `navidrome.db`          | 7 nightly         |
 | homeassistant      | `config/homeassistant.sh`      | tar of `/mnt/tank/shared/homeassistant/config` (excludes deps, recorder DB) | 14 nightly |
 | gtnh               | `config/gtnh.sh`               | `rcon-cli save-all` then alpine sidecar tar | 7 nightly         |

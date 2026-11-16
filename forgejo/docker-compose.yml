@@ -1,0 +1,111 @@
+name: forgejo
+
+# Self-hosted Forgejo (git forge) + Forgejo Actions runner with its own
+# Docker-in-Docker daemon. See README.md.
+#
+# RUNNER_SECRET and RUNNER_UUID are Dokploy env vars: this repo is public, so
+# never commit them. The `:?` form makes a missing value fail the deploy loudly.
+
+services:
+  forgejo:
+    image: data.forgejo.org/forgejo/forgejo:17.0.1@sha256:fcd19ff4ebc85fb098a67e8e1d0d5a84d07dd6e8a23edcfdfd5b71a6178953be
+    container_name: forgejo
+    restart: unless-stopped
+    environment:
+      FORGEJO__security__INSTALL_LOCK: "true"
+      FORGEJO__server__ROOT_URL: https://git.imapps.uk/
+      FORGEJO__server__DOMAIN: git.imapps.uk
+      FORGEJO__server__DISABLE_SSH: "true"
+      FORGEJO__service__DISABLE_REGISTRATION: "true"
+      FORGEJO__actions__ENABLED: "true"
+      FORGEJO__actions__DEFAULT_ACTIONS_URL: https://github.com
+      FORGEJO__database__DB_TYPE: sqlite3
+      FORGEJO__repository__DEFAULT_BRANCH: main
+    volumes:
+      - forgejo-data:/data
+    # No host port: Traefik routes git.imapps.uk to this container's :3000
+    # (Dokploy domain, LAN/tailnet only).
+    expose:
+      - "3000"
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:3000/api/healthz"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
+    networks:
+      - forgejo
+
+  # Docker daemon for CI jobs. Plain TCP without TLS is acceptable here: the
+  # port is only reachable on the private `forgejo` bridge, is never published,
+  # and workflow job containers get no access to it (runner `docker_host: "-"`).
+  # Privileged is required for dockerd-in-docker.
+  dind:
+    image: data.forgejo.org/oci/docker:29-dind@sha256:7bf70dcb85c822e3fa6f2d332143e474b99147b9d7b39102b0cfe8b04a7dd61b
+    container_name: forgejo-dind
+    restart: unless-stopped
+    privileged: true
+    command: ["dockerd", "-H", "tcp://0.0.0.0:2375", "--tls=false"]
+    volumes:
+      - dind-data:/var/lib/docker
+    networks:
+      - forgejo
+
+  runner:
+    image: data.forgejo.org/forgejo/runner:13.2.1@sha256:568cea8c15ddc01fc8f330124892f572af7db37fa28344a2c1914405793bf61d
+    container_name: forgejo-runner
+    restart: unless-stopped
+    depends_on:
+      forgejo:
+        condition: service_healthy
+      dind:
+        condition: service_started
+    environment:
+      DOCKER_HOST: tcp://dind:2375
+    command: forgejo-runner --config /config.yml daemon
+    mem_limit: 2g
+    volumes:
+      - runner-data:/data
+    configs:
+      - source: runner-config
+        target: /config.yml
+    networks:
+      - forgejo
+
+configs:
+  runner-config:
+    content: |
+      log:
+        level: info
+      runner:
+        capacity: 2
+        timeout: 3h
+        labels:
+          - "ubuntu-latest:docker://ghcr.io/catthehacker/ubuntu:act-22.04"
+      container:
+        network: ""
+        privileged: false
+        options: "--memory=8g --cpus=8"
+        docker_host: "-"
+      server:
+        connections:
+          default:
+            url: http://forgejo:3000
+            uuid: ${RUNNER_UUID:?set in Dokploy env}
+            token: ${RUNNER_SECRET:?set in Dokploy env}
+
+volumes:
+  # Local bind onto the ZFS pool (same style as vaultwarden); this is what
+  # backups/config/forgejo.sh reads. The directory must exist before deploy.
+  forgejo-data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /mnt/tank/shared/forgejo
+  dind-data:
+  runner-data:
+
+networks:
+  forgejo:
+    driver: bridge
