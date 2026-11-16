@@ -39,13 +39,15 @@ services:
   # Docker daemon for CI jobs. Plain TCP without TLS is acceptable here: the
   # port is only reachable on the private `forgejo` bridge, is never published,
   # and workflow job containers get no access to it (runner `docker_host: "-"`).
+  # --dns: job containers must resolve git.imapps.uk, which is LAN/tailnet-only,
+  # so they use blocky (192.168.68.17); a public resolver would not know the name.
   # Privileged is required for dockerd-in-docker.
   dind:
     image: data.forgejo.org/oci/docker:29-dind@sha256:7bf70dcb85c822e3fa6f2d332143e474b99147b9d7b39102b0cfe8b04a7dd61b
     container_name: forgejo-dind
     restart: unless-stopped
     privileged: true
-    command: ["dockerd", "-H", "tcp://0.0.0.0:2375", "--tls=false"]
+    command: ["dockerd", "-H", "tcp://0.0.0.0:2375", "--tls=false", "--dns=192.168.68.17", "--dns=1.1.1.1"]
     volumes:
       - dind-data:/var/lib/docker
     networks:
@@ -87,10 +89,12 @@ configs:
         privileged: false
         options: "--memory=8g --cpus=8"
         docker_host: "-"
+      # Public URL, not http://forgejo:3000: job containers run inside DinD, on a
+      # different network, and clone from the server URL the runner reports.
       server:
         connections:
           default:
-            url: http://forgejo:3000
+            url: https://git.imapps.uk
             uuid: ${RUNNER_UUID:?set in Dokploy env}
             token: ${RUNNER_SECRET:?set in Dokploy env}
 
