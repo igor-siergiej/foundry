@@ -383,6 +383,17 @@ endpoints:
     alerts:
       - type: discord
 
+  - name: Forgejo
+    group: Infrastructure
+    # Tailnet/LAN-only at git.imapps.uk (no public DNS, no Access).
+    url: https://git.imapps.uk/api/healthz
+    interval: 60s
+    timeout: 10s
+    conditions:
+      - "[STATUS] == 200"
+    alerts:
+      - type: discord
+
   - name: Umami
     group: Analytics
     # Tailnet/LAN-only at analytics.imapps.uk (no public DNS, no Access).
