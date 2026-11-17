@@ -2,6 +2,7 @@
 """Exercise Forgejo backup/restore against disposable on-disk SQLite data."""
 import os
 from pathlib import Path
+import shutil
 import sqlite3
 import subprocess
 import tarfile
@@ -26,7 +27,7 @@ class ForgejoBackupTest(unittest.TestCase):
         subprocess.run(["git", "init", "--bare", "--quiet", str(repo)], check=True)
         self.db = sqlite3.connect(self.data / "gitea/gitea.db")
         self.addCleanup(self.db.close)
-        self.db.executescript('PRAGMA journal_mode=WAL; CREATE TABLE "user" (id INTEGER); INSERT INTO "user" VALUES (1);')
+        self.db.executescript('PRAGMA journal_mode=WAL; CREATE TABLE "user" (id INTEGER); INSERT INTO "user" VALUES (1); CREATE TABLE repository (id INTEGER); INSERT INTO repository VALUES (1);')
 
     def run_backup(self, commands):
         env = dict(os.environ, BACKUPS_ROOT=str(self.root / "backups"), DATA_FIXTURE=str(self.data))
@@ -67,6 +68,37 @@ class ForgejoBackupTest(unittest.TestCase):
         result = self.run_backup("do_backup")
         self.assertNotEqual(result.returncode, 0)
         self.assertFalse(list((self.root / "backups/forgejo").glob("*.tar.gz")))
+
+    def test_drill_rejects_empty_repository_tree(self):
+        shutil.rmtree(self.data / "git/repositories/owner/example.git")
+        result = self.run_backup("do_backup && do_restore_drill")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("repository count mismatch", result.stderr)
+        self.assertFalse(list((self.root / "backups/forgejo").glob(".drill-*")))
+
+    def test_drill_rejects_database_with_zero_repositories(self):
+        self.db.execute("DELETE FROM repository")
+        self.db.commit()
+        result = self.run_backup("do_backup && do_restore_drill")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("restored database validation failed", result.stderr)
+
+    def test_drill_does_not_count_wiki_as_missing_primary_repository(self):
+        self.db.execute("INSERT INTO repository VALUES (2)")
+        self.db.commit()
+        wiki = self.data / "git/repositories/owner/example.wiki.git"
+        subprocess.run(["git", "init", "--bare", "--quiet", str(wiki)], check=True)
+        result = self.run_backup("do_backup && do_restore_drill")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("repository count mismatch", result.stderr)
+
+    def test_drill_rejects_repository_enumeration_failure(self):
+        result = self.run_backup(
+            'do_backup || exit; find() { if [ "$1" = "$DEST" ]; then command find "$@"; else return 1; fi; }; do_restore_drill'
+        )
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("repository enumeration failed", result.stderr)
+        self.assertFalse(list((self.root / "backups/forgejo").glob(".drill-*")))
 
 
 if __name__ == "__main__":

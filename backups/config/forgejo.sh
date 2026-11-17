@@ -103,8 +103,8 @@ do_restore_drill() (
     return 1
   fi
 
-  local users
-  if ! users="$(python3 - "$restored/gitea.db" <<'PY'
+  local counts users expected_repos
+  if ! counts="$(python3 - "$restored/gitea.db" <<'PY'
 from pathlib import Path
 import sqlite3
 import sys
@@ -117,29 +117,47 @@ try:
         users = db.execute('SELECT count(*) FROM "user"').fetchone()[0]
         if users < 1:
             raise ValueError("no users")
-        print(users)
+        repositories = db.execute("SELECT count(*) FROM repository").fetchone()[0]
+        if repositories < 1:
+            raise ValueError("no repositories")
+        print(users, repositories)
     finally:
         db.close()
 except (sqlite3.Error, ValueError):
-    sys.exit("forgejo: restored SQLite database failed integrity/schema/user checks")
+    sys.exit("forgejo: restored SQLite database failed integrity/schema/user/repository checks")
 PY
   )"; then
     log_err "$SERVICE_NAME: restored database validation failed"
     return 1
   fi
 
-  local repos=0 bad=0 repo
+  read -r users expected_repos <<< "$counts"
+  local repo_list="$staging/repositories.list"
+  if ! find "$restored/git/repositories" -mindepth 2 -maxdepth 2 -type d -name '*.git' -print0 > "$repo_list"; then
+    log_err "$SERVICE_NAME: repository enumeration failed"
+    return 1
+  fi
+
+  local repos=0 primary_repos=0 bad=0 repo
   while IFS= read -r -d '' repo; do
     repos=$((repos + 1))
+    case "$repo" in
+      *.wiki.git) ;;
+      *) primary_repos=$((primary_repos + 1)) ;;
+    esac
     if ! git -c safe.directory="$repo" --git-dir="$repo" fsck --no-progress >/dev/null 2>&1; then
       log_err "$SERVICE_NAME: git fsck failed for ${repo#"$restored/git/repositories/"}"
       bad=$((bad + 1))
     fi
-  done < <(find "$restored/git/repositories" -mindepth 2 -maxdepth 2 -type d -name '*.git' -print0)
+  done < "$repo_list"
 
+  if [ "$primary_repos" -lt "$expected_repos" ]; then
+    log_err "$SERVICE_NAME: repository count mismatch (database=$expected_repos restored_primary=$primary_repos)"
+    return 1
+  fi
   if [ "$bad" -gt 0 ]; then
     log_err "$SERVICE_NAME: drill sanity failed (integrity=ok users=$users repos=$repos fsck_failed=$bad)"
     return 1
   fi
-  log_info "$SERVICE_NAME: drill ok: integrity=ok users=$users repos=$repos fsck=ok"
+  log_info "$SERVICE_NAME: drill ok: integrity=ok users=$users repos=$repos primary_repos=$primary_repos database_repos=$expected_repos fsck=ok"
 )

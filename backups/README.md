@@ -109,12 +109,16 @@ The archive includes bare repositories, `app.ini`, JWT/Actions signing keys and
 `git/.ssh` when present. Forgejo 17 generated push-mirror SSH private keys are
 encrypted in `push_mirror.private_key` in SQLite; the original `app.ini` secret
 key is also required to recover them. No key values are logged. Staging trees
-are private and tarballs are mode 0600. Attachments/LFS/packages are not included.
+are private and tarballs are mode 0600. This code/history/configuration backup
+omits attachments, LFS objects, packages, Actions logs/artifacts and user/repository
+avatars, as well as derived indexes, queues, temporary files and application logs.
 
-The drill extracts to an isolated directory, checks SQLite integrity and users,
-and runs `git fsck` on every bare repo, then removes the extracted tree on success
-or failure. Live repository copies are not atomic with the database snapshot.
-Stop Forgejo writes for application-wide consistency before upgrades.
+The drill extracts to an isolated directory, checks SQLite integrity and nonempty
+user/repository tables, and runs `git fsck` on every bare repo. Enumeration errors
+fail the drill, and the non-wiki repo count must cover the database repo count.
+The extracted tree is removed on success or failure. Live repository copies are
+not atomic with the database snapshot. Stop Forgejo writes for application-wide
+consistency before upgrades.
 
 The generic driver discovers `config/*.sh` relative to its installed
 `bin/backup.sh`, not arbitrary worktrees. Its root suite units are not installed
