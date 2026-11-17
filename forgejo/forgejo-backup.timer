@@ -1,0 +1,10 @@
+[Unit]
+Description=Back up and validate Forgejo nightly at 03:30 UTC
+
+[Timer]
+OnCalendar=*-*-* 03:30:00 UTC
+Persistent=true
+Unit=forgejo-backup.service
+
+[Install]
+WantedBy=timers.target

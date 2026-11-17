@@ -21,6 +21,8 @@ services:
       FORGEJO__actions__DEFAULT_ACTIONS_URL: https://github.com
       FORGEJO__database__DB_TYPE: sqlite3
       FORGEJO__repository__DEFAULT_BRANCH: main
+      # Allow this exact LAN-routed host for jott's push-to-deploy webhook.
+      FORGEJO__webhook__ALLOWED_HOST_LIST: dokploy.imapps.uk
     volumes:
       - forgejo-data:/data
     # No host port: Traefik routes git.imapps.uk to this container's :3000
