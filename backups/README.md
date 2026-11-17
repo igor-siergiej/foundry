@@ -15,7 +15,7 @@ that no `du`/`stat` can see.
 | mongodb            | `config/mongodb.sh`            | `mongodump --gzip` via docker exec          | 7 nightly         |
 | immich Postgres    | `config/immich-pg.sh`          | `pg_dumpall` via docker exec, gzipped       | 7 nightly         |
 | vaultwarden        | `config/vaultwarden.sh`        | SQLite `.backup` + RSA key, tar'd           | 14 nightly        |
-| forgejo            | `config/forgejo.sh`            | SQLite `.backup` of `gitea.db` + bare repos + `app.ini`/`jwt`, tar'd | 14 nightly |
+| forgejo            | `config/forgejo.sh`            | Python SQLite online backup + bare repos + `app.ini`, signing keys and SSH client state, tar'd | 14 proven backups via Forgejo user wrapper |
 | navidrome          | `config/navidrome.sh`          | SQLite `.backup` of `navidrome.db`          | 7 nightly         |
 | homeassistant      | `config/homeassistant.sh`      | tar of `/mnt/tank/shared/homeassistant/config` (excludes deps, recorder DB) | 14 nightly |
 | gtnh               | `config/gtnh.sh`               | `rcon-cli save-all` then alpine sidecar tar | 7 nightly         |
@@ -96,6 +96,44 @@ Required globals (per-service config):
 
 `lib/common.sh` provides `log_info/log_warn/log_err`, `with_lock`,
 `ensure_dir`, `timestamp`, `discord_post`, `retain_dumps`.
+
+### Forgejo
+
+`forgejo.sh` uses host `python3` with stdlib `sqlite3.Connection.backup`, not the
+`sqlite3` executable. It opens the source read-only (a missing DB cannot be
+created silently), snapshots committed WAL data, runs `PRAGMA integrity_check`
+and requires an existing user. Missing/empty `app.ini`, database or a missing
+repository directory fails the backup. Failed copies/archives are not published.
+
+The archive includes bare repositories, `app.ini`, JWT/Actions signing keys and
+`git/.ssh` when present. Forgejo 17 generated push-mirror SSH private keys are
+encrypted in `push_mirror.private_key` in SQLite; the original `app.ini` secret
+key is also required to recover them. No key values are logged. Staging trees
+are private and tarballs are mode 0600. Attachments/LFS/packages are not included.
+
+The drill extracts to an isolated directory, checks SQLite integrity and users,
+and runs `git fsck` on every bare repo, then removes the extracted tree on success
+or failure. Live repository copies are not atomic with the database snapshot.
+Stop Forgejo writes for application-wide consistency before upgrades.
+
+The generic driver discovers `config/*.sh` relative to its installed
+`bin/backup.sh`, not arbitrary worktrees. Its root suite units are not installed
+on this host; the installed root `gtnh-backup.service` is GregTech-only.
+
+Forgejo instead has a dedicated user-systemd service/timer and wrapper in
+[`forgejo/`](../forgejo/README.md#backup-installation-host-user-home-uid-1000).
+It sources only this config and `lib/common.sh`, backs up and drills in a
+temporary `BACKUPS_ROOT`, then retains the proven archive under
+`/mnt/tank/shared/forgejo-backups/forgejo/<stamp>/<stamp>.tar.gz`. The outer root
+is mode 0700 and the archive mode 0600. It reuses `with_lock` and `retain_dumps`
+to retain 14 proven timestamp directories. The generic all-service driver does
+not prune Forgejo standalone tarballs.
+
+The shared default root remains `/mnt/tank/shared/backups`, which aliases the
+uid-3000-owned `/mnt/tank/shared/Backups` on this case-insensitive ZFS dataset.
+The user service does not write there or change its permissions.
+
+Regression check: `python3 backups/tests/test_forgejo.py`.
 
 ## Discord alerts
 

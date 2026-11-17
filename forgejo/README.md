@@ -4,13 +4,14 @@
 
 | Service | Image | Port | Notes |
 |---|---|---|---|
-| `forgejo` | `data.forgejo.org/forgejo/forgejo:17.0.1@sha256:fcd19ff4…` | 3000 (internal) | `git.imapps.uk`, Tailscale/LAN-only: no public DNS record, no Access. SSH disabled, registration disabled, SQLite. |
+| `forgejo` | `data.forgejo.org/forgejo/forgejo:17.0.1@sha256:fcd19ff4…` | 3000 (internal) | `git.imapps.uk`, currently private (Tailscale/LAN), with valid HTTPS. SSH disabled, registration disabled, SQLite. Public Cloudflare exposure is approved but blocked on Cloudflare OAuth authorization; it is not public yet. |
 | `dind` | `data.forgejo.org/oci/docker:29-dind@sha256:7bf70dcb…` | 2375 (private `forgejo` network only) | Privileged Docker daemon for CI jobs. Plain TCP is fine: never published, not on `dokploy-network`, and job containers get no docker access (`docker_host: "-"`). |
 | `runner` | `data.forgejo.org/forgejo/runner:13.2.1@sha256:568cea8c…` | — | Label `ubuntu-latest` (`ghcr.io/catthehacker/ubuntu:act-22.04`), capacity 2, `mem_limit: 2g` (jobs run in dind, limited to 8g/8 cpus each). Config is an inline compose `configs:` entry mounted at `/config.yml`. |
 
-- Data: `forgejo-data` → `/data`, local bind to `/mnt/tank/shared/forgejo` (ZFS). `dind-data` and `runner-data` are named volumes.
-- The `git.imapps.uk` → `forgejo:3000` Dokploy domain is created in Dokploy, not in this file. Dokploy attaches `dokploy-network` for it.
-- Gatus: `Forgejo` → `https://git.imapps.uk/api/healthz`. Backup: `backups/config/forgejo.sh` (nightly, 14 kept).
+- Data: `forgejo-data` binds `/mnt/tank/shared/forgejo` on the host to `/data`. SQLite is `/mnt/tank/shared/forgejo/gitea/gitea.db`; config is `gitea/conf/app.ini`; bare repositories are `git/repositories/<owner>/<repo>.git`. JWT and Actions signing keys are under `gitea/jwt` and `gitea/actions_id_token`. `git/.ssh` holds SSH client state. Generated push-mirror private keys are encrypted in SQLite, not persistent standalone SSH key files; restoring them also requires the original `app.ini` secret key.
+- `dind-data` (`/var/lib/docker`) and `runner-data` (`/data`) are named volumes. DinD images/cache are rebuildable, not part of the Forgejo backup.
+- The `git.imapps.uk` → `forgejo:3000` domain is configured in Dokploy, not in this file. Dokploy attaches `dokploy-network` for it. Intended next state: a public Cloudflare route after OAuth authorization is restored, keeping Forgejo login/registration restrictions.
+- Gatus: `Forgejo` → `https://git.imapps.uk/api/healthz`. Forgejo has its own user-systemd `forgejo-backup.timer`, daily at 03:30 UTC with persistent catch-up. Its service takes a backup and runs the isolated restore drill before retention. The generic root `foundry-backup` / `foundry-restore-drill` units are not installed; the root `gtnh-backup` unit handles only GregTech.
 
 ## Env vars (Dokploy panel; values never in git)
 
@@ -47,12 +48,66 @@ Prefer narrower scopes (e.g. `write:repository`) where possible, and keep the to
 ## Upgrade / rollback
 
 Bump the pinned tag **and** digest in `docker-compose.yml`, commit, push, `compose-deploy`.
-Forgejo migrates the DB on start and cannot be downgraded: take a manual backup first (`backups/bin/backup.sh`), and roll back by restoring it plus the previous pin.
+Forgejo migrates the DB on start and cannot be downgraded: take a manual backup first (`systemctl --user start forgejo-backup.service`), and roll back by restoring it plus the previous pin.
 v17.0 is a non-LTS release, EOL 2027-01-28; plan the move to the v19 LTS before then.
+
+After changing the inline `runner-config`, a runner restart alone did not load the new config. Recreate it, then deploy the compose stack through Dokploy:
+
+```sh
+docker rm -f forgejo-runner
+# Dokploy compose.deploy for composeId 5k8B-0zQyODVVasOc6CCx
+```
+
+After rebuilding DinD storage, rebuild jott's local CI image from a jott checkout:
+
+```sh
+bash .forgejo/ci/build-ci-image.sh
+```
+
+The script targets the Forgejo DinD daemon; rebuilding the runner container does not restore its job images.
+
+## Backup installation (host user `home`, uid 1000)
+
+Run from the foundry checkout containing these changes. The installed copies do
+not track later checkout edits; repeat `install` after changing the wrapper,
+config or shared library.
+
+```sh
+install -d -m 0700 /mnt/tank/shared/forgejo-backups
+install -d -m 0700 /home/home/.local/libexec/forgejo-backup/forgejo \
+  /home/home/.local/libexec/forgejo-backup/backups/lib \
+  /home/home/.local/libexec/forgejo-backup/backups/config \
+  /home/home/.config/systemd/user
+install -m 0700 forgejo/backup.sh /home/home/.local/libexec/forgejo-backup/forgejo/backup.sh
+install -m 0600 backups/lib/common.sh /home/home/.local/libexec/forgejo-backup/backups/lib/common.sh
+install -m 0600 backups/config/forgejo.sh /home/home/.local/libexec/forgejo-backup/backups/config/forgejo.sh
+install -m 0600 forgejo/forgejo-backup.service forgejo/forgejo-backup.timer /home/home/.config/systemd/user/
+systemctl --user daemon-reload
+systemctl --user start forgejo-backup.service
+systemctl --user enable --now forgejo-backup.timer
+systemctl --user list-timers forgejo-backup.timer
+```
+
+The user manager has `Linger=yes` on this host, so it runs without an interactive
+login. If rebuilding the host, an administrator must enable lingering once with
+`sudo loginctl enable-linger home`. The wrapper uses the shared framework's
+`with_lock` under `$XDG_RUNTIME_DIR/forgejo-backup`, an isolated temporary
+`BACKUPS_ROOT`, and `retain_dumps` to keep the newest 14 proven timestamp
+directories. Failed backup/drill runs fail the systemd service; inspect
+`journalctl --user -u forgejo-backup.service`. No Discord webhook is configured
+for this user service.
 
 ## Restore
 
-Latest dump: `/mnt/tank/shared/backups/forgejo/<stamp>.tar.gz` (contains `gitea.db`, `git/repositories`, `gitea/conf/app.ini`, `gitea/jwt`). Stop the stack, extract into `/mnt/tank/shared/forgejo` (db → `gitea/gitea.db`, others at the same relative paths, owner uid 1000), start. The weekly restore drill runs `PRAGMA integrity_check` and `git fsck` on every repo.
+Proven archives live at `/mnt/tank/shared/forgejo-backups/forgejo/<stamp>/<stamp>.tar.gz`. The service root is mode 0700, owned by `home`; tarballs are mode 0600. `/mnt/tank/shared/Backups` is owned by uid 3000 and not writable by this user, so its permissions were not changed. The shared framework's default `/mnt/tank/shared/backups` resolves to that same directory on this case-insensitive ZFS dataset and is not the user service destination.
+
+Each archive contains `gitea.db` at its timestamp-directory root, plus `git/repositories`, `gitea/conf/app.ini`, `gitea/jwt`, `gitea/actions_id_token` and `git/.ssh` when present. Files containing secrets and the archive are owner-only. Keep the archive private.
+
+Stop Forgejo writes before restoring. Extract into a private temporary directory, then copy `gitea.db` to `/mnt/tank/shared/forgejo/gitea/gitea.db` and the remaining trees to their matching paths. Remove stale `gitea.db-wal` and `gitea.db-shm` while the service is stopped, restore owner uid/gid 1000, and start Forgejo. Preserve the original `app.ini`: its secret key decrypts generated push-mirror SSH keys stored in the DB.
+
+The Python stdlib SQLite backup API takes a consistent online DB snapshot, including committed WAL data, and checks integrity. The isolated restore drill checks `PRAGMA integrity_check`, a nonempty user table and `git fsck` on every restored bare repository without starting Forgejo or connecting to production. Repositories are copied live, not atomically with the DB; stop writes before an upgrade backup if a single application-wide recovery point is required. Attachments/LFS/packages are not yet included.
+
+The generic suite discovers `backups/config/*.sh` relative to its installed driver. The Forgejo-only wrapper instead sources only the installed `common.sh` and `forgejo.sh`; it does not run or schedule other services. Its verified archive is moved from the temporary backup root into a timestamp directory for the shared `retain_dumps` helper. The generic all-service driver itself does not prune Forgejo's standalone tarballs.
 
 ## Break-glass
 

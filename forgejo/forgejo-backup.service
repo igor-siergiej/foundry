@@ -1,0 +1,9 @@
+[Unit]
+Description=Forgejo backup and isolated restore proof
+
+[Service]
+Type=oneshot
+UMask=0077
+Environment=BACKUPS_ROOT=/mnt/tank/shared/forgejo-backups
+ExecStart=%h/.local/libexec/forgejo-backup/forgejo/backup.sh
+TimeoutStartSec=30min

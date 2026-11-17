@@ -2,15 +2,15 @@
 # backups/config/forgejo.sh
 # Backup of Forgejo (git.imapps.uk): the source of truth for jott's git history.
 #
-# Strategy: SQLite `.backup` (WAL-safe online backup) of /data/gitea/gitea.db
-# (the default [database] PATH in the image's app.ini template), plus the bare
-# repositories (git/repositories), app.ini and the JWT/secret material under
-# gitea/ needed to restore, tar'd together. No attachments/LFS/packages are
-# used yet, so they are not included; add them when that changes.
+# Strategy: Python's SQLite online backup API snapshots gitea/gitea.db,
+# including committed WAL data. Archive it with bare repositories, app.ini,
+# JWT/Actions signing keys and git/.ssh. Generated push-mirror SSH keys are
+# encrypted in the DB; app.ini's SECRET_KEY is required to decrypt them.
+# Attachments/LFS/packages are not used yet and are not included.
 #
-# Repositories are copied while Forgejo runs. Git objects are immutable and
-# refs are updated atomically, so the copy is consistent enough for `git fsck`;
-# the nightly cadence makes a torn ref update self-healing on the next run.
+# Repositories are copied live, not atomically with the database. The restore
+# drill checks every copied repository with git fsck; stop writes for a fully
+# application-consistent recovery point before upgrades.
 
 set -uo pipefail
 
@@ -19,58 +19,69 @@ DATA_DIR="/mnt/tank/shared/forgejo"
 DEST="$BACKUPS_ROOT/$SERVICE_NAME"
 RETENTION_DAYS=14
 
-do_backup() {
-  ensure_dir "$DEST"
+do_backup() (
+  umask 077
+  ensure_dir "$DEST" || return 1
   local stamp; stamp="$(timestamp)"
   local staging="$DEST/$stamp"
-  ensure_dir "$staging"
-
-  if [ ! -d "$DATA_DIR/gitea" ]; then
-    log_err "$SERVICE_NAME: $DATA_DIR/gitea not mounted"
-    rm -rf -- "$staging"
-    return 1
-  fi
-
-  # WAL-safe online backup using the sqlite3 CLI.
-  if ! sqlite3 "$DATA_DIR/gitea/gitea.db" ".backup '$staging/gitea.db'"; then
-    log_err "$SERVICE_NAME: sqlite .backup failed"
-    rm -rf -- "$staging"
-    return 1
-  fi
-
-  # app.ini + jwt/ hold the secret keys (SECRET_KEY, JWT, LFS) needed to make
-  # a restored DB usable (2FA, tokens, sessions).
-  ensure_dir "$staging/gitea"
-  if [ -f "$DATA_DIR/gitea/conf/app.ini" ]; then
-    ensure_dir "$staging/gitea/conf"
-    cp -- "$DATA_DIR/gitea/conf/app.ini" "$staging/gitea/conf/app.ini"
-    chmod 600 "$staging/gitea/conf/app.ini"
-  else
-    log_warn "$SERVICE_NAME: no gitea/conf/app.ini at $DATA_DIR"
-  fi
-  if [ -d "$DATA_DIR/gitea/jwt" ]; then
-    rsync -a "$DATA_DIR/gitea/jwt/" "$staging/gitea/jwt/"
-  fi
-
-  if [ -d "$DATA_DIR/git/repositories" ]; then
-    ensure_dir "$staging/git"
-    rsync -a "$DATA_DIR/git/repositories/" "$staging/git/repositories/"
-  else
-    log_warn "$SERVICE_NAME: no git/repositories at $DATA_DIR"
-  fi
-
-  # Pack everything for atomicity.
   local archive="$DEST/$stamp.tar.gz"
-  tar -C "$DEST" -czf "$archive" "$stamp"
-  rm -rf -- "$staging"
-  chmod 600 "$archive"
 
-  log_info "$SERVICE_NAME: dump ok ($(du -sh "$archive" | awk '{print $1}'))"
-  return 0
-}
+  if [ ! -s "$DATA_DIR/gitea/conf/app.ini" ] || [ ! -s "$DATA_DIR/gitea/gitea.db" ] || \
+     [ ! -d "$DATA_DIR/git/repositories" ]; then
+    log_err "$SERVICE_NAME: required app.ini, database or repository directory missing/empty"
+    return 1
+  fi
+  mkdir -m 700 -- "$staging" || return 1
+  trap 'rm -rf -- "$staging"; rm -f -- "$archive.tmp"' EXIT
 
-do_restore_drill() {
-  ensure_dir "$DEST"
+  if ! python3 - "$DATA_DIR/gitea/gitea.db" "$staging/gitea.db" <<'PY'
+from pathlib import Path
+import sqlite3
+import sys
+
+try:
+    # mode=ro prevents a missing source from becoming a new empty database.
+    source = sqlite3.connect(Path(sys.argv[1]).resolve().as_uri() + "?mode=ro", uri=True)
+    target = sqlite3.connect(sys.argv[2])
+    try:
+        source.backup(target)
+        if target.execute("PRAGMA integrity_check").fetchall() != [("ok",)]:
+            raise ValueError("snapshot integrity check failed")
+        if target.execute('SELECT count(*) FROM "user"').fetchone()[0] < 1:
+            raise ValueError("snapshot has no users")
+    finally:
+        target.close()
+        source.close()
+except (sqlite3.Error, ValueError):
+    # Do not print SQL, connection details or secret-bearing database values.
+    sys.exit("forgejo: SQLite snapshot failed integrity/schema/user checks")
+PY
+  then
+    log_err "$SERVICE_NAME: online SQLite backup failed"
+    return 1
+  fi
+
+  mkdir -p -- "$staging/gitea/conf" "$staging/git" || return 1
+  cp -- "$DATA_DIR/gitea/conf/app.ini" "$staging/gitea/conf/app.ini" || return 1
+  local path
+  for path in gitea/jwt gitea/actions_id_token git/.ssh; do
+    if [ -d "$DATA_DIR/$path" ]; then
+      rsync -a "$DATA_DIR/$path/" "$staging/$path/" || return 1
+    fi
+  done
+  rsync -a "$DATA_DIR/git/repositories/" "$staging/git/repositories/" || return 1
+  chmod -R go-rwx -- "$staging" || return 1
+
+  # Publish only a complete archive; a failed tar is never a valid drill input.
+  tar -C "$DEST" -czf "$archive.tmp" "$stamp" || return 1
+  chmod 600 "$archive.tmp" || return 1
+  mv -- "$archive.tmp" "$archive" || return 1
+  log_info "$SERVICE_NAME: backup ok ($archive)"
+)
+
+do_restore_drill() (
+  umask 077
+  ensure_dir "$DEST" || return 1
   local latest
   latest="$(find "$DEST" -mindepth 1 -maxdepth 1 -type f -name '*.tar.gz' | sort -r | head -n 1)"
   if [ -z "$latest" ]; then
@@ -79,41 +90,56 @@ do_restore_drill() {
   fi
 
   local stamp; stamp="$(basename "$latest" .tar.gz)"
-  local staging="$DEST/.drill-$stamp"
-  rm -rf -- "$staging"
-  ensure_dir "$staging"
+  local staging
+  staging="$(mktemp -d "$DEST/.drill-$stamp.XXXXXX")" || return 1
+  trap 'rm -rf -- "$staging"' EXIT
 
-  log_info "$SERVICE_NAME: drilling dump $stamp into $staging"
-  tar -C "$staging" -xzf "$latest"
-
-  local db="$staging/$stamp/gitea.db"
-  if [ ! -f "$db" ]; then
-    log_err "$SERVICE_NAME: drill tarball missing gitea.db"
-    rm -rf -- "$staging"
+  log_info "$SERVICE_NAME: drilling dump $stamp"
+  tar -C "$staging" -xzf "$latest" || return 1
+  local restored="$staging/$stamp"
+  if [ ! -s "$restored/gitea.db" ] || [ ! -s "$restored/gitea/conf/app.ini" ] || \
+     [ ! -d "$restored/git/repositories" ]; then
+    log_err "$SERVICE_NAME: drill archive missing database, app.ini or repositories"
     return 1
   fi
 
-  local integrity users
-  integrity="$(sqlite3 "$db" "PRAGMA integrity_check;" 2>&1 | head -1)"
-  users="$(sqlite3 "$db" 'select count(*) from "user";' 2>/dev/null | tr -d ' \n' || echo 0)"
+  local users
+  if ! users="$(python3 - "$restored/gitea.db" <<'PY'
+from pathlib import Path
+import sqlite3
+import sys
 
-  # git fsck every restored repo (usually a handful); any failure fails the drill.
+try:
+    db = sqlite3.connect(Path(sys.argv[1]).resolve().as_uri() + "?mode=ro", uri=True)
+    try:
+        if db.execute("PRAGMA integrity_check").fetchall() != [("ok",)]:
+            raise ValueError("integrity check failed")
+        users = db.execute('SELECT count(*) FROM "user"').fetchone()[0]
+        if users < 1:
+            raise ValueError("no users")
+        print(users)
+    finally:
+        db.close()
+except (sqlite3.Error, ValueError):
+    sys.exit("forgejo: restored SQLite database failed integrity/schema/user checks")
+PY
+  )"; then
+    log_err "$SERVICE_NAME: restored database validation failed"
+    return 1
+  fi
+
   local repos=0 bad=0 repo
-  while IFS= read -r repo; do
+  while IFS= read -r -d '' repo; do
     repos=$((repos + 1))
-    if ! git --git-dir="$repo" fsck --no-progress >/dev/null 2>&1; then
-      log_err "$SERVICE_NAME: git fsck failed for ${repo#"$staging/$stamp/git/repositories/"}"
+    if ! git -c safe.directory="$repo" --git-dir="$repo" fsck --no-progress >/dev/null 2>&1; then
+      log_err "$SERVICE_NAME: git fsck failed for ${repo#"$restored/git/repositories/"}"
       bad=$((bad + 1))
     fi
-  done < <(find "$staging/$stamp/git/repositories" -mindepth 2 -maxdepth 2 -type d -name '*.git' 2>/dev/null)
+  done < <(find "$restored/git/repositories" -mindepth 2 -maxdepth 2 -type d -name '*.git' -print0)
 
-  rm -rf -- "$staging"
-
-  if [ "$integrity" != "ok" ] || [ -z "$users" ] || [ "$users" -lt 1 ] || [ "$bad" -gt 0 ]; then
-    log_err "$SERVICE_NAME: drill sanity failed (integrity=$integrity users=$users repos=$repos fsck_failed=$bad)"
+  if [ "$bad" -gt 0 ]; then
+    log_err "$SERVICE_NAME: drill sanity failed (integrity=ok users=$users repos=$repos fsck_failed=$bad)"
     return 1
   fi
-
-  log_info "$SERVICE_NAME: drill ok — integrity=ok users=$users repos=$repos fsck=ok"
-  return 0
-}
+  log_info "$SERVICE_NAME: drill ok: integrity=ok users=$users repos=$repos fsck=ok"
+)
