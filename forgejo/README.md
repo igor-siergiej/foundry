@@ -111,7 +111,8 @@ The generic suite discovers `backups/config/*.sh` relative to its installed driv
 
 ## Break-glass
 
-- Forgejo down: jott deploys from the GitHub mirror, so production deploys are unaffected. Local clones still have full history.
+- Forgejo down: the running jott server keeps serving, but new deployments read Forgejo directly through Dokploy's Gitea provider. Restore the verified Forgejo backup first. For emergency deployment, switch only jott's Dokploy source back to the GitHub mirror; it contains the last successful push sync. Local clones retain full git history.
 - Locked out: `docker exec -u git forgejo forgejo admin user change-password --username <name> --password <new>`.
+- Jott deployment: provider `Forgejo git.imapps.uk` uses a separate read-only token. A main-branch push webhook targets Dokploy over LAN HTTPS, restricted by `FORGEJO__webhook__ALLOWED_HOST_LIST=dokploy.imapps.uk`; watch paths remain `server/**` and `schema/**`. The webhook URL contains a deployment secret and must not be committed.
 - Runner stuck: `docker restart forgejo-runner`; wedged job containers live inside dind (`docker exec forgejo-dind docker ps`).
 - To pause CI: `docker stop forgejo-runner`.
