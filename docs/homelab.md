@@ -229,7 +229,7 @@ Each infra/gtnh stack with a README links it in the Notes column. Dokploy also a
 ### `nas` (compose stacks, media)
 | Stack | Image | Container port | Ingress |
 |---|---|---|---|
-| immich | `immich-server:v3.2.0` (+ ml, redis, pg16) | 2283 | immich.imapps.uk — **Access bypass**, own login. See [`../immich/README.md`](../immich/README.md) |
+| immich | `immich-server:v3.4.2` (+ CPU ML `v3.4.2`, redis, pg16; Quick Sync video retained) | 2283 | immich.imapps.uk — **Access bypass**, own login. See [`../immich/README.md`](../immich/README.md) |
 | jellyfin | `jellyfin:12.3@sha256:2038fe…` (digest-pinned 2026-10-26; Debian bundle rejects the eMudhra intermediates. 10.11 → 12 DB migrations are one-way, see the README for the snapshot step) | 8096 | jellyfin.imapps.uk — bypass. See [`../jellyfin/README.md`](../jellyfin/README.md) |
 | navidrome | `deluan/navidrome@sha256:901293…` (0.63.2, go1.26.5, digest-pinned; still trusts the eMudhra intermediates: the newest release 0.64.2 is go1.27.1, only unreleased `develop` builds are fixed) | 4533 | navidrome.imapps.uk — bypass. See [`../navidrome/README.md`](../navidrome/README.md) |
 | audiobookshelf | `advplyr/audiobookshelf@sha256:b897c3…` (2.37.2, digest-pinned) | 80 (Dokploy domain port; Gatus checks `:80`) | audiobookshelf.imapps.uk — bypass. See [`../audiobookshelf/README.md`](../audiobookshelf/README.md) |

@@ -5,10 +5,10 @@ Self-hosted photo/video library (Google Photos replacement). Four containers: `i
 
 - **Dokploy:** project `nas`, compose `immich` (appName `immich-app-exucge`), source `foundry` repo
   `immich/docker-compose.yml`, branch `main`.
-- **Images (pinned):** `ghcr.io/immich-app/immich-server:v3.3.5`,
-  `ghcr.io/immich-app/immich-machine-learning:v3.3.5-openvino`, `ghcr.io/immich-app/postgres:16-vectorchord0.4.3-pgvectors0.2.0`,
-  `docker.io/redis:7-alpine`. Server and ML must stay on the same version (keep the ML `-openvino` suffix);
-  read Immich's release notes for breaking changes before bumping (last bump: `v2.7.3 -> v3.2.0`, commit `1ba211e`).
+- **Images (pinned):** `ghcr.io/immich-app/immich-server:v3.4.2`,
+  `ghcr.io/immich-app/immich-machine-learning:v3.4.2`, `ghcr.io/immich-app/postgres:16-vectorchord0.4.3-pgvectors0.2.0`,
+  `docker.io/redis:7-alpine`. Server and ML must stay on the same version.
+  Read Immich's release notes for breaking changes before bumping (last upgrade: `v3.3.5 -> v3.4.2`, 2026-11-19).
 
 ## Ingress
 
@@ -29,19 +29,20 @@ Postgres are on `immich` only.
 | Volume | Mount | Backing | Backed up |
 |---|---|---|---|
 | `immich-upload` | `/usr/src/app/upload` (rw) | bind `/mnt/tank/shared/immich` (ZFS) | no (lives on the ZFS mirror) |
-| `immich-pgdata` | Postgres data | Docker named volume, **host disk** | nightly `pg_dumpall` |
+| `immich-pgdata` | Postgres data | Docker named volume, **host disk** | Immich-managed nightly database dump; pre-upgrade custom dump (see below) |
 | `model-cache` | ML `/cache` | Docker named volume, host disk | no (re-downloads) |
 
 ## Hardware acceleration (Intel UHD 770)
 
-`/dev/dri` is passed to both `immich-server` and `immich-machine-learning`.
+`/dev/dri` is passed to `immich-server` for video transcoding.
 
 - **Video transcoding:** Quick Sync. The device alone does nothing: the admin setting
   *Video Transcoding → Hardware Acceleration* must be `Quick Sync` with hardware decoding on. That setting
   lives in the Immich DB (`system_metadata` key `system-config`, `ffmpeg.accel = qsv`,
   `ffmpeg.accelDecode = true`), not in this compose, and survives redeploys.
-- **Machine learning:** the `-openvino` image runs the CLIP and face models on the iGPU. The ML container log
-  shows `OpenVINOExecutionProvider` when a model loads.
+- **Machine learning:** the standard `v3.4.2` image runs CLIP, face recognition and OCR on CPU.
+  The `v3.4.2-openvino` image was not published at upgrade time (registry returned `MANIFEST_UNKNOWN`),
+  so CPU ML was explicitly selected. This does not disable Quick Sync video transcoding.
 
 ## Environment
 
@@ -57,9 +58,13 @@ Commit + push, then explicit `compose-deploy` — the webhook is unreliable. See
 
 - Gatus: `Immich (Photos)` → `http://immich-server:2283/api/server/ping`, expects 200
   ([`../monitoring/config/gatus/config.yaml`](../monitoring/config/gatus/config.yaml)).
-- Backup: [`../backups/config/immich-pg.sh`](../backups/config/immich-pg.sh) — `pg_dumpall` via
-  `docker exec immich-postgres`, gzipped, 7-day retention, restore-drilled weekly into the same Postgres image.
-  See [homelab.md §9](../docs/homelab.md#9-backups--restore-drill) and [`../backups/README.md`](../backups/README.md).
+- Live nightly database backups: `/mnt/tank/shared/immich/backups/immich-db-backup-*-v3.3.5-pg16.10.sql.gz`
+  before the upgrade; these are Immich-managed backups, not proof that the repository's backup timer is installed.
+- Pre-upgrade backup: `/mnt/tank/shared/immich-backups/pre-v3.4.2-20261119T232031Z.dump` (`pg_dump -Fc`,
+  mode 600). Restored successfully into an isolated container using the production Postgres image:
+  **44,336 assets**. Keep this dump for rollback; rolling back images alone does not undo schema migrations.
+- Repository backup/restore tooling: [`../backups/config/immich-pg.sh`](../backups/config/immich-pg.sh)
+  and [`../backups/README.md`](../backups/README.md).
 
 ## Gotchas
 
