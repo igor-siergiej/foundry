@@ -28,7 +28,7 @@ export KANBAN_CLI_REPO_ROOTS="${KANBAN_CLI_REPO_ROOTS:-/home/home/imapps}"
 
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 # Each entry is a checkout directory next to foundry (../<name>) whose
-# .kanban-cli.json supplies the production baseUrl (tandra: https://app.tandra.uk).
+# jott-config.json supplies the production baseUrl (tandra: https://app.tandra.uk).
 APPS=(tandra jewellery-catalogue kivo mixtape)
 
 WORKDIR="$(mktemp -d -t foundry-smoke.XXXXXX)"
@@ -36,10 +36,10 @@ trap 'rm -rf "$WORKDIR"' EXIT
 
 run_one() {
   local name="$1"
-  local cfg="$REPO_ROOT/../$name/.kanban-cli.json"
+  local cfg="$REPO_ROOT/../$name/jott-config.json"
   if [ ! -f "$cfg" ]; then
-    echo "[smoke] $name: no .kanban-cli.json, skipping"
-    printf 'skipped (no .kanban-cli.json)\n'
+    echo "[smoke] $name: no jott-config.json, skipping"
+    printf 'skipped (no jott-config.json)\n'
     return 0
   fi
 

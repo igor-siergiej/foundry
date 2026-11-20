@@ -144,7 +144,7 @@ permission_args() {
 
 # Resolve a jott project name to its on-disk checkout. Mirrors
 # `kanban-cli resolve-repo` semantics (scan each KANBAN_CLI_REPO_ROOTS dir,
-# up to two levels, for a `.kanban-cli.json` whose `repoName` matches). Returns
+# up to two levels, for a `jott-config.json` whose `repoName` matches). Returns
 # the first match on stdout, non-zero if none.
 resolve_project_repo() {
   local project="$1"
@@ -158,7 +158,7 @@ resolve_project_repo() {
         dirname "$cfg"
         return 0
       fi
-    done < <(find "$root" -mindepth 2 -maxdepth 4 -name '.kanban-cli.json' -print 2>/dev/null)
+    done < <(find "$root" -mindepth 2 -maxdepth 4 -name 'jott-config.json' -print 2>/dev/null)
   done
   return 1
 }

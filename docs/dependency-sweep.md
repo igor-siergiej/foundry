@@ -103,7 +103,7 @@ For each repo, weekly (Monday 04:00):
 
 1. **Dependabot opens PRs** — patch + minor for `bun`, `npm`,
    `github-actions`, `docker`.
-2. **CI runs** on the PR (lint, test, e2e per repo's `.kanban-cli.json`).
+2. **CI runs** on the PR (lint, test, e2e per repo's `jott-config.json`).
 3. **`dependabot-merge.yml` workflow** checks the PR's update-type:
    - **patch / minor**: `gh pr merge --auto --squash`. Lands once CI
      is green.
@@ -122,7 +122,7 @@ For each repo, weekly (Monday 04:00):
 The card body calls out 3-4 failures in the last 30 runs on `mixtape`,
 `kivo`, `portfolio`. These block auto-merge before the bump even
 lands. Fix each flake before enabling auto-merge there — the
-`./.kanban-cli.json` retry counter is the indicator; if
+`./jott-config.json` retry counter is the indicator; if
 `retryPolicy.e2e_local` trips, treat the flake as a separate bug, not
 a dep-sweep problem.
 
