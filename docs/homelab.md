@@ -138,8 +138,7 @@ Two reachability tiers — don't assume a server is a native deferred tool just 
 Notes:
 - **None of dokploy/cloudflare/grafana/tailscale/trello are native Claude Code deferred tools** — they're `mcp-cli`-CLI-only, by design (see user CLAUDE.md: avoids deferred-tool context bloat). Only Gmail/Drive/Calendar/Figma/GitHub/Playwright are registered natively (check with `claude mcp list`).
 - `~/.mcp_servers.json` is vault-rendered (see dotfiles `docs/secrets.md`), not hand-edited — the checked-in shape lives at dotfiles `docs/mcp_servers.json.template`.
-- **`~` is not `/home/home` inside a Paperclip agent run.** Paperclip sandboxes `HOME` to a per-run temp dir, so every `~/.mcp_servers.json` above resolves to a nonexistent file and *all* of these MCPs look unreachable. Use the absolute path — `mcp-cli --config /home/home/.mcp_servers.json call-tool dokploy-mcp:<tool>`. Verified working 2026-09-27.
-- **MagicDNS on `foundry` — broken until 2026-09-27, now fixed.** See §4a. If `*.ts.net` stops resolving here again, that's the thing to check: the Paperclip control-plane MCPs (`home.tail2d4575.ts.net:8444`) fail at session start with `ENOTFOUND` and the fallback is `curl --resolve <host>:<port>:100.79.92.93`.
+- **MagicDNS on `foundry` — broken until 2026-09-27, now fixed.** See §4a. If `*.ts.net` stops resolving here again, that's the thing to check: tailnet hosts (e.g. the jott server `home.tail2d4575.ts.net:8787`) fail with `ENOTFOUND` and the fallback is `curl --resolve <host>:<port>:100.79.92.93`.
 - **`cloudflare-api` needs a one-time OAuth sign-in per machine.** Its config entry is an `npx mcp-remote` stdio wrapper (`mcp-cli` only speaks stdio). Signed in on `home` 2026-10-18 (token in `/home/home/.mcp-auth/mcp-remote-v1/*_tokens.json`); see §4b to redo it. Tools are `search` (OpenAPI spec), `execute` (JS calling `cloudflare.request()`), `docs`, `whoami`.
 - **Don't assume which machine you're on.** A SessionStart hook (`~/.claude/hooks/machine-context.sh`, dotfiles-managed) injects machine identity (hostname/tailscale IP → known role, e.g. this box IS `foundry` itself with direct docker access) at session start — read that context instead of assuming "laptop, reach host via tailscale". If the hook reports "unrecognized machine", check `hostname`/`tailscale status` yourself before trusting anything below that assumes a specific box.
 
@@ -198,7 +197,7 @@ MCP_REMOTE_CONFIG_DIR=/home/home/.mcp-auth \
 # paste the printed https://mcp.cloudflare.com/authorize?... URL into your local browser
 ```
 
-Agents then use it normally, but **must** pin the auth dir, because Paperclip sandboxes `HOME`:
+Agents then use it normally, pinning the auth dir:
 
 ```sh
 MCP_REMOTE_CONFIG_DIR=/home/home/.mcp-auth \
@@ -313,9 +312,15 @@ has no `@smoke`-tagged tests, so its run executes nothing. Diagram:
 
 ## 9. Backups & restore drill
 
-The `backups/` directory ships a nightly backup suite + a weekly restore
-drill. Both run as systemd timers on the foundry host and post to the
-same Discord webhook as Gatus / smoke routine. Diagrams:
+The `backups/` directory ships a nightly backup suite and a weekly restore drill.
+On 2026-11-05 the general `foundry-backup` and `foundry-restore-drill` units were not installed.
+GregTech now has an installed, enabled `gtnh-backup.timer` at **02:00 UTC**, running
+`backups/bin/gtnh-backup.sh` to back up `OmniSlop` and supporting state to the ZFS mirror,
+then extract and validate the archive. Seven-day retention applies only after a passing
+drill and excludes manual rollback archives. The first scheduled-service manual run passed;
+see [`../gtnh/README.md`](../gtnh/README.md#backups). This job logs failures to the journal,
+with no Discord notification configured. The general suite below describes the shipped
+templates, not verified active schedules. Diagrams:
 [`diagrams/data-storage.excalidraw`](./diagrams/data-storage.excalidraw),
 [`diagrams/ops-automation.excalidraw`](./diagrams/ops-automation.excalidraw).
 
@@ -331,7 +336,7 @@ prunes by `RETENTION_DAYS`, and exits non-zero on any failure.
 | vaultwarden | `backups/config/vaultwarden.sh` | SQLite `.backup` + RSA key, tar'd |
 | navidrome | `backups/config/navidrome.sh` | SQLite `.backup` of `navidrome.db` |
 | homeassistant | `backups/config/homeassistant.sh` | tar of `/mnt/tank/shared/homeassistant/config` (excludes deps, recorder DB) |
-| gtnh | `backups/config/gtnh.sh` | `rcon-cli save-all` then alpine sidecar tar |
+| gtnh | `backups/config/gtnh.sh` | disable autosaving, flush, tar `OmniSlop` + supporting state; re-enable autosaving on exit; extract and validate every run |
 
 Not yet backed up: rustfs (S3 mirror with a read-only IAM user, ~150 MB), opensearch (rebuild from
 mongo), jellyfin / audiobookshelf / monitoring / mixtape / resilio-sync
@@ -379,7 +384,7 @@ Backblaze B2 or a friend's box) is a separate follow-up.
 - [ ] **Gatus config lives at `monitoring/config/gatus/config.yaml`, mounted as a directory** so Gatus hot-reloads it after a deploy. It used to be a single-file bind mount of `gatus-config.yml`, which never saw the file git replaced, so new checks silently didn't load until a manual restart (2026-10-14). `homelab-status` now flags a mismatch between deployed and live check counts. Dokploy apps are checked via their public hostname (`https://<app>.imapps.uk/...`), not the suffixed swarm service name; the exception is sentinel-api, whose `/health` isn't reachable through Traefik.
 - [ ] **Monitoring deploys force a full container recreate.** Every `compose-deploy` of `monitoring` re-clones `/etc/dokploy/compose/infra-monitoring-xbyv0n/code` and runs `docker compose ... up -d --force-recreate` (the `--force-recreate` is in the Dokploy compose's `command` field, set via `dokploy-mcp compose.update`). Without that flag, a service whose spec didn't change keeps its bind mount to the deleted directory inode and runs on stale config — the original "dashboard JSON edited, but grafana doesn't see it until a manual `docker restart grafana`" report (2026-10-16). `--force-recreate` recreates every container on every deploy; the bind mount source is the freshly-cloned path, so the new container sees the new content. Gatus still hot-reloads its config in place once the recreated container comes up.
 - [ ] **This homelab and `taisei-karate` (AWS) share no infrastructure** — different clouds, different auth models, different deploy pipelines. See [`taisei-karate.md`](./taisei-karate.md).
-- [ ] **Nightly smoke tests reuse `kanban-cli e2e live`** — same scoped `@smoke` filter each repo declares in `.kanban-cli.json` `e2e.smokeGrep`. An app with no `.kanban-cli.json` is logged-and-skipped, not failed. Don't add `@smoke` tags speculatively; the smoke tier runs against production.
+- [ ] **Nightly smoke tests reuse `kanban-cli e2e live`** — same scoped `@smoke` filter each repo declares in `jott-config.json` `e2e.smokeGrep`. An app with no `jott-config.json` is logged-and-skipped, not failed. Don't add `@smoke` tags speculatively; the smoke tier runs against production.
 - [ ] **After every Dokploy upgrade, recheck `SECURITY-AUDIT.md` #3 + #9**: `docker service inspect dokploy --format '{{json .Endpoint.Spec.Ports}}'` must be `null`, and from a container on `dokploy-network` `wget -qO- http://dokploy-traefik:8080/api/overview` must fail. With `api.insecure: false` nothing listens on `:8080`, so wget reports *connection refused* (same on v3.6.25 and v3.7.16, checked 2026-10-26); a 404 is also fine, a JSON body is not. Both findings closed 2026-10-18 by `docker service update --publish-rm` (re-opens on upgrade) and the `settings.updateTraefikConfig` MCP call, respectively; the Dokploy upgrade to v0.30.8 re-added the publish and the audit had to be re-verified.
 - [ ] **Traefik's version is pinned by `TRAEFIK_VERSION` on the `dokploy` swarm service** (`3.7.16` since 2026-10-26, jott #199: Dokploy v0.30.10 defaults to `3.6.25`, go1.26.5, which still trusts the compromised eMudhra intermediates). Dokploy reads it whenever it recreates `dokploy-traefik` (`settings.writeTraefikEnv`, `settings.updateTraefikPorts`). Both Dokploy upgrade paths (in-app updater, `install.sh update`) run `docker service update --image`, which keeps the env; a fresh `install.sh` (`docker service create`) drops it, and Traefik falls back to Dokploy's default on the next recreate. Check: `docker service inspect dokploy --format '{{json .Spec.TaskTemplate.ContainerSpec.Env}}'` and `docker exec dokploy-traefik traefik version`. To bump: `docker service update --env-add TRAEFIK_VERSION=<x.y.z> dokploy`, wait for Dokploy to come back, then make Dokploy recreate the container with `settings.updateTraefikPorts` `{"additionalPorts":[]}` (dokploy-mcp, or `POST https://dokploy.imapps.uk/api/settings.updateTraefikPorts` with the same `x-api-key`; it keeps the current env, including `CF_DNS_API_TOKEN`). `settings.reloadTraefik` only restarts the container and never changes the image. Roll back with `--env-rm TRAEFIK_VERSION` and the same recreate. Before a minor bump, run the new image next to the live one: a throwaway container on `dokploy-network` with a copy of `traefik.yml` (`api.insecure: true`), the dynamic dir and the Docker socket mounted read-only, then diff `/api/http/routers` and per-host responses against the old version. Drop the env once Dokploy's own default reaches the pinned version, or it will hold Traefik back.
 - [ ] **Host updates (apt, Docker Engine, reboot) restart every container.** Swarm mode is active, and Docker refuses `live-restore` in swarm mode (`docker info` → `Live Restore Enabled: false`), so any `dockerd` restart — including the one `apt` triggers when `docker-ce`/`containerd.io` are in the batch — stops and restarts every container. That includes blocky, so the **whole LAN loses its primary DNS** until blocky is back (clients and the host fall back to `1.1.1.1`: no split-horizon, no adblock), and vaultwarden, Traefik and the tunnel go down with it. It needs `sudo`, so a headless factory run cannot do it. Run it in a quiet window: `sudo apt update && sudo apt full-upgrade` (apt downloads everything before `dockerd` restarts, so it does not need DNS mid-install), then `sudo reboot` if `/var/run/reboot-required` exists. Host Bun (`~/.bun/bin/bun`, which runs `kanban-cli dispatch` and omp) is user-owned: `bun upgrade`, no sudo; running processes keep the old binary until they restart. Afterwards, in order: `findmnt /mnt/tank` (ZFS imported before containers with tank binds start), `dig @192.168.68.17 imapps.uk` (blocky first), `docker version` (Engine), `apt list --upgradable` (empty, or only held packages, each with a reason), `tailscale status`, the tunnel through the real edge (`curl -sI --resolve dokploy.imapps.uk:443:104.21.45.248 https://dokploy.imapps.uk`, since `/etc/hosts` pins it to the LAN), then `homelab-status` must exit 0.

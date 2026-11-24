@@ -13,8 +13,8 @@ This is the second layer: real end-to-end flows.
   `kivo`, `mixtape` (checkout directories next to foundry, e.g. `../tandra`).
   For each, calls `kanban-cli e2e live <repo> --url <production baseUrl>`
   (which runs only `@smoke`-tagged specs by default, scoped to that repo's
-  `e2e.smokeGrep` from `.kanban-cli.json`; tandra's is `https://app.tandra.uk`).
-- Apps without a `.kanban-cli.json` or `environments.production.baseUrl` are
+  `e2e.smokeGrep` from `jott-config.json`; tandra's is `https://app.tandra.uk`).
+- Apps without a `jott-config.json` or `environments.production.baseUrl` are
   skipped with a log line — they're added when the kanban-worker bootstraps
   them.
 

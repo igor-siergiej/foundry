@@ -5,7 +5,7 @@
 Thumbs.db
 .env
 
-# Per-machine Claude Code settings (local-only Paperclip hooks/permissions).
+# Per-machine Claude Code settings (local-only hooks/permissions).
 .claude/
 
 # GTNH server files live in the gtnh-data volume; only the compose file and README are tracked

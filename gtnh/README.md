@@ -30,6 +30,11 @@ means editing `WHITELIST` in the compose file, not the local `whitelist.json`.
 
 Console: `docker exec -i gtnh rcon-cli <command>` (the backup script uses `rcon-cli save-all flush`).
 
+Pollution is disabled in the persistent volume's `/data/config/GregTech/Pollution.cfg`:
+`B:"Activate Pollution"=false` (applied 2026-11-05). Restart `gtnh` after changing it.
+The ignored local `config/` directory does not control the live server. Recheck this setting
+after a modpack update that replaces configuration files.
+
 ## Health / monitoring
 
 - Gatus: `GTNH (Minecraft)` → `tcp://gtnh.tail2d4575.ts.net:25565`, every 120s (group Apps).
@@ -38,11 +43,28 @@ Console: `docker exec -i gtnh rcon-cli <command>` (the backup script uses `rcon-
 
 ## Backups
 
-`backups/config/gtnh.sh`, nightly with the rest of the suite ([`homelab.md` §9](../docs/homelab.md#9-backups--restore-drill)):
-`rcon-cli save-all flush`, then an `alpine:3` sidecar with `--volumes-from gtnh` tars `data/world`,
-`server.properties`, `whitelist.json`, `ops.json` to `/mnt/tank/shared/backups/gtnh/`. Retention 7 days.
-The restore drill checks for `world/level.dat` and at least one `.mca` region file. The tailscale
-state volume is not backed up (re-auth with a new key if lost).
+Server Utilities keeps ZIP backups in `/data/backups/`, containing `OmniSlop/`,
+`serverutilities/`, and `visualprospecting/`. On 2026-11-05 the latest existing backup,
+`2026-11-03-22-43-01.zip`, passed CRC validation and was restored with the server stopped.
+The restored `OmniSlop/level.dat` matched the archive byte-for-byte before the world began ticking.
+The previous world and auxiliary data remain in `/data/.pre-restore-20261105/`; an additional
+rollback archive, including the previous pollution config, is at
+`/mnt/tank/shared/backups/gtnh/pre-restore-20261105.tar.gz`.
+
+`gtnh-backup.timer` runs nightly at **02:00 UTC** (persistent across downtime). Its service
+runs `backups/bin/gtnh-backup.sh`: disable autosaving, flush the world, archive `OmniSlop/`,
+`serverutilities/`, `visualprospecting/`, `config/`, and server properties/whitelist/ops to
+`/mnt/tank/shared/backups/gtnh/`, then re-enable autosaving even if archiving fails.
+Each successful backup is extracted to a temporary directory and checked for world data,
+region files, and supporting state. After a passing drill, timestamped archives older than
+seven days are pruned; manual `pre-restore-*` archives are excluded.
+
+Installed and exercised 2026-11-05: `2026-11-05T092416Z.tar.gz` (320 MiB on disk),
+restore drill passed with 53 overworld region files. Inspect with
+`systemctl status gtnh-backup.timer` and `journalctl -u gtnh-backup.service`;
+run manually with `sudo systemctl start gtnh-backup.service`.
+Unit sources are in `backups/systemd/gtnh-backup.{service,timer}`.
+The tailscale state volume is not backed up (re-auth with a new key if lost).
 
 ## Gotchas
 
@@ -50,4 +72,4 @@ state volume is not backed up (re-auth with a new key if lost).
   reaches `foundry` on every port and the advertised `192.168.68.0/24` — `../SECURITY-AUDIT.md` #1 (HIGH, open).
 - If the sidecar restarts, the server container loses its network namespace; restart `gtnh` after it.
   [INFERENCE from `network_mode: service:`; not observed]
-- `gtnh-data` is on the host disk, not the ZFS mirror; the nightly tar is the only copy on `tank`.
+- `gtnh-data` and the Server Utilities ZIPs are on the host disk. Nightly archives and the manual pre-restore archive are on the ZFS mirror, but still on the same host; there is no off-host copy.

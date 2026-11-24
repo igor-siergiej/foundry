@@ -1,0 +1,13 @@
+[Unit]
+Description=GregTech world backup and restore drill
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+User=root
+WorkingDirectory=/home/home/imapps/foundry
+ExecStart=/bin/bash /home/home/imapps/foundry/backups/bin/gtnh-backup.sh
+StandardOutput=journal
+StandardError=journal
+TimeoutStartSec=30min

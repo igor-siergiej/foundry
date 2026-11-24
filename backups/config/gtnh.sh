@@ -1,92 +1,87 @@
 #!/usr/bin/env bash
 # backups/config/gtnh.sh
-# Backup of the GTNH Minecraft world. Uses the itzg image's built-in
-# `save-on`/`save-all` RCON commands so we capture a quiescent world
-# snapshot, then `docker run --volumes-from` against the gtnh container
-# to pull /data/world without touching anything else.
-#
-# Why this approach: `cp -a /mnt/tank/...` while the server is running
-# is unsafe (chunk files mid-write). Itzg ships a tiny Alpine image we
-# can exec rcon inside, and the world lives on the gtnh-data Docker
-# volume so we attach to that volume.
+# Back up the active GTNH world and supporting state to the ZFS mirror.
+# Disable world autosaves while archiving; always re-enable them on exit.
 
 set -uo pipefail
 
 SERVICE_NAME="gtnh"
 CONTAINER="gtnh"
 DEST="$BACKUPS_ROOT/$SERVICE_NAME"
-RETENTION_DAYS=7   # 7 nightly copies is plenty for a creative-build world
+RETENTION_DAYS=7
+GTNH_WORLD="OmniSlop"
 
-# RCON is on by default in itzg's image; creds live in /data/server.properties.
-# We don't know the password without parsing it, so use the `rcon-cli` binary
-# included in the image with env-based config that itzg auto-detects from
-# the live container's properties file. Failing that, fall back to a forced
-# `save-off` cycle with `save-all` over the console pipe (stdin_open=true).
-
-do_backup() {
+do_backup() (
   ensure_dir "$DEST"
   local stamp; stamp="$(timestamp)"
   local archive="$DEST/$stamp.tar.gz"
 
-  log_info "$SERVICE_NAME: quiescing world and tarring /data"
-  if ! docker exec "$CONTAINER" \
-        rcon-cli save-all flush >/dev/null 2>&1; then
-    log_warn "$SERVICE_NAME: rcon-cli save-all failed; continuing without quiesce"
+  if ! docker exec "$CONTAINER" rcon-cli save-off; then
+    log_err "$SERVICE_NAME: could not disable autosaving"
+    return 1
   fi
-
-  # Use a sidecar alpine container with --volumes-from to copy /data out
-  # without depending on a bind mount being present (gtnh-data is a named
-  # volume, no host bind in the compose).
-  if ! docker run --rm \
-        --volumes-from "$CONTAINER" \
-        -v "$DEST:/out" \
-        alpine:3 \
-        tar --create --gzip \
-            --exclude='cache' \
-            --exclude='logs' \
-            --exclude='crash-reports' \
-            --exclude='*.log' \
-            --file=/out/"$stamp".tar.gz \
-            -C / data/world data/server.properties data/whitelist.json data/ops.json >/dev/null 2>&1; then
-    log_err "$SERVICE_NAME: tar via sidecar failed"
-    rm -f -- "$archive"
+  trap '
+    status=$?
+    if ! docker exec "$CONTAINER" rcon-cli save-on; then
+      log_err "$SERVICE_NAME: could not re-enable autosaving"
+      status=1
+    fi
+    if [ "$status" -ne 0 ]; then rm -f -- "$archive"; fi
+    exit "$status"
+  ' EXIT
+  if ! docker exec "$CONTAINER" rcon-cli save-all flush; then
+    log_err "$SERVICE_NAME: could not flush world"
     return 1
   fi
 
-  log_info "$SERVICE_NAME: dump ok ($(du -sh "$DEST/$stamp.tar.gz" | awk '{print $1}'))"
-  return 0
-}
+  log_info "$SERVICE_NAME: archiving $GTNH_WORLD"
+  if ! docker run --rm --network none \
+        --volumes-from "$CONTAINER":ro \
+        -v "$DEST:/out" \
+        alpine:3 \
+        tar --create --gzip \
+            --file=/out/"$stamp".tar.gz \
+            -C / data/"$GTNH_WORLD" data/serverutilities data/visualprospecting \
+            data/config data/server.properties data/whitelist.json data/ops.json; then
+    log_err "$SERVICE_NAME: tar via sidecar failed"
+    return 1
+  fi
 
-do_restore_drill() {
+  log_info "$SERVICE_NAME: dump ok ($(du -h "$archive" | cut -f1))"
+)
+
+do_restore_drill() (
   ensure_dir "$DEST"
   local latest
-  latest="$(find "$DEST" -mindepth 1 -maxdepth 1 -type f -name '*.tar.gz' | sort -r | head -n 1)"
+  latest="$(find "$DEST" -mindepth 1 -maxdepth 1 -type f \
+    -name '20??-??-??T??????Z.tar.gz' | sort -r | head -n 1)"
   if [ -z "$latest" ]; then
     log_err "$SERVICE_NAME: no dump to drill"
     return 1
   fi
 
   local staging; staging="$(mktemp -d -t gtnh-drill.XXXXXX)"
-  trap 'rm -rf -- "$staging"' RETURN
-
+  trap 'rm -rf -- "$staging"' EXIT
   log_info "$SERVICE_NAME: drilling dump $(basename "$latest") into $staging"
   if ! tar -C "$staging" -xzf "$latest"; then
     log_err "$SERVICE_NAME: drill untar failed"
     return 1
   fi
-
-  # Sanity: world region dir + level.dat present (Mojang's level marker).
-  if [ ! -d "$staging/data/world/region" ] || \
-     [ ! -f "$staging/data/world/level.dat" ]; then
-    log_err "$SERVICE_NAME: drill tarball missing world essentials"
+  if [ ! -f "$staging/data/$GTNH_WORLD/level.dat" ] || \
+     [ ! -d "$staging/data/$GTNH_WORLD/region" ] || \
+     [ ! -f "$staging/data/config/GregTech/Pollution.cfg" ] || \
+     [ ! -d "$staging/data/serverutilities" ] || \
+     [ ! -d "$staging/data/visualprospecting" ]; then
+    log_err "$SERVICE_NAME: drill tarball missing world or supporting state"
     return 1
   fi
-
-  local region_count; region_count="$(find "$staging/data/world/region" -name '*.mca' | wc -l)"
-  log_info "$SERVICE_NAME: drill ok — $region_count region files"
+  local region_count
+  region_count="$(find "$staging/data/$GTNH_WORLD/region" -name '*.mca' | wc -l)"
   if [ "$region_count" -lt 1 ]; then
     log_err "$SERVICE_NAME: drill looks empty (no .mca files)"
     return 1
   fi
-  return 0
-}
+  log_info "$SERVICE_NAME: drill ok — $region_count region files"
+  find "$DEST" -maxdepth 1 -type f -name '20??-??-??T??????Z.tar.gz' \
+    ! -path "$latest" -mtime +"$RETENTION_DAYS" -delete
+)

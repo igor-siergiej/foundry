@@ -17,7 +17,7 @@ that no `du`/`stat` can see.
 | vaultwarden        | `config/vaultwarden.sh`        | SQLite `.backup` + RSA key, tar'd           | 14 nightly        |
 | navidrome          | `config/navidrome.sh`          | SQLite `.backup` of `navidrome.db`          | 7 nightly         |
 | homeassistant      | `config/homeassistant.sh`      | tar of `/mnt/tank/shared/homeassistant/config` (excludes deps, recorder DB) | 14 nightly |
-| gtnh               | `config/gtnh.sh`               | `rcon-cli save-all` then alpine sidecar tar | 7 nightly         |
+| gtnh               | `config/gtnh.sh`               | disable autosaving, flush, tar world + config; extract and validate each run | 7 days |
 
 ### Not yet backed up (follow-up cards)
 
@@ -35,6 +35,32 @@ that no `du`/`stat` can see.
   vaultwarden staging; covered.
 
 ## Deploy
+
+### Installed GregTech schedule
+
+As of 2026-11-05, the general `foundry-backup` / `foundry-restore-drill` units below are
+not installed. GregTech has a dedicated `gtnh-backup.timer`, nightly at **02:00 UTC**:
+
+```sh
+sudo systemctl link /home/home/imapps/foundry/backups/systemd/gtnh-backup.service \
+                    /home/home/imapps/foundry/backups/systemd/gtnh-backup.timer
+sudo systemctl daemon-reload
+sudo systemctl enable --now gtnh-backup.timer
+sudo systemctl start gtnh-backup.service
+journalctl -u gtnh-backup.service
+```
+
+`bin/gtnh-backup.sh` holds the existing per-service lock across backup and restore drill.
+It needs Docker access, not the suite's credential environment file. It archives
+`OmniSlop`, Server Utilities, VisualProspecting, mod configuration (including the pollution
+setting), and server properties/whitelist/ops. Autosaving is restored on both success and
+failure. A drill extracts the latest timestamped archive and checks world and supporting
+state before pruning timestamped archives older than seven days; manual rollback archives
+are never selected or pruned. Failures are visible in the systemd service and journal;
+this dedicated job has no Discord notification configured.
+
+### General suite installation
+
 
 ```sh
 # Render /etc/foundry/backup.env once (Discord webhook URL + any
